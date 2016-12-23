@@ -23,16 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import fs from 'fs';
 import { EventEmitter } from 'events';
-import { init } from 'raspi';
-import { getPins, getPinNumber } from 'raspi-board';
-import { PULL_NONE, PULL_UP, PULL_DOWN, DigitalOutput, DigitalInput } from 'raspi-gpio';
-import { PWM } from 'raspi-pwm';
-import { SoftPWM } from 'raspi-soft-pwm';
-import { I2C } from 'raspi-i2c';
-import { LED } from 'raspi-led';
-import { Serial, DEFAULT_PORT } from 'raspi-serial';
 
 // Constants
 const INPUT_MODE = 0;
@@ -73,6 +64,15 @@ const serialPump = Symbol('serialPump');
 const isSerialProcessing = Symbol('isSerialProcessing');
 const isSerialOpen = Symbol('isSerialOpen');
 
+const raspiModule = Symbol('raspiModule');
+const raspiBoardModule = Symbol('raspiBoardModule');
+const raspiGpioModule = Symbol('raspiGpioModule');
+const raspiI2cModule = Symbol('raspiI2cModule');
+const raspiLedModule = Symbol('raspiLedModule');
+const raspiPwmModule = Symbol('raspiPwmModule');
+const raspiSerialModule = Symbol('raspiSerialModule');
+const raspiSoftPwmModule = Symbol('raspiSoftPwmModule');
+
 const SERIAL_ACTION_WRITE = 'SERIAL_ACTION_WRITE';
 const SERIAL_ACTION_CLOSE = 'SERIAL_ACTION_CLOSE';
 const SERIAL_ACTION_FLUSH = 'SERIAL_ACTION_FLUSH';
@@ -88,12 +88,85 @@ function bufferToArray(buffer) {
   return array;
 }
 
-class Raspi extends EventEmitter {
+export class RaspiIOCore extends EventEmitter {
 
-  constructor({ includePins, excludePins, enableSoftPwm = false } = {}) {
+  constructor({ includePins, excludePins, enableSoftPwm = false, platform } = {}) {
     super();
 
+    if (!platform) {
+      throw new Error('"platform" option is required');
+    }
+    if (!platform['raspi']) {
+      throw new Error('"raspi" module is missing from "platform" option');
+    }
+    if (!platform['raspi-board']) {
+      throw new Error('"raspi-board" module is missing from "platform" option');
+    }
+    if (!platform['raspi-gpio']) {
+      throw new Error('"raspi-gpio" module is missing from "platform" option');
+    }
+    if (!platform['raspi-i2c']) {
+      throw new Error('"raspi-i2c" module is missing from "platform" option');
+    }
+    if (!platform['raspi-led']) {
+      throw new Error('"raspi-led" module is missing from "platform" option');
+    }
+    if (!platform['raspi-pwm']) {
+      throw new Error('"raspi-pwm" module is missing from "platform" option');
+    }
+    if (!platform['raspi-serial']) {
+      throw new Error('"raspi-serial" module is missing from "platform" option');
+    }
+    if (enableSoftPwm && !platform['raspi-soft-pwm']) {
+      throw new Error('"enableSoftPwm" is true and raspi-soft-pwm" module is missing from "platform" option');
+    }
+
     Object.defineProperties(this, {
+
+      [raspiModule]: {
+        writable: true,
+        value: platform['raspi']
+      },
+
+      [raspiBoardModule]: {
+        writable: true,
+        value: platform['raspi-board']
+      },
+
+      [raspiGpioModule]: {
+        writable: true,
+        value: platform['raspi-gpio']
+      },
+
+      [raspiI2cModule]: {
+        writable: true,
+        value: platform['raspi-i2c']
+      },
+
+      [raspiLedModule]: {
+        writable: true,
+        value: platform['raspi-led']
+      },
+
+      [raspiPwmModule]: {
+        writable: true,
+        value: platform['raspi-pwm']
+      },
+
+      [raspiSerialModule]: {
+        writable: true,
+        value: platform['raspi-serial']
+      },
+
+      [raspiSoftPwmModule]: {
+        writable: true,
+        value: platform['raspi-soft-pwm']
+      }
+
+    });
+
+    Object.defineProperties(this, {
+
       name: {
         enumerable: true,
         value: 'RaspberryPi-IO'
@@ -139,7 +212,7 @@ class Raspi extends EventEmitter {
 
       [i2c]: {
         writable: true,
-        value: new I2C()
+        value: new this[raspiI2cModule].I2C()
       },
 
       [i2cDelay]: {
@@ -149,7 +222,7 @@ class Raspi extends EventEmitter {
 
       [serial]: {
         writable: true,
-        value: new Serial()
+        value: new this[raspiSerialModule].Serial()
       },
 
       [serialQueue]: {
@@ -194,14 +267,14 @@ class Raspi extends EventEmitter {
       SERIAL_PORT_IDs: {
         enumerable: true,
         value: Object.freeze({
-          HW_SERIAL0: DEFAULT_PORT,
-          DEFAULT: DEFAULT_PORT
+          HW_SERIAL0: this[raspiSerialModule].DEFAULT_PORT,
+          DEFAULT: this[raspiSerialModule].DEFAULT_PORT
         })
       }
     });
 
-    init(() => {
-      let pinMappings = getPins();
+    this[raspiModule].init(() => {
+      let pinMappings = this[raspiBoardModule].getPins();
       this[pins] = [];
 
       // Slight hack to get the LED in there, since it's not actually a pin
@@ -217,7 +290,7 @@ class Raspi extends EventEmitter {
       if (Array.isArray(includePins)) {
         const newPinMappings = {};
         for (const pin of includePins) {
-          const normalizedPin = getPinNumber(pin);
+          const normalizedPin = this[raspiBoardModule].getPinNumber(pin);
           if (normalizedPin === null) {
             throw new Error(`Invalid pin "${pin}" specified in includePins`);
           }
@@ -227,7 +300,7 @@ class Raspi extends EventEmitter {
       } else if (Array.isArray(excludePins)) {
         pinMappings = Object.assign({}, pinMappings);
         for (const pin of excludePins) {
-          const normalizedPin = getPinNumber(pin);
+          const normalizedPin = this[raspiBoardModule].getPinNumber(pin);
           if (normalizedPin === null) {
             throw new Error(`Invalid pin "${pin}" specified in excludePins`);
           }
@@ -345,7 +418,7 @@ class Raspi extends EventEmitter {
       }
 
       this.serialConfig({
-        portId: DEFAULT_PORT,
+        portId: this[raspiSerialModule].DEFAULT_PORT,
         baud: 9600
       });
 
@@ -360,7 +433,7 @@ class Raspi extends EventEmitter {
   }
 
   normalize(pin) {
-    const normalizedPin = getPinNumber(pin);
+    const normalizedPin = this[raspiBoardModule].getPinNumber(pin);
     if (typeof normalizedPin !== 'number') {
       throw new Error(`Unknown pin "${pin}"`);
     }
@@ -379,7 +452,7 @@ class Raspi extends EventEmitter {
     this[pinMode]({ pin, mode });
   }
 
-  [pinMode]({ pin, mode, pullResistor = PULL_NONE }) {
+  [pinMode]({ pin, mode, pullResistor = this[raspiGpioModule].PULL_NONE }) {
     const normalizedPin = this.normalize(pin);
     const pinInstance = this[getPinInstance](normalizedPin);
     pinInstance.pullResistor = pullResistor;
@@ -392,24 +465,24 @@ class Raspi extends EventEmitter {
     }
 
     if (pin == LED_PIN) {
-      if (pinInstance.peripheral instanceof LED) {
+      if (pinInstance.peripheral instanceof this[raspiLedModule].LED) {
         return;
       }
-      pinInstance.peripheral = new LED();
+      pinInstance.peripheral = new this[raspiLedModule].LED();
     } else {
       switch (mode) {
         case INPUT_MODE:
-          pinInstance.peripheral = new DigitalInput(config);
+          pinInstance.peripheral = new this[raspiGpioModule].DigitalInput(config);
           break;
         case OUTPUT_MODE:
-          pinInstance.peripheral = new DigitalOutput(config);
+          pinInstance.peripheral = new this[raspiGpioModule].DigitalOutput(config);
           break;
         case PWM_MODE:
         case SERVO_MODE:
           if (pinInstance.isHardwarePwm) {
-            pinInstance.peripheral = new PWM(normalizedPin);
+            pinInstance.peripheral = new this[raspiPwmModule].PWM(normalizedPin);
           } else {
-            pinInstance.peripheral = new SoftPWM({
+            pinInstance.peripheral = new this[raspiSoftPwmModule].SoftPWM({
               pin: normalizedPin,
               frequency: SOFTWARE_PWM_FREQUENCY,
               range: SOFTWARE_PWM_RANGE
@@ -417,7 +490,7 @@ class Raspi extends EventEmitter {
           }
           break;
         default:
-          console.warn(`Unknown pin mode: ${mode}`);
+          console.warn(`Unknown pin mode: ${mode}`); // eslint-disable-line no-console
           break;
       }
     }
@@ -465,9 +538,9 @@ class Raspi extends EventEmitter {
   digitalWrite(pin, value) {
     const pinInstance = this[getPinInstance](this.normalize(pin));
     if (pinInstance.mode === INPUT_MODE && value === HIGH) {
-      this[pinMode]({ pin, mode: INPUT_MODE, pullResistor: PULL_UP });
+      this[pinMode]({ pin, mode: INPUT_MODE, pullResistor: this[raspiGpioModule].PULL_UP });
     } else if (pinInstance.mode === INPUT_MODE && value === LOW) {
-      this[pinMode]({ pin, mode: INPUT_MODE, pullResistor: PULL_DOWN });
+      this[pinMode]({ pin, mode: INPUT_MODE, pullResistor: this[raspiGpioModule].PULL_DOWN });
     } else if (pinInstance.mode != OUTPUT_MODE) {
       this[pinMode]({ pin, mode: OUTPUT_MODE });
     }
@@ -712,8 +785,8 @@ class Raspi extends EventEmitter {
   }
 
   [addToSerialQueue](action) {
-    if (action.portId !== DEFAULT_PORT) {
-      throw new Error(`Invalid serial port "${portId}"`);
+    if (action.portId !== this[raspiSerialModule].DEFAULT_PORT) {
+      throw new Error(`Invalid serial port "${action.portId}"`);
     }
     this[serialQueue].push(action);
     this[serialPump]();
@@ -758,7 +831,7 @@ class Raspi extends EventEmitter {
 
       case SERIAL_ACTION_CONFIG:
         this[serial].close(() => {
-          this[serial] = new Serial({
+          this[serial] = new this[raspiSerialModule].Serial({
             baudRate: action.baud
           });
           this[serial].open(() => {
@@ -850,18 +923,3 @@ class Raspi extends EventEmitter {
     throw new Error('stepperStep is not yet implemented');
   }
 }
-
-Object.defineProperty(Raspi, 'isRaspberryPi', {
-  enumerable: true,
-  value: () => {
-    // Determining if a system is a Raspberry Pi isn't possible through
-    // the os module on Raspbian, so we read it from the file system instead
-    let isRaspberryPi = false;
-    try {
-      isRaspberryPi = fs.readFileSync('/etc/os-release').toString().indexOf('Raspbian') !== -1;
-    } catch (e) {}// Squash file not found, etc errors
-    return isRaspberryPi;
-  }
-});
-
-module.exports = Raspi;
