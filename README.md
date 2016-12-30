@@ -1,84 +1,57 @@
-Raspi-io
-========
+# Raspi IO Core
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nebrius/raspi-io?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Raspi-io is a Firmata API compatible library for Raspbian running on the [Raspberry Pi](http://www.raspberrypi.org/) that can be used as an I/O plugin with [Johnny-Five](https://github.com/rwaldron/johnny-five). The API docs for this module can be found on the [Johnny-Five Wiki](https://github.com/rwaldron/io-plugins). Raspi IO supports all models of the Raspberry Pi, except for the Model A.
+Raspi IO Core is a Firmata API compatible abstract library for creating [Johnny-Five](http://johnny-five.io/) IO plugins targeting the [Raspberry Pi](http://www.raspberrypi.org/). The API docs for this module can be found on the [Johnny-Five Wiki](https://github.com/rwaldron/io-plugins), except for the constructor which is documented below.
 
-If you have a bug report, feature request, or wish to contribute code, please be sure to check out the [Contributing Guide](/CONTRIBUTING.md).
-
-## System Requirements
-
-- Raspberry Pi Model B Rev 1 or newer (sorry Model A users)
-- Raspbian Jessie
-  - See https://github.com/nebrius/raspi-io/issues/24 for more info about support for other OSes
-- GCC 4.8 or newer
-- Node 0.12 or newer
-- [Wiring Pi](http://wiringpi.com/). _Note:_ This should come pre-installed with Raspbian out of the box.
-
-Detailed instructions for getting a Raspberry Pi ready for NodeBots, including how to install Node.js, can be found in the [wiki](https://github.com/nebrius/raspi-io/wiki/Getting-a-Raspberry-Pi-ready-for-NodeBots)
-
-#### Warning: this module must be installed as a normal user, but run as the root user
+If you have a bug report, feature request, or wish to contribute code, please be sure to check out the Raspi-IO [Contributing Guide](https://github.com/nebrius/raspi-io/blob/master/CONTRIBUTING.md), which also applies to this project.
 
 ## Installation
 
 Install with npm:
 
 ```
-npm install raspi-io
+npm install raspi-io-core
 ```
-
-**Warning**: this module requires GCC 4.8 or newer. This means that you should be running Raspbian Jessie or newer, released in September of 2015. The package should be installed with an unprivileged user account as the installation as root is likely to fail with an [build error](https://github.com/nebrius/raspi-io/issues/40).
 
 ## Usage
 
-Using raspi-io inside of Johnny-Five is pretty straightforward, although does take an extra step compared to the Arduino Uno:
+Using raspi-io-core to create a Johnny-Five IO plugin should look something like this:
 
 ```JavaScript
-var raspi = require('raspi-io');
-var five = require('johnny-five');
-var board = new five.Board({
-  io: new raspi()
-});
+import { RaspiIOCore } from 'raspi-io-core';
 
-board.on('ready', function() {
+module.exports = function RaspiIO({ includePins, excludePins, enableSoftPwm = false } = {}) {
 
-  // Create an Led on pin 7 (GPIO4) on P1 and strobe it on/off
-  // Optionally set the speed; defaults to 100ms
-  (new five.Led('P1-7')).strobe();
+  // Create the platform options
+  const platform = {
+    'raspi': require('raspi'),
+    'raspi-board': require('raspi-board'),
+    'raspi-gpio': require('raspi-gpio'),
+    'raspi-i2c': require('raspi-i2c'),
+    'raspi-led': require('raspi-led'),
+    'raspi-pwm': require('raspi-pwm'),
+    'raspi-serial': require('raspi-serial'),
+  };
 
-});
+  if (enableSoftPwm) {
+    platform['raspi-soft-pwm'] = require('raspi-soft-pwm');
+  }
+
+  return new RaspiIOCore({
+    includePins,
+    excludePins,
+    enableSoftPwm,
+    platform
+  });
+}
 ```
-
-The ```io``` property must be specified explicitly to differentiate from trying to control, say, an Arduino Uno that is plugged into the Raspberry Pi. Note that we specify the pin as ```"P1-7"```, not ```7```. See the [section on pins](#pin-naming) below for an explanation of the pin numbering scheme on the Raspberry Pi.
-
-*Warning:* this module _must_ be run as root, even though it cannot be installed as root.
-
-Note: This module is not intended to be used directly. If you do not want to use Johnny-Five, I recommend taking a look at [Raspi.js](https://github.com/nebrius/raspi), which underpins this library and is a little more straight-forward to use than using raspi-io directly.
-
-## Pin Naming
-
-The pins on the Raspberry Pi are a little complicated. There are multiple headers on some Raspberry Pis with extra pins, and the pin numbers are not consistent between Raspberry Pi board versions.
-
-To help make it easier, you can specify pins in three ways. The first is to specify the pin by function, e.g. ```'GPIO18'```. The second way is to specify by pin number, which is specified in the form "P[header]-[pin]", e.g. ```'P1-7'```. The final way is specify the [Wiring Pi virtual pin number](http://wiringpi.com/pins/), e.g. ```7```. If you specify a number instead of a string, it is assumed to be a Wiring Pi number.
-
-Be sure to read the [full list of pins](https://github.com/nebrius/raspi-io/wiki/Pin-Information) on the supported models of the Raspberry Pi.
-
-## I2C notes
-
-There are a few limitations and extra steps to be aware of when using I2C on the Raspberry Pi.
-
-First, note that the I2C pins can _only_ be used for I2C with Raspi IO, even though they are capable of GPIO at the hardware level.
-
-Also note that you will need to edit ```/boot/config.txt``` in order to change the I2C baud rate from the default, if you need to. If you notice that behavior is unstable while trying to communicate with another microcontroller, try setting the baudrate to 10000 from the default 100000. This instability has been observed on the Arduino Nano before.
-
-Finally, if you try to access a device that doesn't exist, you will get an error stating ```EIO, i/o error``` (sorry it's not very descriptive).
 
 ## API
 
 ### new raspi(options)
 
-Instantiates a new Raspi IO instance with the given options
+Instantiates a new Raspi IO Core instance with the given options
 
 _Arguments_:
 
@@ -91,7 +64,7 @@ _Arguments_:
     </tr>
   </thead>
   <tr>
-    <td>options (optional)</td>
+    <td>options</td>
     <td>Object</td>
     <td>The configuration options.</td>
   </tr>
@@ -126,6 +99,66 @@ _Arguments_:
           <td>Array&lt;Number|String&gt;</td>
           <td>A list of pins to exclude from initialization. Any pins listed here will not be initialized or available for use by Raspi IO</td>
         </tr>
+        <tr>
+          <td>platform</td>
+          <td>Object</td>
+          <td>The set of platform plugins</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td colspan="2">
+            <table>
+              <thead>
+                <tr>
+                  <th>Property</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tr>
+                <td>raspi</td>
+                <td>Object</td>
+                <td>The "raspi" module to use, e.g. https://github.com/nebrius/raspi</td>
+              </tr>
+              <tr>
+                <td>raspi-board</td>
+                <td>Object</td>
+                <td>The "raspi-board" module to use, e.g. https://github.com/nebrius/raspi-board</td>
+              </tr>
+              <tr>
+                <td>raspi-gpio</td>
+                <td>Object</td>
+                <td>The "raspi-gpio" module to use, e.g. https://github.com/nebrius/raspi-gpio</td>
+              </tr>
+              <tr>
+                <td>raspi-i2c</td>
+                <td>Object</td>
+                <td>The "raspi-i2c" module to use, e.g. https://github.com/nebrius/raspi-i2c</td>
+              </tr>
+              <tr>
+                <td>raspi-led</td>
+                <td>Object</td>
+                <td>The "raspi-led" module to use, e.g. https://github.com/nebrius/raspi-led</td>
+              </tr>
+              <tr>
+                <td>raspi-pwm</td>
+                <td>Object</td>
+                <td>The "raspi-pwm" module to use, e.g. https://github.com/nebrius/raspi-pwm</td>
+              </tr>
+              <tr>
+                <td>raspi-serial</td>
+                <td>Object</td>
+                <td>The "raspi-serial" module to use, e.g. https://github.com/nebrius/raspi-serial</td>
+              </tr>
+              <tr>
+                <td>raspi-soft-pwm (optional)</td>
+                <td>Object</td>
+                <td>The "raspi-soft-pwm" module to use, e.g. https://github.com/nebrius/raspi-soft-pwm. This only needs to be supplied if the <code>enableSoftPwm</code> flag is set to <code>true</code></td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        </tr>
       </table>
     </td>
   </tr>
@@ -136,7 +169,7 @@ License
 
 The MIT License (MIT)
 
-Copyright (c) 2013-2016 Bryan Hughes bryan@nebri.us
+Copyright (c) 2013-2016 Bryan Hughes <bryan@nebri.us>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

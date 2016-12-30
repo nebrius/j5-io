@@ -1,13 +1,13 @@
 {
   "name": "raspi-io-core",
-  "version": "8.0.0",
+  "version": "1.0.0",
   "description": "The core library for Raspi IO",
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nebrius/raspi-io.git"
+    "url": "https://github.com/nebrius/raspi-io-core.git"
   },
-  "homepage": "https://github.com/nebrius/raspi-io",
+  "homepage": "https://github.com/nebrius/raspi-io-core",
   "keywords": [
     "raspberrypi",
     "nodebots",
@@ -36,6 +36,6 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/nebrius/raspi-io/issues"
+    "url": "https://github.com/nebrius/raspi-io-core/issues"
   }
 }

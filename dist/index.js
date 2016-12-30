@@ -108,19 +108,22 @@ function bufferToArray(buffer) {
 var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
   _inherits(RaspiIOCore, _EventEmitter);
 
-  function RaspiIOCore() {
+  function RaspiIOCore(options) {
     var _Object$definePropert, _Object$definePropert2;
-
-    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-        includePins = _ref.includePins,
-        excludePins = _ref.excludePins,
-        _ref$enableSoftPwm = _ref.enableSoftPwm,
-        enableSoftPwm = _ref$enableSoftPwm === undefined ? false : _ref$enableSoftPwm,
-        platform = _ref.platform;
 
     _classCallCheck(this, RaspiIOCore);
 
     var _this = _possibleConstructorReturn(this, (RaspiIOCore.__proto__ || Object.getPrototypeOf(RaspiIOCore)).call(this));
+
+    if (!options) {
+      throw new Error('Options are required');
+    }
+    var includePins = options.includePins,
+        excludePins = options.excludePins,
+        _options$enableSoftPw = options.enableSoftPwm,
+        enableSoftPwm = _options$enableSoftPw === undefined ? false : _options$enableSoftPw,
+        platform = options.platform;
+
 
     if (!platform) {
       throw new Error('"platform" option is required');
@@ -482,11 +485,11 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
     }
   }, {
     key: _pinMode,
-    value: function value(_ref2) {
-      var pin = _ref2.pin,
-          mode = _ref2.mode,
-          _ref2$pullResistor = _ref2.pullResistor,
-          pullResistor = _ref2$pullResistor === undefined ? this[raspiGpioModule].PULL_NONE : _ref2$pullResistor;
+    value: function value(_ref) {
+      var pin = _ref.pin,
+          mode = _ref.mode,
+          _ref$pullResistor = _ref.pullResistor,
+          pullResistor = _ref$pullResistor === undefined ? this[raspiGpioModule].PULL_NONE : _ref$pullResistor;
 
       var normalizedPin = this.normalize(pin);
       var pinInstance = this[getPinInstance](normalizedPin);
@@ -795,9 +798,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
     }
   }, {
     key: 'serialConfig',
-    value: function serialConfig(_ref3) {
-      var portId = _ref3.portId,
-          baud = _ref3.baud;
+    value: function serialConfig(_ref2) {
+      var portId = _ref2.portId,
+          baud = _ref2.baud;
 
       if (!this[isSerialOpen] || baud && baud !== this[serial].baudRate) {
         this[addToSerialQueue]({

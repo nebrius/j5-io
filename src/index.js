@@ -90,8 +90,13 @@ function bufferToArray(buffer) {
 
 export class RaspiIOCore extends EventEmitter {
 
-  constructor({ includePins, excludePins, enableSoftPwm = false, platform } = {}) {
+  constructor(options) {
     super();
+
+    if (!options) {
+      throw new Error('Options are required');
+    }
+    const { includePins, excludePins, enableSoftPwm = false, platform } = options;
 
     if (!platform) {
       throw new Error('"platform" option is required');
