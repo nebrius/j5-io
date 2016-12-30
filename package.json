@@ -19,9 +19,9 @@
     "eslint": "^3.12.2"
   },
   "scripts": {
-    "test": "node ./test/bootstrap.js",
     "prebuild": "eslint src/index.js",
-    "build": "babel src/index.js --presets es2015 --out-file dist/index.js --source-maps"
+    "build": "babel src/index.js --presets es2015 --out-file dist/index.js --source-maps",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Bryan Hughes <bryan@nebri.us>",
   "contributors": [
