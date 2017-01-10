@@ -463,7 +463,8 @@ export class RaspiIOCore extends EventEmitter {
     pinInstance.pullResistor = pullResistor;
     const config = {
       pin: normalizedPin,
-      pullResistor: pinInstance.pullResistor
+      pullResistor: pinInstance.pullResistor,
+      enableListener: false
     };
     if (this[pins][normalizedPin].supportedModes.indexOf(mode) == -1) {
       throw new Error(`Pin "${pin}" does not support mode "${mode}"`);

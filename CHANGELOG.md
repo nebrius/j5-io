@@ -1,4 +1,8 @@
-## 1.0.0 ()
+## 1.0.1 (2017-1-9)
+
+- Fixed a bug with not being able to kill the process when run within Johnny-Five
+
+## 1.0.0 (2016-12-30)
 
 - Spun off raspi-io into raspi-io-core
 - Reworked this module so that [Raspi.js](https://github.com/nebrius/raspi) is passed in to the constructor of raspi-io-core

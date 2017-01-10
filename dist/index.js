@@ -496,7 +496,8 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
       pinInstance.pullResistor = pullResistor;
       var config = {
         pin: normalizedPin,
-        pullResistor: pinInstance.pullResistor
+        pullResistor: pinInstance.pullResistor,
+        enableListener: false
       };
       if (this[pins][normalizedPin].supportedModes.indexOf(mode) == -1) {
         throw new Error('Pin "' + pin + '" does not support mode "' + mode + '"');
