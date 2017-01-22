@@ -10,7 +10,7 @@ If you have a bug report, feature request, or wish to contribute code, please be
 
 Install with npm:
 
-```
+```Shell
 npm install raspi-io-core
 ```
 

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 Bryan Hughes <bryan@theoreticalideations.com>
+Copyright (c) 2014 Bryan Hughes <bryan@nebri.us>
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
