@@ -1,3 +1,7 @@
+## 1.0.2 (2017-2-17)
+
+- Improved error messaging around unsupported pin modes
+
 ## 1.0.1 (2017-1-9)
 
 - Fixed a bug with not being able to kill the process when run within Johnny-Five

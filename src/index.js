@@ -467,7 +467,16 @@ export class RaspiIOCore extends EventEmitter {
       enableListener: false
     };
     if (this[pins][normalizedPin].supportedModes.indexOf(mode) == -1) {
-      throw new Error(`Pin "${pin}" does not support mode "${mode}"`);
+      let modeName;
+      switch(mode) {
+        case INPUT_MODE: modeName = 'input'; break;
+        case OUTPUT_MODE: modeName = 'output'; break;
+        case ANALOG_MODE: modeName = 'analog'; break;
+        case PWM_MODE: modeName = 'pwm'; break;
+        case SERVO_MODE: modeName = 'servo'; break;
+        default: modeName = 'other'; break;
+      }
+      throw new Error(`Pin "${pin}" does not support mode "${modeName}"`);
     }
 
     if (pin == LED_PIN) {
