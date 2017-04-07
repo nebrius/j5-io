@@ -80,6 +80,11 @@ _Arguments_:
           </tr>
         </thead>
         <tr>
+          <td>enableSerial (optional)</td>
+          <td>boolean</td>
+          <td>Enables the use of the serial port by Johnny-Five. The default value is <code>false</code></td>
+        </tr>
+        <tr>
           <td>enableSoftPwm (optional)</td>
           <td>boolean</td>
           <td>Use a software-based approach to PWM on GPIO pins that do not support hardware PWM. The <a href="https://github.com/tralves/raspi-soft-pwm"><code>raspi-soft-pwm</code> library</a> is used to enable this.

@@ -120,6 +120,7 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
     }
     var includePins = options.includePins,
         excludePins = options.excludePins,
+        enableSerial = options.enableSerial,
         _options$enableSoftPw = options.enableSoftPwm,
         enableSoftPwm = _options$enableSoftPw === undefined ? false : _options$enableSoftPw,
         platform = options.platform;
@@ -146,11 +147,11 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
     if (!platform['raspi-pwm']) {
       throw new Error('"raspi-pwm" module is missing from "platform" option');
     }
-    if (!platform['raspi-serial']) {
-      throw new Error('"raspi-serial" module is missing from "platform" option');
+    if (enableSerial && !platform['raspi-serial']) {
+      throw new Error('"enableSerial" is true and "raspi-serial" module is missing from "platform" option');
     }
     if (enableSoftPwm && !platform['raspi-soft-pwm']) {
-      throw new Error('"enableSoftPwm" is true and raspi-soft-pwm" module is missing from "platform" option');
+      throw new Error('"enableSoftPwm" is true and "raspi-soft-pwm" module is missing from "platform" option');
     }
 
     Object.defineProperties(_this, (_Object$definePropert = {}, _defineProperty(_Object$definePropert, raspiModule, {
@@ -219,9 +220,6 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
     }), _defineProperty(_Object$definePropert2, i2cDelay, {
       writable: true,
       value: 0
-    }), _defineProperty(_Object$definePropert2, serial, {
-      writable: true,
-      value: new _this[raspiSerialModule].Serial()
     }), _defineProperty(_Object$definePropert2, serialQueue, {
       value: []
     }), _defineProperty(_Object$definePropert2, isSerialProcessing, {
@@ -248,13 +246,34 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
     }), _defineProperty(_Object$definePropert2, 'defaultLed', {
       enumerable: true,
       value: LED_PIN
-    }), _defineProperty(_Object$definePropert2, 'SERIAL_PORT_IDs', {
-      enumerable: true,
-      value: Object.freeze({
-        HW_SERIAL0: _this[raspiSerialModule].DEFAULT_PORT,
-        DEFAULT: _this[raspiSerialModule].DEFAULT_PORT
-      })
     }), _Object$definePropert2));
+
+    if (enableSerial) {
+      var _Object$definePropert3;
+
+      Object.defineProperties(_this, (_Object$definePropert3 = {}, _defineProperty(_Object$definePropert3, raspiSerialModule, {
+        writable: true,
+        value: platform['raspi-serial']
+      }), _defineProperty(_Object$definePropert3, serial, {
+        writable: true,
+        value: new _this[raspiSerialModule].Serial()
+      }), _defineProperty(_Object$definePropert3, 'SERIAL_PORT_IDs', {
+        enumerable: true,
+        value: Object.freeze({
+          HW_SERIAL0: _this[raspiSerialModule].DEFAULT_PORT,
+          DEFAULT: _this[raspiSerialModule].DEFAULT_PORT
+        })
+      }), _Object$definePropert3));
+    } else {
+      Object.defineProperties(_this, {
+
+        SERIAL_PORT_IDs: {
+          enumerable: true,
+          value: Object.freeze({})
+        }
+
+      });
+    }
 
     _this[raspiModule].init(function () {
       var pinMappings = _this[raspiBoardModule].getPins();
@@ -443,10 +462,12 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
         }
       }
 
-      _this.serialConfig({
-        portId: _this[raspiSerialModule].DEFAULT_PORT,
-        baud: 9600
-      });
+      if (enableSerial) {
+        _this.serialConfig({
+          portId: _this[raspiSerialModule].DEFAULT_PORT,
+          baud: 9600
+        });
+      }
 
       _this[isReady] = true;
       _this.emit('ready');
@@ -818,6 +839,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
       var portId = _ref2.portId,
           baud = _ref2.baud;
 
+      if (!this[raspiSerialModule]) {
+        throw new Error('Serial support is disabled');
+      }
       if (!this[isSerialOpen] || baud && baud !== this[serial].baudRate) {
         this[addToSerialQueue]({
           type: SERIAL_ACTION_CONFIG,
@@ -829,6 +853,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
   }, {
     key: 'serialWrite',
     value: function serialWrite(portId, inBytes) {
+      if (!this[raspiSerialModule]) {
+        throw new Error('Serial support is disabled');
+      }
       this[addToSerialQueue]({
         type: SERIAL_ACTION_WRITE,
         portId: portId,
@@ -838,6 +865,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
   }, {
     key: 'serialRead',
     value: function serialRead(portId, maxBytesToRead, handler) {
+      if (!this[raspiSerialModule]) {
+        throw new Error('Serial support is disabled');
+      }
       if (typeof maxBytesToRead === 'function') {
         handler = maxBytesToRead;
         maxBytesToRead = undefined;
@@ -852,6 +882,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
   }, {
     key: 'serialStop',
     value: function serialStop(portId) {
+      if (!this[raspiSerialModule]) {
+        throw new Error('Serial support is disabled');
+      }
       this[addToSerialQueue]({
         type: SERIAL_ACTION_STOP,
         portId: portId
@@ -860,6 +893,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
   }, {
     key: 'serialClose',
     value: function serialClose(portId) {
+      if (!this[raspiSerialModule]) {
+        throw new Error('Serial support is disabled');
+      }
       this[addToSerialQueue]({
         type: SERIAL_ACTION_CLOSE,
         portId: portId
@@ -868,6 +904,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
   }, {
     key: 'serialFlush',
     value: function serialFlush(portId) {
+      if (!this[raspiSerialModule]) {
+        throw new Error('Serial support is disabled');
+      }
       this[addToSerialQueue]({
         type: SERIAL_ACTION_FLUSH,
         portId: portId
@@ -1035,5 +1074,3 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
 
   return RaspiIOCore;
 }(_events.EventEmitter);
-
-//# sourceMappingURL=index.js.map

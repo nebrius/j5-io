@@ -1,3 +1,7 @@
+## 1.1.0 (2017-4-6)
+
+- Added the `enableSerial` configuration option, which works the same as `enableSoftPwm`
+
 ## 1.0.2 (2017-2-17)
 
 - Improved error messaging around unsupported pin modes

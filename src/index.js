@@ -96,7 +96,7 @@ export class RaspiIOCore extends EventEmitter {
     if (!options) {
       throw new Error('Options are required');
     }
-    const { includePins, excludePins, enableSoftPwm = false, platform } = options;
+    const { includePins, excludePins, enableSerial, enableSoftPwm = false, platform } = options;
 
     if (!platform) {
       throw new Error('"platform" option is required');
@@ -119,11 +119,11 @@ export class RaspiIOCore extends EventEmitter {
     if (!platform['raspi-pwm']) {
       throw new Error('"raspi-pwm" module is missing from "platform" option');
     }
-    if (!platform['raspi-serial']) {
-      throw new Error('"raspi-serial" module is missing from "platform" option');
+    if (enableSerial && !platform['raspi-serial']) {
+      throw new Error('"enableSerial" is true and "raspi-serial" module is missing from "platform" option');
     }
     if (enableSoftPwm && !platform['raspi-soft-pwm']) {
-      throw new Error('"enableSoftPwm" is true and raspi-soft-pwm" module is missing from "platform" option');
+      throw new Error('"enableSoftPwm" is true and "raspi-soft-pwm" module is missing from "platform" option');
     }
 
     Object.defineProperties(this, {
@@ -225,11 +225,6 @@ export class RaspiIOCore extends EventEmitter {
         value: 0
       },
 
-      [serial]: {
-        writable: true,
-        value: new this[raspiSerialModule].Serial()
-      },
-
       [serialQueue]: {
         value: []
       },
@@ -267,16 +262,41 @@ export class RaspiIOCore extends EventEmitter {
       defaultLed: {
         enumerable: true,
         value: LED_PIN
-      },
-
-      SERIAL_PORT_IDs: {
-        enumerable: true,
-        value: Object.freeze({
-          HW_SERIAL0: this[raspiSerialModule].DEFAULT_PORT,
-          DEFAULT: this[raspiSerialModule].DEFAULT_PORT
-        })
       }
     });
+
+    if (enableSerial) {
+      Object.defineProperties(this, {
+
+        [raspiSerialModule]: {
+          writable: true,
+          value: platform['raspi-serial']
+        },
+
+        [serial]: {
+          writable: true,
+          value: new this[raspiSerialModule].Serial()
+        },
+
+        SERIAL_PORT_IDs: {
+          enumerable: true,
+          value: Object.freeze({
+            HW_SERIAL0: this[raspiSerialModule].DEFAULT_PORT,
+            DEFAULT: this[raspiSerialModule].DEFAULT_PORT
+          })
+        }
+
+      });
+    } else {
+      Object.defineProperties(this, {
+
+        SERIAL_PORT_IDs: {
+          enumerable: true,
+          value: Object.freeze({})
+        }
+
+      });
+    }
 
     this[raspiModule].init(() => {
       let pinMappings = this[raspiBoardModule].getPins();
@@ -422,10 +442,12 @@ export class RaspiIOCore extends EventEmitter {
         }
       }
 
-      this.serialConfig({
-        portId: this[raspiSerialModule].DEFAULT_PORT,
-        baud: 9600
-      });
+      if (enableSerial) {
+        this.serialConfig({
+          portId: this[raspiSerialModule].DEFAULT_PORT,
+          baud: 9600
+        });
+      }
 
       this[isReady] = true;
       this.emit('ready');
@@ -748,6 +770,9 @@ export class RaspiIOCore extends EventEmitter {
   }
 
   serialConfig({ portId, baud }) {
+    if (!this[raspiSerialModule]) {
+      throw new Error('Serial support is disabled');
+    }
     if (!this[isSerialOpen] || (baud && baud !== this[serial].baudRate)) {
       this[addToSerialQueue]({
         type: SERIAL_ACTION_CONFIG,
@@ -758,6 +783,9 @@ export class RaspiIOCore extends EventEmitter {
   }
 
   serialWrite(portId, inBytes) {
+    if (!this[raspiSerialModule]) {
+      throw new Error('Serial support is disabled');
+    }
     this[addToSerialQueue]({
       type: SERIAL_ACTION_WRITE,
       portId,
@@ -766,6 +794,9 @@ export class RaspiIOCore extends EventEmitter {
   }
 
   serialRead(portId, maxBytesToRead, handler) {
+    if (!this[raspiSerialModule]) {
+      throw new Error('Serial support is disabled');
+    }
     if (typeof maxBytesToRead === 'function') {
       handler = maxBytesToRead;
       maxBytesToRead = undefined;
@@ -779,6 +810,9 @@ export class RaspiIOCore extends EventEmitter {
   }
 
   serialStop(portId) {
+    if (!this[raspiSerialModule]) {
+      throw new Error('Serial support is disabled');
+    }
     this[addToSerialQueue]({
       type: SERIAL_ACTION_STOP,
       portId
@@ -786,6 +820,9 @@ export class RaspiIOCore extends EventEmitter {
   }
 
   serialClose(portId) {
+    if (!this[raspiSerialModule]) {
+      throw new Error('Serial support is disabled');
+    }
     this[addToSerialQueue]({
       type: SERIAL_ACTION_CLOSE,
       portId
@@ -793,6 +830,9 @@ export class RaspiIOCore extends EventEmitter {
   }
 
   serialFlush(portId) {
+    if (!this[raspiSerialModule]) {
+      throw new Error('Serial support is disabled');
+    }
     this[addToSerialQueue]({
       type: SERIAL_ACTION_FLUSH,
       portId
