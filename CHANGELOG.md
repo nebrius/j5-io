@@ -1,4 +1,8 @@
-## 1.1.0 (2017-4-6)
+## 1.1.1 (2017-4-7)
+
+- Republishing because I accidentally had git out of sync
+
+## 1.1.0 (2017-4-7)
 
 - Added the `enableSerial` configuration option, which works the same as `enableSoftPwm`
 
