@@ -1,3 +1,7 @@
+## 2.0.0 (2017-4-23)
+
+- BREAKING CHANGE: Updated PWM value calculation to match breaking changes in raspi-pwm 4.0.0
+
 ## 1.1.1 (2017-4-7)
 
 - Republishing because I accidentally had git out of sync

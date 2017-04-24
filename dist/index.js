@@ -588,7 +588,7 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
       if (pinInstance.mode != PWM_MODE) {
         this.pinMode(pin, PWM_MODE);
       }
-      pinInstance.peripheral.write(Math.round(value * pinInstance.peripheral.range / 255));
+      pinInstance.peripheral.write(value / 255);
     }
   }, {
     key: 'digitalRead',
