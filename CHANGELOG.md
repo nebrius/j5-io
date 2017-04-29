@@ -1,3 +1,7 @@
+## 2.0.1 (2017-4-29)
+
+- Fixed a bug in Servo duty cycle calculation
+
 ## 2.0.0 (2017-4-23)
 
 - BREAKING CHANGE: Updated PWM value calculation to match breaking changes in raspi-pwm 4.0.0

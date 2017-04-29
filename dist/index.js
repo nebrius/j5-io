@@ -660,8 +660,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
       if (pinInstance.mode != SERVO_MODE) {
         this.pinMode(pin, SERVO_MODE);
       }
-      var dutyCycle = (pinInstance.min + value / 180 * (pinInstance.max - pinInstance.min)) / 20000;
-      pinInstance.peripheral.write(dutyCycle * pinInstance.peripheral.range);
+      var period = 1000000 / pinInstance.peripheral.frequency; // in us
+      var pulseWidth = pinInstance.min + value / 180 * (pinInstance.max - pinInstance.min); // in us
+      pinInstance.peripheral.write(pulseWidth / period);
     }
   }, {
     key: 'queryCapabilities',

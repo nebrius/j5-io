@@ -613,8 +613,9 @@ export class RaspiIOCore extends EventEmitter {
     if (pinInstance.mode != SERVO_MODE) {
       this.pinMode(pin, SERVO_MODE);
     }
-    const dutyCycle = (pinInstance.min + (value / 180) * (pinInstance.max - pinInstance.min)) / 20000;
-    pinInstance.peripheral.write(dutyCycle * pinInstance.peripheral.range);
+    const period = 1000000 / pinInstance.peripheral.frequency; // in us
+    const pulseWidth = (pinInstance.min + (value / 180) * (pinInstance.max - pinInstance.min)); // in us
+    pinInstance.peripheral.write(pulseWidth / period);
   }
 
   queryCapabilities(cb) {
