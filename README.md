@@ -4,7 +4,7 @@
 
 Raspi IO Core is a Firmata API compatible abstract library for creating [Johnny-Five](http://johnny-five.io/) IO plugins targeting the [Raspberry Pi](http://www.raspberrypi.org/). The API docs for this module can be found on the [Johnny-Five Wiki](https://github.com/rwaldron/io-plugins), except for the constructor which is documented below.
 
-If you have a bug report, feature request, or wish to contribute code, please be sure to check out the Raspi-IO [Contributing Guide](https://github.com/nebrius/raspi-io/blob/master/CONTRIBUTING.md) and [Code of Conduct](https://github.com/nebrius/raspi-io/blob/master/CODE_OF_CONDUCT.md), which also apply to this project.
+If you have a bug report, feature request, or wish to contribute code, please be sure to check out the [Raspi IO Contributing Guide](https://github.com/nebrius/raspi-io/blob/master/CONTRIBUTING.md).
 
 ## Installation
 
