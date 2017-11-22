@@ -1,3 +1,7 @@
+## 2.0.2 (2017-11-22)
+
+- Fixed a bug where the `digital-read-${pin}` event was being fired even when there was no change (thanks @boneskull!)
+
 ## 2.0.1 (2017-4-29)
 
 - Fixed a bug in Servo duty cycle calculation
