@@ -378,6 +378,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
           // We start with undefined because it's in an unknown state
           previousWrittenValue: undefined,
 
+          // For comparing previous digital reads, as to only trigger event on change
+          previousReadValue: undefined,
+
           // Used to set the default min and max values
           min: DEFAULT_SERVO_MIN,
           max: DEFAULT_SERVO_MAX,
@@ -606,10 +609,13 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
         } else {
           value = pinInstance.previousWrittenValue;
         }
-        if (handler) {
-          handler(value);
+        if (value !== pinInstance.previousReadValue) {
+          pinInstance.previousReadValue = value;
+          if (handler) {
+            handler(value);
+          }
+          _this2.emit('digital-read-' + pin, value);
         }
-        _this2.emit('digital-read-' + pin, value);
       }, DIGITAL_READ_UPDATE_RATE);
       pinInstance.peripheral.on('destroyed', function () {
         clearInterval(interval);
