@@ -1,3 +1,7 @@
+## 2.1.0 (2018-04-02)
+
+- Added ability to take in servo values greater than 544 as part of servo class rewrite (thanks @dtex!)
+
 ## 2.0.2 (2017-11-22)
 
 - Fixed a bug where the `digital-read-${pin}` event was being fired even when there was no change (thanks @boneskull!)
