@@ -105,6 +105,10 @@ function bufferToArray(buffer) {
   return array;
 }
 
+function constrain(value, min, max) {
+  return value > max ? max : value < min ? min : value;
+}
+
 var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
   _inherits(RaspiIOCore, _EventEmitter);
 
@@ -667,7 +671,12 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
         this.pinMode(pin, SERVO_MODE);
       }
       var period = 1000000 / pinInstance.peripheral.frequency; // in us
-      var pulseWidth = pinInstance.min + value / 180 * (pinInstance.max - pinInstance.min); // in us
+      var pulseWidth;
+      if (value < 544) {
+        pulseWidth = pinInstance.min + constrain(value, 0, 180) / 180 * (pinInstance.max - pinInstance.min);
+      } else {
+        pulseWidth = constrain(value, pinInstance.min, pinInstance.max);
+      }
       pinInstance.peripheral.write(pulseWidth / period);
     }
   }, {
