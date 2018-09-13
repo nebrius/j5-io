@@ -97,8 +97,8 @@ export class RaspiIOCore extends EventEmitter {
   constructor(options) {
     super();
 
-    if (!options) {
-      throw new Error('Options are required');
+    if (typeof options !== 'object') {
+      throw new Error('An options object is required');
     }
     const { includePins, excludePins, enableSerial, enableSoftPwm = false, platform } = options;
 

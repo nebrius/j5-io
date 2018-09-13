@@ -119,8 +119,8 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
 
     var _this = _possibleConstructorReturn(this, (RaspiIOCore.__proto__ || Object.getPrototypeOf(RaspiIOCore)).call(this));
 
-    if (!options) {
-      throw new Error('Options are required');
+    if ((typeof options === 'undefined' ? 'undefined' : _typeof(options)) !== 'object') {
+      throw new Error('An options object is required');
     }
     var includePins = options.includePins,
         excludePins = options.excludePins,
