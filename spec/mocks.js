@@ -23,7 +23,8 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-const { EventEmitter } = require('events');
+const OFF = 0;
+const ON = 1;
 
 const raspiMock = {
   init(cb) {
@@ -31,130 +32,31 @@ const raspiMock = {
   }
 };
 
-const raspiBoardMock = {
-  VERSION_1_MODEL_A: "rpi1_a",
-  VERSION_1_MODEL_B_REV_1: "rpi1_b1",
-  VERSION_1_MODEL_B_REV_2: "rpi1_b2",
-  VERSION_1_MODEL_B_PLUS: "rpi1_bplus",
-  VERSION_1_MODEL_A_PLUS: "rpi1_aplus",
-  VERSION_1_MODEL_ZERO: "rpi1_zero",
-  VERSION_1_MODEL_ZERO_W: "rpi1_zerow",
-  VERSION_2_MODEL_B: "rpi2_b",
-  VERSION_3_MODEL_B: "rpi3_b",
-  VERSION_3_MODEL_B_PLUS: "rpi3_bplus",
-  VERSION_UNKNOWN: "unknown",
-  getBoardRevision() {
-    raspiBoardMock.VERSION_3_MODEL_B_PLUS
-  },
-  getPins() {
-    return {
-      0: {
-        pins: [
-          'GPIO17',
-          'P1-11'
-        ],
-        peripherals: [
-          'gpio'
-        ],
-        gpio: 17
-      },
-      1: {
-        pins: [
-          'GPIO18',
-          'PWM0',
-          'P1-12'
-        ],
-        peripherals: [
-          'gpio',
-          'pwm'
-        ],
-        gpio: 18
-      },
-      8: {
-        pins: [
-          'GPIO2',
-          'SDA0',
-          'P1-3'
-        ],
-        peripherals: [
-          'gpio',
-          'i2c'
-        ],
-        gpio: 2
-      },
-      10: {
-        pins: [
-          'GPIO8',
-          'CE0',
-          'P1-24'
-        ],
-        peripherals: [
-          'gpio',
-          'spi'
-        ],
-        gpio: 8
-      },
-      16: {
-        pins: [
-          'GPIO15',
-          'RXD0',
-          'P1-10'
-        ],
-        peripherals: [
-          'gpio',
-          'uart'
-        ],
-        gpio: 15
-      },
-    };
-  },
-  getPinNumber(alias) {
-    return 1;
-  },
-  getGpioNumber(alias) {
-    return 1;
-  }
-};
+// We can use the actual raspi-board and raspi-peripheral modules in test mode here
+global.raspiTest = true; // TODO: convert this to an environment variable in raspi-board
+const raspiBoardMock = require('raspi-board');
+const raspiPeripheralMock = require('raspi-peripheral');
 
-class Peripheral extends EventEmitter {
-  constructor(pins) {
-    this.alive = true;
-    this.pins = [ 1 ];
-  }
-  destroy() {
-    this.alive = false;
-  }
-  validateAlive() {
-    if (!this.alive) {
-      throw new Error('Is not alive');
-    }
-  }
-}
-
-const raspiPeripheralMock = {
-  Peripheral
-};
-
-class DigitalOutput extends Peripheral {
+class DigitalOutput extends raspiPeripheralMock.Peripheral {
   get value() {
     return this._value;
   }
-  constructor(config) {
+  constructor() {
     super([ 0 ]);
-    this._value = 0;
+    this._value = OFF;
   }
   write(value) {
     this._value = value;
   }
 }
 
-class DigitalInput extends Peripheral {
+class DigitalInput extends raspiPeripheralMock.Peripheral {
   get value() {
     return this._value;
   }
-  constructor(config) {
+  constructor() {
     super([ 0 ]);
-    this._value = 0;
+    this._value = OFF;
   }
   read() {
     return this.value;
@@ -165,8 +67,8 @@ class DigitalInput extends Peripheral {
 }
 
 const raspiGpioMock = {
-  LOW: 0,
-  HIGH: 1,
+  LOW: OFF,
+  HIGH: ON,
   PULL_NONE: 0,
   PULL_DOWN: 1,
   PULL_UP: 2,
@@ -174,9 +76,207 @@ const raspiGpioMock = {
   DigitalOutput
 };
 
+class I2C extends raspiPeripheralMock.Peripheral {
+  constructor() {
+    super([ 'SDA0', 'SCL0' ]);
+  }
+  // constructor();
+  // destroy(): void;
+  // read(address: number, length: number, cb: ReadCallback): void;
+  // read(address: number, register: number, length: number, cb: ReadCallback): void;
+  // readSync(address: number, registerOrLength: number | undefined, length?: number): Buffer;
+  // readByte(address: number, cb: ReadCallback): void;
+  // readByte(address: number, register: number, cb: ReadCallback): void;
+  // readByteSync(address: number, register?: number): number;
+  // readWord(address: number, cb: ReadCallback): void;
+  // readWord(address: number, register: number, cb: ReadCallback): void;
+  // readWordSync(address: number, register?: number): number;
+  // write(address: number, buffer: Buffer, cb?: WriteCallback): void;
+  // write(address: number, register: number, buffer: Buffer, cb?: WriteCallback): void;
+  // writeSync(address: number, buffer: Buffer): void;
+  // writeSync(address: number, register: number, buffer: Buffer): void;
+  // writeByte(address: number, byte: number, cb?: WriteCallback): void;
+  // writeByte(address: number, register: number, byte: number, cb?: WriteCallback): void;
+  // writeByteSync(address: number, registerOrByte: number, byte?: number): void;
+  // writeWord(address: number, word: number, cb?: WriteCallback): void;
+  // writeWord(address: number, register: number, word: number, cb?: WriteCallback): void;
+  // writeWordSync(address: number, registerOrWord: number, word?: number): void;
+}
+
+const raspiI2CMock = {
+  I2C
+};
+
+class LED extends raspiPeripheralMock.Peripheral {
+  constructor() {
+    super([]);
+    this._value = OFF;
+  }
+  hasLed() {
+    return true;
+  }
+  read() {
+    return this._value;
+  }
+  write(value) {
+    this._value = value;
+  }
+}
+
+const raspiLEDMock = {
+  OFF: 0,
+  ON: 1,
+  LED
+};
+
+class PWM extends raspiPeripheralMock.Peripheral {
+  get frequency() {
+    return this._frequencyValue;
+  }
+  get dutyCycle() {
+    return this._dutyCycleValue;
+  }
+  constructor(config) {
+    let pin = 1;
+    let frequency = 50;
+    if (typeof config === 'number' || typeof config === 'string') {
+      pin = config;
+    } else if (typeof config === 'object') {
+      if (typeof config.pin === 'number' || typeof config.pin === 'string') {
+        pin = config.pin;
+      }
+      if (typeof config.frequency === 'number') {
+        frequency = config.frequency;
+      }
+    }
+    super(pin);
+    this._frequencyValue = frequency;
+    this._dutyCycleValue = 0;
+  }
+  write(dutyCycle) {
+    this._dutyCycleValue = dutyCycle;
+  }
+}
+
+const raspiPWMMock = {
+  PWM
+};
+
+class Serial extends raspiPeripheralMock.Peripheral {
+  get port() {
+    return this._portId;
+  }
+  get baudRate() {
+    return this._options.baudRate;
+  }
+
+  get dataBits() {
+    return this._options.dataBits;
+  }
+
+  get stopBits() {
+    return this._options.stopBits;
+  }
+
+  get parity() {
+    return this._options.parity;
+  }
+
+  constructor({
+    portId = "/dev/ttyAMA0",
+    baudRate = 9600,
+    dataBits = 8,
+    stopBits = 1,
+    parity = "none"
+  } = {}) {
+    const pins = [ 'TXD0', 'RXD0' ];
+    super(pins);
+    this._portId = portId;
+    this._options = {
+      portId,
+      baudRate,
+      dataBits,
+      stopBits,
+      parity
+    };
+  }
+  open(cb) {
+    setImmediate(cb);
+  }
+  close(cb) {
+    setImmediate(cb);
+  }
+  write(data, cb) {
+    setImmediate(cb);
+  }
+  flush(cb) {
+    setImmediate(cb);
+  }
+}
+
+const raspiSerialMock = {
+  PARITY_NONE: "none",
+  PARITY_EVEN: "even",
+  PARITY_ODD: "odd",
+  PARITY_MARK: "mark",
+  PARITY_SPACE: "space",
+  DEFAULT_PORT: "/dev/ttyAMA0",
+  Serial
+};
+
+class SoftPWM extends raspiPeripheralMock.Peripheral {
+  get frequency() {
+    return this._frequency;
+  }
+  get range() {
+    return this._range;
+  }
+  get dutyCycle() {
+    return this._dutyCycle;
+  }
+  constructor(config) {
+    let pin;
+    let frequency = 50;
+    let range = 40000;
+    if (typeof config === 'number' || typeof config === 'string') {
+      pin = config;
+    } else if (typeof config === 'object') {
+      if (typeof config.pin === 'number' || typeof config.pin === 'string') {
+        pin = config.pin;
+      } else {
+        throw new Error(`Invalid pin "${config.pin}". Pin must a number or string`);
+      }
+      if (typeof config.frequency === 'number') {
+        frequency = config.frequency;
+      }
+      if (typeof config.range === 'number') {
+        range = config.range;
+      }
+    } else {
+      throw new Error('Invalid config, must be a number, string, or object');
+    }
+    super(pin);
+    this._frequency = frequency;
+    this._range = range;
+    this._dutyCycle = 0;
+  }
+  write(dutyCycle) {
+    this._dutyCycle = dutyCycle;
+  }
+}
+
+const raspiSoftPWMMock = {
+  SoftPWM
+};
+
 module.exports = {
   raspiMock,
   raspiBoardMock,
   raspiPeripheralMock,
-  raspiGpioMock
+  raspiGpioMock,
+  raspiI2CMock,
+  raspiLEDMock,
+  raspiPWMMock,
+  raspiSerialMock,
+  raspiSoftPWMMock
 };
