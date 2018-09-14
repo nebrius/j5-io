@@ -362,6 +362,5 @@ describe('App Initialization', () => {
     done();
   }));
 
-  // TODO: test all built-in props, like .ready and .pins
   // TODO: test excludePins and includePins
 });
