@@ -238,7 +238,130 @@ describe('App Instantiation', () => {
 });
 
 describe('App Initialization', () => {
-  // TODO: test 'ready' and 'connected' events
+  it('emits "ready" and "connect" events on initialization', (done) => {
+    const raspi = new RaspiIOCore({
+      platform: {
+        'raspi': raspiMock,
+        'raspi-board': raspiBoardMock,
+        'raspi-gpio': raspiGpioMock,
+        'raspi-i2c': raspiI2CMock,
+        'raspi-led': raspiLEDMock,
+        'raspi-pwm': raspiPWMMock
+      }
+    });
+    expect(raspi.hasOwnProperty('isReady')).toBeTruthy();
+    expect(raspi.isReady).toBe(false);
+    let readyEmitted = false;
+    let connectEmitted = false;
+    function finalize() {
+      if (readyEmitted && connectEmitted) {
+        expect(raspi.isReady).toBe(true);
+        done();
+      }
+    }
+    raspi.on('ready', () => {
+      readyEmitted = true;
+      finalize();
+    });
+    raspi.on('connect', () => {
+      connectEmitted = true;
+      finalize();
+    });
+  });
+
+  function createInstance(cb) {
+    const raspi = new RaspiIOCore({
+      enableSerial: true,
+      enableSoftPwm: false,
+      platform: {
+        'raspi': raspiMock,
+        'raspi-board': raspiBoardMock,
+        'raspi-gpio': raspiGpioMock,
+        'raspi-i2c': raspiI2CMock,
+        'raspi-led': raspiLEDMock,
+        'raspi-pwm': raspiPWMMock,
+        'raspi-serial': raspiSerialMock
+      }
+    });
+    raspi.on('ready', () => cb(raspi));
+  }
+
+  function isPropertyFrozenAndReadOnly(obj, property) {
+    expect(obj.hasOwnProperty(property)).toBeTruthy();
+    expect(Object.isFrozen(obj['property'])).toBeTruthy();
+    const descriptor = Object.getOwnPropertyDescriptor(obj, property);
+    expect(descriptor.configurable).toBeFalsy();
+    expect(descriptor.writable).toBeFalsy();
+  }
+
+  it('creates the `MODES` property', (done) => createInstance((raspi) => {
+    isPropertyFrozenAndReadOnly(raspi, 'MODES');
+    expect(raspi.MODES).toEqual(Object.freeze({
+      INPUT: 0,
+      OUTPUT: 1,
+      ANALOG: 2,
+      PWM: 3,
+      SERVO: 4
+    }));
+    done();
+  }));
+
+  it('creates the `SERIAL_PORT_IDs` property', (done) => createInstance((raspi) => {
+    isPropertyFrozenAndReadOnly(raspi, 'SERIAL_PORT_IDs');
+    expect(raspi.SERIAL_PORT_IDs).toEqual(Object.freeze({
+      HW_SERIAL0: raspiSerialMock.DEFAULT_PORT,
+      DEFAULT: raspiSerialMock.DEFAULT_PORT
+    }));
+    done();
+  }));
+
+  it('creates the `pins` property', (done) => createInstance((raspi) => {
+    isPropertyFrozenAndReadOnly(raspi, 'pins');
+    const pins = [];
+    const boardPins = raspiBoardMock.getPins();
+    Object.keys(boardPins).forEach((pin) => {
+      const supportedModes = [];
+      const pinInfo = boardPins[pin];
+      if (pinInfo.peripherals.indexOf('i2c') == -1 && pinInfo.peripherals.indexOf('uart') == -1) {
+        if (pin == -1) {
+          supportedModes.push(1);
+        } else if (pinInfo.peripherals.indexOf('gpio') != -1) {
+          supportedModes.push(0, 1);
+        }
+        if (pinInfo.peripherals.indexOf('pwm') != -1) {
+          supportedModes.push(3, 4);
+        }
+      }
+      const mode = supportedModes.indexOf(1) == -1 ? 99 : 1;
+      pins[pin] = {
+        supportedModes,
+        mode,
+        value: mode == 1 ? 0 : null,
+        report: 1,
+        analogChannel: 127
+      };
+    });
+    for (let i = 0; i < pins.length; i++) {
+      if (!pins[i]) {
+        pins[i] = {
+          supportedModes: Object.freeze([]),
+          mode: 99,
+          value: 0,
+          report: 1,
+          analogChannel: 127
+        };
+      }
+    }
+    expect(raspi.pins).toEqual(pins);
+    done();
+  }));
+
+  it('creates the `analogPins` property', (done) => createInstance((raspi) => {
+    isPropertyFrozenAndReadOnly(raspi, 'analogPins');
+    expect(raspi.analogPins).toEqual([]);
+    done();
+  }));
+
   // TODO: test all built-in props, like .ready and .pins
   // TODO: test excludePins and includePins
 });
