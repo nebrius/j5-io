@@ -62,12 +62,15 @@ describe('App Initialization', () => {
     raspi.on('ready', () => cb(raspi));
   }
 
+  // Input tests
+
   it('can set a pin in input mode', (done) => createInstance((raspi) => {
     const pin = raspi.normalize(pinAlias);
     expect(raspi.pins[pin].mode).toEqual(1);
     raspi.pinMode(pinAlias, raspi.MODES.INPUT);
-    const { peripheral } = raspi.getInternalPinInstances()[pin];
     expect(raspi.pins[pin].mode).toEqual(0);
+
+    const { peripheral } = raspi.getInternalPinInstances()[pin];
     expect(peripheral.args.length).toEqual(1);
     expect(peripheral.args[0]).toEqual({
       pin,
@@ -134,9 +137,11 @@ describe('App Initialization', () => {
     const pin = raspi.normalize(pinAlias);
     raspi.pinMode(pinAlias, raspi.MODES.INPUT);
     const { peripheral } = raspi.getInternalPinInstances()[pin];
+
     let numReadsRemaining = NUM_DIGITAL_READS;
     let lastReadTimestamp = -1;
     let value = 0;
+
     raspi.digitalRead(pinAlias, () => {
       if (lastReadTimestamp !== -1) {
         const duration = Date.now() - lastReadTimestamp;
@@ -151,5 +156,52 @@ describe('App Initialization', () => {
         return;
       }
     });
+  }));
+
+  // Output tests
+
+  it('can set a pin in output mode after putting it in input mode', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+
+    // Note: OUTPUT mode is default, so we force it to input mode first to make sure we can change it back to OUTPUT mode
+    expect(raspi.pins[pin].mode).toEqual(1);
+    raspi.pinMode(pinAlias, raspi.MODES.INPUT);
+    expect(raspi.pins[pin].mode).toEqual(0);
+    raspi.pinMode(pinAlias, raspi.MODES.OUTPUT);
+    expect(raspi.pins[pin].mode).toEqual(1);
+
+    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    expect(peripheral.args.length).toEqual(1);
+    expect(peripheral.args[0]).toEqual({
+      pin,
+      pullResistor: 0
+    });
+    done();
+  }));
+
+  it('can write a value to a pin using the `digitalWrite` method', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+    expect(raspi.pins[pin].mode).toEqual(1);
+
+    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    raspi.digitalWrite(pinAlias, 0);
+    expect(peripheral.value).toEqual(0);
+    expect(raspi.pins[pin].value).toEqual(0);
+    raspi.digitalWrite(pinAlias, 1);
+    expect(peripheral.value).toEqual(1);
+    expect(raspi.pins[pin].value).toEqual(1);
+    done();
+  }));
+
+  it('can write a value to a pin using the `value` setter', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+    expect(raspi.pins[pin].mode).toEqual(1);
+
+    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    raspi.pins[pin].value = 0;
+    expect(peripheral.value).toEqual(0);
+    raspi.pins[pin].value = 1;
+    expect(peripheral.value).toEqual(1);
+    done();
   }));
 });
