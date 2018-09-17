@@ -23,6 +23,8 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
+const { EventEmitter } = require('events');
+
 const OFF = 0;
 const ON = 1;
 
@@ -32,34 +34,80 @@ const raspiMock = {
   }
 };
 
-// We can use the actual raspi-board and raspi-peripheral modules in test mode here
-global.raspiTest = true; // TODO: convert this to an environment variable in raspi-board
+// We can use the actual raspi-board module in test mode here
+global.raspiTest = true; // TODO: convert raspi-board to use RASPI-TEST-MODE env variable
 const raspiBoardMock = require('raspi-board');
-const raspiPeripheralMock = require('raspi-peripheral');
 
-class DigitalOutput extends raspiPeripheralMock.Peripheral {
+class Peripheral extends EventEmitter {
+  get alive() {
+    return this._alive;
+  }
+  get pins() {
+    return this._pins;
+  }
+  constructor(pins) {
+    super();
+    this._alive = true;
+    this._pins = [];
+    if (!Array.isArray(pins)) {
+      pins = [ pins ];
+    }
+    for (const alias of pins) {
+      const pin = raspiBoardMock.getPinNumber(alias);
+      if (pin === null) {
+        throw new Error(`Invalid pin: ${alias}`);
+      }
+      this._pins.push(pin);
+    }
+  }
+  destroy() {
+    if (this._alive) {
+      this._alive = false;
+      this.emit('destroyed');
+    }
+  }
+  validateAlive() {
+    if (!this._alive) {
+      throw new Error('Attempted to access a destroyed peripheral');
+    }
+  }
+}
+
+const raspiPeripheralMock = {
+  Peripheral
+};
+
+class DigitalOutput extends Peripheral {
   get value() {
     return this._value;
   }
-  constructor() {
+  get args() {
+    return this._args;
+  }
+  constructor(...args) {
     super([ 0 ]);
     this._value = OFF;
+    this._args = args;
   }
   write(value) {
     this._value = value;
   }
 }
 
-class DigitalInput extends raspiPeripheralMock.Peripheral {
+class DigitalInput extends Peripheral {
   get value() {
     return this._value;
   }
-  constructor() {
+  get args() {
+    return this._args;
+  }
+  constructor(...args) {
     super([ 0 ]);
     this._value = OFF;
+    this._args = args;
   }
   read() {
-    return this.value;
+    return this._value;
   }
   setMockedValue(value) {
     this._value = value;
@@ -76,7 +124,7 @@ const raspiGpioMock = {
   DigitalOutput
 };
 
-class I2C extends raspiPeripheralMock.Peripheral {
+class I2C extends Peripheral {
   constructor() {
     super([ 'SDA0', 'SCL0' ]);
   }
@@ -107,7 +155,7 @@ const raspiI2CMock = {
   I2C
 };
 
-class LED extends raspiPeripheralMock.Peripheral {
+class LED extends Peripheral {
   constructor() {
     super([]);
     this._value = OFF;
@@ -129,7 +177,7 @@ const raspiLEDMock = {
   LED
 };
 
-class PWM extends raspiPeripheralMock.Peripheral {
+class PWM extends Peripheral {
   get frequency() {
     return this._frequencyValue;
   }
@@ -162,7 +210,7 @@ const raspiPWMMock = {
   PWM
 };
 
-class Serial extends raspiPeripheralMock.Peripheral {
+class Serial extends Peripheral {
   get port() {
     return this._portId;
   }
@@ -224,7 +272,7 @@ const raspiSerialMock = {
   Serial
 };
 
-class SoftPWM extends raspiPeripheralMock.Peripheral {
+class SoftPWM extends Peripheral {
   get frequency() {
     return this._frequency;
   }

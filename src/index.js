@@ -302,6 +302,12 @@ export class RaspiIOCore extends EventEmitter {
       });
     }
 
+    if (process.env['RASPI-TEST-MODE']) {
+      this.getInternalPinInstances = () => {
+        return this[instances];
+      };
+    }
+
     this[raspiModule].init(() => {
       let pinMappings = this[raspiBoardModule].getPins();
       this[pins] = [];
@@ -492,8 +498,7 @@ export class RaspiIOCore extends EventEmitter {
     pinInstance.pullResistor = pullResistor;
     const config = {
       pin: normalizedPin,
-      pullResistor: pinInstance.pullResistor,
-      enableListener: false
+      pullResistor: pinInstance.pullResistor
     };
     if (this[pins][normalizedPin].supportedModes.indexOf(mode) == -1) {
       let modeName;

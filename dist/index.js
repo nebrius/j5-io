@@ -279,6 +279,12 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
       });
     }
 
+    if (process.env['RASPI-TEST-MODE']) {
+      _this.getInternalPinInstances = function () {
+        return _this[instances];
+      };
+    }
+
     _this[raspiModule].init(function () {
       var pinMappings = _this[raspiBoardModule].getPins();
       _this[pins] = [];
@@ -524,8 +530,7 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
       pinInstance.pullResistor = pullResistor;
       var config = {
         pin: normalizedPin,
-        pullResistor: pinInstance.pullResistor,
-        enableListener: false
+        pullResistor: pinInstance.pullResistor
       };
       if (this[pins][normalizedPin].supportedModes.indexOf(mode) == -1) {
         var modeName = void 0;
