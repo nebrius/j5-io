@@ -28,6 +28,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Enable test mode for all modules that use this environment variable
 process.env['RASPI-TEST-MODE'] = true;
 
+// This is used to control how many times we want to successively read using the `digitalRead` method
+const NUM_DIGITAL_READS = 10;
+
 const { RaspiIOCore } = require('../dist/index');
 const {
   raspiMock,
@@ -91,15 +94,61 @@ describe('App Initialization', () => {
     raspi.pinMode(pinAlias, raspi.MODES.INPUT);
     const { peripheral } = raspi.getInternalPinInstances()[pin];
 
+    let numReadsRemaining = NUM_DIGITAL_READS;
     let value = 0;
     peripheral.setMockedValue(value);
     raspi.digitalRead(pinAlias, (newValue) => {
       expect(value).toEqual(newValue);
-      if (value === 0) {
-        value = 1;
-        peripheral.setMockedValue(value);
-      } else {
+      if (!(--numReadsRemaining)) {
         done();
+        return;
+      }
+      value = value === 1 ? 0 : 1;
+      peripheral.setMockedValue(value);
+    });
+  }));
+
+  it('can read from a pin using the `digital-read-${pin}` event', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+    raspi.pinMode(pinAlias, raspi.MODES.INPUT);
+    const { peripheral } = raspi.getInternalPinInstances()[pin];
+
+    let numReadsRemaining = NUM_DIGITAL_READS;
+    let value = 0;
+    peripheral.setMockedValue(value);
+    raspi.digitalRead(pinAlias);
+
+    // TODO: follow up on https://github.com/rwaldron/io-plugins/issues/16 to see if we need to rename this event
+    raspi.on(`digital-read-${pinAlias}`, (newValue) => {
+      expect(value).toEqual(newValue);
+      if (!(--numReadsRemaining)) {
+        done();
+        return;
+      }
+      value = value === 1 ? 0 : 1;
+      peripheral.setMockedValue(value);
+    });
+  }));
+
+  it('can read from a pin using the `digitalRead` method at no more than 200Hz and no less than 50Hz', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+    raspi.pinMode(pinAlias, raspi.MODES.INPUT);
+    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    let numReadsRemaining = NUM_DIGITAL_READS;
+    let lastReadTimestamp = -1;
+    let value = 0;
+    raspi.digitalRead(pinAlias, () => {
+      if (lastReadTimestamp !== -1) {
+        const duration = Date.now() - lastReadTimestamp;
+        expect(duration).toBeGreaterThanOrEqual(5); // Less than or equal to 200Hz
+        expect(duration).toBeLessThanOrEqual(20); // Greater than or equal to 50Hz
+      }
+      lastReadTimestamp = Date.now();
+      value = value === 1 ? 0 : 1;
+      peripheral.setMockedValue(value);
+      if (!(--numReadsRemaining)) {
+        done();
+        return;
       }
     });
   }));

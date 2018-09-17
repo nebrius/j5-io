@@ -44,7 +44,7 @@ const SOFTWARE_PWM_FREQUENCY = 50;
 // Settings
 const DEFAULT_SERVO_MIN = 1000;
 const DEFAULT_SERVO_MAX = 2000;
-const DIGITAL_READ_UPDATE_RATE = 19;
+const DIGITAL_READ_UPDATE_RATE = 15;
 
 // Private symbols
 const isReady = Symbol('isReady');

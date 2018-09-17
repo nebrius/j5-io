@@ -78,39 +78,27 @@ const raspiPeripheralMock = {
 };
 
 class DigitalOutput extends Peripheral {
-  get value() {
-    return this._value;
-  }
-  get args() {
-    return this._args;
-  }
   constructor(...args) {
     super([ 0 ]);
-    this._value = OFF;
-    this._args = args;
+    this.value = OFF;
+    this.args = args;
   }
   write(value) {
-    this._value = value;
+    this.value = value;
   }
 }
 
 class DigitalInput extends Peripheral {
-  get value() {
-    return this._value;
-  }
-  get args() {
-    return this._args;
-  }
   constructor(...args) {
     super([ 0 ]);
-    this._value = OFF;
-    this._args = args;
+    this.value = OFF;
+    this.args = args;
   }
   read() {
-    return this._value;
+    return this.value;
   }
   setMockedValue(value) {
-    this._value = value;
+    this.value = value;
   }
 }
 
