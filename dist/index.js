@@ -61,7 +61,7 @@ var SOFTWARE_PWM_FREQUENCY = 50;
 // Settings
 var DEFAULT_SERVO_MIN = 1000;
 var DEFAULT_SERVO_MAX = 2000;
-var DIGITAL_READ_UPDATE_RATE = 15;
+var DIGITAL_READ_UPDATE_RATE = 18;
 
 // Private symbols
 var isReady = Symbol('isReady');
@@ -661,11 +661,11 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
         config.max = DEFAULT_SERVO_MAX;
       }
       var normalizedPin = this.normalize(pin);
-      this[_pinMode]({
-        pin: normalizedPin,
-        mode: SERVO_MODE
-      });
       var pinInstance = this[getPinInstance](this.normalize(normalizedPin));
+      if (pinInstance.mode != SERVO_MODE) {
+        this.pinMode(pin, SERVO_MODE);
+        pinInstance = this[getPinInstance](this.normalize(normalizedPin));
+      }
       pinInstance.min = config.min;
       pinInstance.max = config.max;
     }

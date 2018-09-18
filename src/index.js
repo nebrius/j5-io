@@ -44,7 +44,7 @@ const SOFTWARE_PWM_FREQUENCY = 50;
 // Settings
 const DEFAULT_SERVO_MIN = 1000;
 const DEFAULT_SERVO_MAX = 2000;
-const DIGITAL_READ_UPDATE_RATE = 15;
+const DIGITAL_READ_UPDATE_RATE = 18;
 
 // Private symbols
 const isReady = Symbol('isReady');
@@ -615,11 +615,11 @@ export class RaspiIOCore extends EventEmitter {
       config.max = DEFAULT_SERVO_MAX;
     }
     const normalizedPin = this.normalize(pin);
-    this[pinMode]({
-      pin: normalizedPin,
-      mode: SERVO_MODE
-    });
-    const pinInstance = this[getPinInstance](this.normalize(normalizedPin));
+    let pinInstance = this[getPinInstance](this.normalize(normalizedPin));
+    if (pinInstance.mode != SERVO_MODE) {
+      this.pinMode(pin, SERVO_MODE);
+      pinInstance = this[getPinInstance](this.normalize(normalizedPin));
+    }
     pinInstance.min = config.min;
     pinInstance.max = config.max;
   }

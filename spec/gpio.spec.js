@@ -139,19 +139,16 @@ describe('GPIO', () => {
     const { peripheral } = raspi.getInternalPinInstances()[pin];
 
     let numReadsRemaining = NUM_DIGITAL_READS;
-    let lastReadTimestamp = -1;
     let value = 0;
 
+    const startTime = Date.now();
     raspi.digitalRead(pinAlias, () => {
-      if (lastReadTimestamp !== -1) {
-        const duration = Date.now() - lastReadTimestamp;
-        expect(duration).toBeGreaterThanOrEqual(5); // Less than or equal to 200Hz
-        expect(duration).toBeLessThanOrEqual(20); // Greater than or equal to 50Hz
-      }
-      lastReadTimestamp = Date.now();
       value = value === 1 ? 0 : 1;
       peripheral.setMockedValue(value);
       if (!(--numReadsRemaining)) {
+        const averagePeriod = (Date.now() - startTime) / NUM_DIGITAL_READS;
+        expect(averagePeriod).toBeGreaterThanOrEqual(5); // Less than or equal to 200Hz
+        expect(averagePeriod).toBeLessThanOrEqual(20); // Greater than or equal to 50Hz
         done();
         return;
       }
@@ -206,4 +203,5 @@ describe('GPIO', () => {
   }));
 
   // TODO: test auto-converting of pin mode when calling, e.g., digitalRead
+  // TODO: test invalid parameters to digitalWrite, digitalRead, and value setters
 });
