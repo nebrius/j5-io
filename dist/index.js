@@ -61,7 +61,7 @@ var SOFTWARE_PWM_FREQUENCY = 50;
 // Settings
 var DEFAULT_SERVO_MIN = 1000;
 var DEFAULT_SERVO_MAX = 2000;
-var DIGITAL_READ_UPDATE_RATE = 19;
+var DIGITAL_READ_UPDATE_RATE = 15;
 
 // Private symbols
 var isReady = Symbol('isReady');
@@ -600,6 +600,7 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
       if (pinInstance.mode != PWM_MODE) {
         this.pinMode(pin, PWM_MODE);
       }
+      // TODO: need to constrain value to be between 0 and 255
       pinInstance.peripheral.write(value / 255);
     }
   }, {

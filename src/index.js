@@ -559,6 +559,7 @@ export class RaspiIOCore extends EventEmitter {
     if (pinInstance.mode != PWM_MODE) {
       this.pinMode(pin, PWM_MODE);
     }
+    // TODO: need to constrain value to be between 0 and 255
     pinInstance.peripheral.write(value / 255);
   }
 

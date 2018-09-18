@@ -1,7 +1,7 @@
 ## 2.2.0 ()
 
 - Added unit tests, yay!
-- Changed the `digitalRead` update interval to be every 15ms instead of every 19ms to get it spec compliant (must be at least 50Hz in practice)
+- Changed the `digitalRead` update interval to be every 15ms instead of every 19ms to get it spec compliant in practice, not just in theory (must be at least 50Hz in practice)
 - Removed some dead code (no change to behavior)
 - Changed error handling in the constructor to throw a more intelligible error if a primitive is passed for options
 

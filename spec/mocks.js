@@ -172,7 +172,8 @@ class PWM extends Peripheral {
   get dutyCycle() {
     return this._dutyCycleValue;
   }
-  constructor(config) {
+  constructor(...args) {
+    let config = args[0];
     let pin = 1;
     let frequency = 50;
     if (typeof config === 'number' || typeof config === 'string') {
@@ -188,6 +189,7 @@ class PWM extends Peripheral {
     super(pin);
     this._frequencyValue = frequency;
     this._dutyCycleValue = 0;
+    this.args = args;
   }
   write(dutyCycle) {
     this._dutyCycleValue = dutyCycle;

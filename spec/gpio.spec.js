@@ -42,7 +42,7 @@ const {
   raspiSerialMock
 } = require('./mocks');
 
-describe('App Initialization', () => {
+describe('GPIO', () => {
 
   const pinAlias = 'GPIO10';
 
@@ -204,4 +204,6 @@ describe('App Initialization', () => {
     expect(peripheral.value).toEqual(1);
     done();
   }));
+
+  // TODO: test auto-converting of pin mode when calling, e.g., digitalRead
 });
