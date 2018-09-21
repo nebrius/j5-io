@@ -36,7 +36,6 @@ const raspiMock = {
 };
 
 // We can use the actual raspi-board module in test mode here
-global.raspiTest = true; // TODO: convert raspi-board to use RASPI-TEST-MODE env variable
 const raspiBoardMock = require('raspi-board');
 
 class Peripheral extends EventEmitter {
@@ -145,9 +144,10 @@ const raspiI2CMock = {
 };
 
 class LED extends Peripheral {
-  constructor() {
+  constructor(...args) {
     super([]);
     this._value = OFF;
+    this.args = args;
   }
   hasLed() {
     return true;
