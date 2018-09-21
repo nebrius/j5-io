@@ -302,7 +302,7 @@ export class RaspiIOCore extends EventEmitter {
       });
     }
 
-    if (process.env['RASPI-TEST-MODE']) {
+    if (process.env['RASPI_IO_TEST_MODE']) {
       this.getInternalPinInstances = () => {
         return this[instances];
       };

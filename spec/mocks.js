@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 const { EventEmitter } = require('events');
+const { RaspiIOCore } = require('../dist/index');
 
 const OFF = 0;
 const ON = 1;
@@ -307,6 +308,22 @@ const raspiSoftPWMMock = {
   SoftPWM
 };
 
+function createInstance(cb) {
+  const raspi = new RaspiIOCore({
+    enableSerial: true,
+    platform: {
+      'raspi': raspiMock,
+      'raspi-board': raspiBoardMock,
+      'raspi-gpio': raspiGpioMock,
+      'raspi-i2c': raspiI2CMock,
+      'raspi-led': raspiLEDMock,
+      'raspi-pwm': raspiPWMMock,
+      'raspi-serial': raspiSerialMock
+    }
+  });
+  raspi.on('ready', () => cb(raspi));
+}
+
 module.exports = {
   raspiMock,
   raspiBoardMock,
@@ -316,5 +333,6 @@ module.exports = {
   raspiLEDMock,
   raspiPWMMock,
   raspiSerialMock,
-  raspiSoftPWMMock
+  raspiSoftPWMMock,
+  createInstance
 };

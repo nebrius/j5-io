@@ -25,19 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 /*global it describe expect*/
 
-// Enable test mode for all modules that use this environment variable
-process.env['RASPI-TEST-MODE'] = true;
-
-const { RaspiIOCore } = require('../dist/index');
-const {
-  raspiMock,
-  raspiBoardMock,
-  raspiGpioMock,
-  raspiI2CMock,
-  raspiLEDMock,
-  raspiPWMMock,
-  raspiSerialMock
-} = require('./mocks');
+const { createInstance } = require('./mocks');
 
 const VALUE_TOLERANCE = 0.001;
 
@@ -49,22 +37,6 @@ function expectToRoughlyEqual(value, expectedValue) {
 describe('PWM', () => {
 
   const pinAlias = 'GPIO18';
-
-  function createInstance(cb) {
-    const raspi = new RaspiIOCore({
-      enableSerial: true,
-      platform: {
-        'raspi': raspiMock,
-        'raspi-board': raspiBoardMock,
-        'raspi-gpio': raspiGpioMock,
-        'raspi-i2c': raspiI2CMock,
-        'raspi-led': raspiLEDMock,
-        'raspi-pwm': raspiPWMMock,
-        'raspi-serial': raspiSerialMock
-      }
-    });
-    raspi.on('ready', () => cb(raspi));
-  }
 
   it('can set a pin in PWM mode', (done) => createInstance((raspi) => {
     const pin = raspi.normalize(pinAlias);

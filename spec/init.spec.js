@@ -25,9 +25,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 /*global it describe expect*/
 
-// Enable test mode for all modules that use this environment variable
-process.env['RASPI-TEST-MODE'] = true;
-
 const { EventEmitter } = require('events');
 const { RaspiIOCore } = require('../dist/index');
 const {

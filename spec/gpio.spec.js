@@ -25,42 +25,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 /*global it describe expect*/
 
-// Enable test mode for all modules that use this environment variable
-process.env['RASPI-TEST-MODE'] = true;
-
 // This is used to control how many times we want to successively read using the `digitalRead` method
 const NUM_DIGITAL_READS = 10;
 
-const { RaspiIOCore } = require('../dist/index');
-const {
-  raspiMock,
-  raspiBoardMock,
-  raspiGpioMock,
-  raspiI2CMock,
-  raspiLEDMock,
-  raspiPWMMock,
-  raspiSerialMock
-} = require('./mocks');
+const { createInstance } = require('./mocks');
 
 describe('GPIO', () => {
 
   const pinAlias = 'GPIO10';
-
-  function createInstance(cb) {
-    const raspi = new RaspiIOCore({
-      enableSerial: true,
-      platform: {
-        'raspi': raspiMock,
-        'raspi-board': raspiBoardMock,
-        'raspi-gpio': raspiGpioMock,
-        'raspi-i2c': raspiI2CMock,
-        'raspi-led': raspiLEDMock,
-        'raspi-pwm': raspiPWMMock,
-        'raspi-serial': raspiSerialMock
-      }
-    });
-    raspi.on('ready', () => cb(raspi));
-  }
 
   // Input tests
 

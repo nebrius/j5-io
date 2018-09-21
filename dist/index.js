@@ -279,7 +279,7 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
       });
     }
 
-    if (process.env['RASPI-TEST-MODE']) {
+    if (process.env['RASPI_IO_TEST_MODE']) {
       _this.getInternalPinInstances = function () {
         return _this[instances];
       };
