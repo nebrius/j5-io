@@ -855,6 +855,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
     value: function sendI2CReadRequest() {
       return this.i2cReadOnce.apply(this, arguments);
     }
+
+    // TODO: print a warning or throw an error (?) when rxPin or txPin are specified
+
   }, {
     key: 'serialConfig',
     value: function serialConfig(_ref2) {
@@ -863,6 +866,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
 
       if (!this[raspiSerialModule]) {
         throw new Error('Serial support is disabled');
+      }
+      if (!portId) {
+        throw new Error('"portId" parameter missing in options');
       }
       if (!this[isSerialOpen] || baud && baud !== this[serial].baudRate) {
         this[addToSerialQueue]({
@@ -878,6 +884,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
       if (!this[raspiSerialModule]) {
         throw new Error('Serial support is disabled');
       }
+      if (!portId) {
+        throw new Error('"portId" argument missing');
+      }
       this[addToSerialQueue]({
         type: SERIAL_ACTION_WRITE,
         portId: portId,
@@ -889,6 +898,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
     value: function serialRead(portId, maxBytesToRead, handler) {
       if (!this[raspiSerialModule]) {
         throw new Error('Serial support is disabled');
+      }
+      if (!portId) {
+        throw new Error('"portId" argument missing');
       }
       if (typeof maxBytesToRead === 'function') {
         handler = maxBytesToRead;
@@ -907,6 +919,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
       if (!this[raspiSerialModule]) {
         throw new Error('Serial support is disabled');
       }
+      if (!portId) {
+        throw new Error('"portId" argument missing');
+      }
       this[addToSerialQueue]({
         type: SERIAL_ACTION_STOP,
         portId: portId
@@ -918,6 +933,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
       if (!this[raspiSerialModule]) {
         throw new Error('Serial support is disabled');
       }
+      if (!portId) {
+        throw new Error('"portId" argument missing');
+      }
       this[addToSerialQueue]({
         type: SERIAL_ACTION_CLOSE,
         portId: portId
@@ -928,6 +946,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
     value: function serialFlush(portId) {
       if (!this[raspiSerialModule]) {
         throw new Error('Serial support is disabled');
+      }
+      if (!portId) {
+        throw new Error('"portId" argument missing');
       }
       this[addToSerialQueue]({
         type: SERIAL_ACTION_FLUSH,
@@ -989,6 +1010,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
             _this4[serial] = new _this4[raspiSerialModule].Serial({
               baudRate: action.baud
             });
+            if (process.env['RASPI_IO_TEST_MODE']) {
+              _this4.emit('$TEST_MODE-serial-instance-created', _this4[serial]);
+            }
             _this4[serial].open(function () {
               _this4[serial].on('data', function (data) {
                 _this4.emit('serial-data-' + action.portId, bufferToArray(data));

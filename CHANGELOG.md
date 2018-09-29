@@ -5,6 +5,7 @@
 - Removed some dead code (no change to behavior)
 - Changed error handling in the constructor to throw a more intelligible error if a primitive is passed for options
 - Changed `servoConfig` so that it only changes pin mode if it's not already in Servo mode.
+- Added better error checking so that all serial* calls throw a readable error when `portId` is not included
 
 ## 2.1.0 (2018-04-02)
 

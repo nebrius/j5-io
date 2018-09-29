@@ -240,16 +240,31 @@ class Serial extends Peripheral {
     };
   }
   open(cb) {
-    setImmediate(cb);
+    setImmediate(() => {
+      cb();
+      this.emit('open');
+    });
   }
   close(cb) {
-    setImmediate(cb);
+    setImmediate(() => {
+      cb();
+      this.emit('close');
+    });
   }
   write(data, cb) {
-    setImmediate(cb);
+    setImmediate(() => {
+      cb();
+      this.emit('write', data);
+    });
   }
   flush(cb) {
-    setImmediate(cb);
+    setImmediate(() => {
+      cb();
+      this.emit('flush');
+    });
+  }
+  fillReadBuffer(data) {
+    this.emit('data', data);
   }
 }
 
