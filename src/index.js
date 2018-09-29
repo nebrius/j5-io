@@ -979,7 +979,7 @@ export class RaspiIOCore extends EventEmitter {
   }
 
   sendOneWireReset() {
-    throw new Error('sendOneWireConfig is not supported on the Raspberry Pi');
+    throw new Error('sendOneWireReset is not supported on the Raspberry Pi');
   }
 
   sendOneWireWrite() {

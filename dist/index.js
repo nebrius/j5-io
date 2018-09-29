@@ -1064,7 +1064,7 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
   }, {
     key: 'sendOneWireReset',
     value: function sendOneWireReset() {
-      throw new Error('sendOneWireConfig is not supported on the Raspberry Pi');
+      throw new Error('sendOneWireReset is not supported on the Raspberry Pi');
     }
   }, {
     key: 'sendOneWireWrite',
