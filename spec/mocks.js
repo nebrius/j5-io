@@ -113,30 +113,190 @@ const raspiGpioMock = {
 };
 
 class I2C extends Peripheral {
+
   constructor() {
     super([ 'SDA0', 'SCL0' ]);
+    this._readBuffers = {};
   }
-  // constructor();
-  // destroy(): void;
-  // read(address: number, length: number, cb: ReadCallback): void;
-  // read(address: number, register: number, length: number, cb: ReadCallback): void;
-  // readSync(address: number, registerOrLength: number | undefined, length?: number): Buffer;
-  // readByte(address: number, cb: ReadCallback): void;
-  // readByte(address: number, register: number, cb: ReadCallback): void;
-  // readByteSync(address: number, register?: number): number;
-  // readWord(address: number, cb: ReadCallback): void;
-  // readWord(address: number, register: number, cb: ReadCallback): void;
-  // readWordSync(address: number, register?: number): number;
-  // write(address: number, buffer: Buffer, cb?: WriteCallback): void;
-  // write(address: number, register: number, buffer: Buffer, cb?: WriteCallback): void;
-  // writeSync(address: number, buffer: Buffer): void;
-  // writeSync(address: number, register: number, buffer: Buffer): void;
-  // writeByte(address: number, byte: number, cb?: WriteCallback): void;
-  // writeByte(address: number, register: number, byte: number, cb?: WriteCallback): void;
-  // writeByteSync(address: number, registerOrByte: number, byte?: number): void;
-  // writeWord(address: number, word: number, cb?: WriteCallback): void;
-  // writeWord(address: number, register: number, word: number, cb?: WriteCallback): void;
-  // writeWordSync(address: number, registerOrWord: number, word?: number): void;
+
+  _mockRead(address, length) {
+    if (!this._readBuffer.hasOwnProperty(address)) {
+      throw new Error(`Internal test error: attempted to read from address without data preloaded`);
+    }
+    return this._readBuffers[address].splice(0, length);
+  }
+
+  setReadBuffer(address, data) {
+    this._readBuffer[address] = data;
+  }
+
+  read(address, registerOrLength, lengthOrCb, cb) {
+    let length;
+    let register;
+    if (typeof cb === 'function' && typeof lengthOrCb === 'number') {
+      length = lengthOrCb;
+      register = registerOrLength;
+    } else if (typeof lengthOrCb === 'function') {
+      cb = lengthOrCb;
+      length = registerOrLength;
+      register = undefined;
+    }
+    setImmediate(() => {
+      const data = this._mockRead(address, length);
+      cb(undefined, data);
+      this.emit('read', { address, length, register, data });
+    })
+  }
+
+  readSync(address, registerOrLength, length) {
+    let register;
+    if (typeof length === 'undefined') {
+      length = +(registerOrLength);
+    } else {
+      register = registerOrLength;
+      length = +length;
+    }
+    const data = this._mockRead(address, length);
+    setImmediate(() => {
+      this.emit('readSync', { address, register, length, data });
+    });
+    return data;
+  }
+
+  readByte(address, registerOrCb, cb) {
+    let register;
+    if (typeof registerOrCb === 'function') {
+      cb = registerOrCb;
+      register = undefined;
+    }
+    setImmediate(() => {
+      const data = this._mockRead(address, 1);
+      cb(undefined, data);
+      this.emit('readByte', { address, register, data });
+    });
+  }
+
+  readByteSync(address, register) {
+    const data = this._mockRead(address, 1);
+    setImmediate(() => {
+      this.emit('readByteSync', { address, register, data });
+    });
+    return data;
+  }
+
+  readWord(address, registerOrCb, cb) {
+    let register;
+    if (typeof registerOrCb === 'function') {
+      cb = registerOrCb;
+    } else {
+      register = registerOrCb;
+    }
+    const data = this._mockRead(address, 2);
+    setImmediate(() => {
+      cb(undefined, data);
+      this.emit('readWord', { address, register, data });
+    });
+  }
+
+  readWordSync(address, register) {
+    const data = this._mockRead(address, 2);
+    setImmediate(() => {
+      this.emit('readByteSync', { address, register, data });
+    });
+    return data;
+  }
+
+  write(address, registerOrBuffer, bufferOrCb, cb) {
+    let buffer;
+    let register;
+    if (Buffer.isBuffer(registerOrBuffer)) {
+      cb = bufferOrCb;
+      buffer = registerOrBuffer;
+      register = undefined;
+    } else if (typeof registerOrBuffer === 'number' && Buffer.isBuffer(bufferOrCb)) {
+      register = registerOrBuffer;
+      buffer = bufferOrCb;
+    } else {
+      throw new TypeError('Invalid I2C write arguments');
+    }
+    setImmediate(() => {
+      cb();
+      this.emit('write', { address, register, buffer });
+    });
+  }
+
+  writeSync(address, registerOrBuffer, buffer) {
+    let register;
+    if (Buffer.isBuffer(registerOrBuffer)) {
+      buffer = registerOrBuffer;
+    } else {
+      if (!buffer) {
+        throw new Error('Invalid I2C write arguments');
+      }
+      register = registerOrBuffer;
+    }
+    setImmediate(() => {
+      this.emit('writeSync', { address, register, buffer });
+    });
+  }
+
+  writeByte(address, registerOrByte, byteOrCb, cb) {
+    let byte;
+    let register;
+    if (typeof byteOrCb === 'number') {
+      byte = byteOrCb;
+      register = registerOrByte;
+    } else {
+      cb = byteOrCb;
+      byte = registerOrByte;
+    }
+    setImmediate(() => {
+      cb();
+      this.emit('writeByte', { address, register, byte });
+    });
+  }
+
+  writeByteSync(address, registerOrByte, byte) {
+    let register;
+    if (byte === undefined) {
+      byte = registerOrByte;
+    } else {
+      register = registerOrByte;
+    }
+    setImmediate(() => {
+      this.emit('writeByteSync', { address, register, byte });
+    });
+  }
+
+  writeWord(address, registerOrWord, wordOrCb, cb) {
+    let register;
+    let word;
+    if (typeof wordOrCb === 'number') {
+      register = registerOrWord;
+      word = wordOrCb;
+    } else if (typeof wordOrCb === 'function') {
+      word = registerOrWord;
+      cb = wordOrCb;
+    } else {
+      throw new Error('Invalid I2C write arguments');
+    }
+    setImmediate(() => {
+      cb();
+      this.emit('writeWord', { address, register, word });
+    });
+  }
+
+  writeWordSync(address, registerOrWord, word) {
+    let register;
+    if (word === undefined) {
+      word = registerOrWord;
+    } else {
+      register = registerOrWord;
+    }
+    setImmediate(() => {
+      this.emit('writeWordSync', { address, register, word });
+    });
+  }
 }
 
 const raspiI2CMock = {

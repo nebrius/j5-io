@@ -27,7 +27,7 @@
     "prebuild": "eslint src/",
     "build": "babel src/index.js --presets es2015 --out-file dist/index.js",
     "pretest": "eslint spec/",
-    "test": "cross-env RASPI_IO_TEST_MODE=true istanbul cover ./node_modules/jasmine/bin/jasmine.js"
+    "test": "cross-env RASPI_IO_TEST_MODE=true istanbul cover -x spec/mocks.js ./node_modules/jasmine/bin/jasmine.js"
   },
   "author": "Bryan Hughes <bryan@nebri.us>",
   "contributors": [

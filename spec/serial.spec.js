@@ -150,6 +150,8 @@ it('can close a serial port', (done) => createInstance((raspi) => {
         // exception thrown from a closed port asynchronous
         setTimeout(() => {
           expect(() => {
+            // TODO: test other serial methods, but these exceptions break the pump queue.
+            // See https://github.com/nebrius/raspi-io-core/issues/7
             raspi.serialWrite(raspi.SERIAL_PORT_IDs.DEFAULT, []);
           }).toThrow(new Error('Cannot write to closed serial port'));
           done();
