@@ -158,6 +158,10 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
       throw new Error('"enableSoftPwm" is true and "raspi-soft-pwm" module is missing from "platform" option');
     }
 
+    if (includePins && excludePins) {
+      throw new Error('"includePins" and "excludePins" cannot be specified at the same time');
+    }
+
     Object.defineProperties(_this, (_Object$definePropert = {}, _defineProperty(_Object$definePropert, raspiModule, {
       writable: true,
       value: platform['raspi']
@@ -297,10 +301,6 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
         pins: [LED_PIN],
         peripherals: ['gpio']
       };
-
-      if (includePins && excludePins) {
-        throw new Error('"includePins" and "excludePins" cannot be specified at the same time');
-      }
 
       if (Array.isArray(includePins)) {
         var newPinMappings = {};

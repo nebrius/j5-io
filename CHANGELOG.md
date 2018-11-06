@@ -1,4 +1,4 @@
-## 2.2.0 ()
+## 3.0.0 ()
 
 - Added unit tests, yay!
 - Changed the `digitalRead` update interval to be every 18ms instead of every 19ms to get it spec compliant in practice, not just in theory (must be at least 50Hz/20ms in practice)
@@ -7,6 +7,7 @@
 - Changed `servoConfig` so that it only changes pin mode if it's not already in Servo mode.
 - Added better error checking so that all serial* calls throw a readable error when `portId` is not included
 - Fixed a theoretical bug where i2cRead continues to read after the peripheral is destroyed, which never happens in practice except in unit tests.
+- POTENTIALLY BREAKING: Specifying both `includePins` and `excludePins` at the same time now throws synchronously from the constructor
 
 ## 2.1.0 (2018-04-02)
 

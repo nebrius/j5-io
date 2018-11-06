@@ -35,7 +35,8 @@ const {
   raspiLEDMock,
   raspiPWMMock,
   raspiSerialMock,
-  raspiSoftPWMMock
+  raspiSoftPWMMock,
+  createInstance
 } = require('./mocks');
 
 describe('App Instantiation', () => {
@@ -235,6 +236,38 @@ describe('App Instantiation', () => {
     });
     expect(raspi instanceof EventEmitter).toBeTruthy();
   });
+
+  it('throws when `excludePins` and `includePins` are both defined', (done) => {
+    expect(() => new RaspiIOCore({
+      includePins: [],
+      excludePins: [],
+      platform: {
+        'raspi': raspiMock,
+        'raspi-board': raspiBoardMock,
+        'raspi-gpio': raspiGpioMock,
+        'raspi-i2c': raspiI2CMock,
+        'raspi-led': raspiLEDMock,
+        'raspi-pwm': raspiPWMMock
+      }
+    })).toThrow(new Error('"includePins" and "excludePins" cannot be specified at the same time'));
+    done();
+  });
+
+  // TODO: test excludePins and includePins with invalid pin definitions
+
+  it('can limit pins with `includePins`', (done) => createInstance({ includePins: [ 'GPIO9' ] }, (raspi) => {
+    expect(raspi.pins[12].supportedModes.length).toEqual(0); // We fill in up to 7, but with non-functional pins
+    expect(raspi.pins[13].supportedModes.length).not.toEqual(0);
+    expect(raspi.pins.hasOwnProperty('14')).toBeFalsy();
+    done();
+  }));
+
+  it('can limit pins with `excludePins`', (done) => createInstance({ excludePins: [ 'GPIO9' ] }, (raspi) => {
+    expect(raspi.pins[12].supportedModes.length).not.toEqual(0);
+    expect(raspi.pins[13].supportedModes.length).toEqual(0);
+    expect(raspi.pins[14].supportedModes.length).not.toEqual(0);
+    done();
+  }));
 });
 
 describe('App Initialization', () => {
@@ -268,22 +301,6 @@ describe('App Initialization', () => {
       finalize();
     });
   });
-
-  function createInstance(cb) {
-    const raspi = new RaspiIOCore({
-      enableSerial: true,
-      platform: {
-        'raspi': raspiMock,
-        'raspi-board': raspiBoardMock,
-        'raspi-gpio': raspiGpioMock,
-        'raspi-i2c': raspiI2CMock,
-        'raspi-led': raspiLEDMock,
-        'raspi-pwm': raspiPWMMock,
-        'raspi-serial': raspiSerialMock
-      }
-    });
-    raspi.on('ready', () => cb(raspi));
-  }
 
   function isPropertyFrozenAndReadOnly(obj, property) {
     expect(obj.hasOwnProperty(property)).toBeTruthy();
@@ -360,6 +377,4 @@ describe('App Initialization', () => {
     expect(raspi.analogPins).toEqual([]);
     done();
   }));
-
-  // TODO: test excludePins and includePins
 });

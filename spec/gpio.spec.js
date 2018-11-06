@@ -34,6 +34,49 @@ describe('GPIO', () => {
 
   const pinAlias = 'GPIO10';
 
+  it('throws an error when resolving an invalid pin', (done) => createInstance((raspi) => {
+    expect(() => raspi.normalize('GPIO9000')).toThrow(new Error('Unknown pin "GPIO9000"'));
+    done();
+  }));
+
+  it('throws an error when setting a pin to input mode that doesn\'t support it', (done) => createInstance((raspi) => {
+    expect(() => raspi.pinMode('P1-3', 0)).toThrow(new Error('Pin "P1-3" does not support mode "input"'));
+    done();
+  }));
+
+  it('throws an error when setting a pin to output mode that doesn\'t support it', (done) => createInstance((raspi) => {
+    expect(() => raspi.pinMode('P1-3', 1)).toThrow(new Error('Pin "P1-3" does not support mode "output"'));
+    done();
+  }));
+
+  it('throws an error when setting a pin to analog mode that doesn\'t support it', (done) => createInstance((raspi) => {
+    expect(() => raspi.pinMode('P1-3', 2)).toThrow(new Error('Pin "P1-3" does not support mode "analog"'));
+    done();
+  }));
+
+  it('throws an error when setting a pin to pwm mode that doesn\'t support it', (done) => createInstance((raspi) => {
+    expect(() => raspi.pinMode('P1-3', 3)).toThrow(new Error('Pin "P1-3" does not support mode "pwm"'));
+    done();
+  }));
+
+  it('throws an error when setting a pin to servo mode that doesn\'t support it', (done) => createInstance((raspi) => {
+    expect(() => raspi.pinMode('P1-3', 4)).toThrow(new Error('Pin "P1-3" does not support mode "servo"'));
+    done();
+  }));
+
+  it('throws an error when setting a pin to other mode that doesn\'t support it', (done) => createInstance((raspi) => {
+    expect(() => raspi.pinMode('P1-3', 5)).toThrow(new Error('Pin "P1-3" does not support mode "other"'));
+    done();
+  }));
+
+  it('ignores changes to the default LED pin mode', (done) => createInstance((raspi) => {
+    const oldPeripheral = raspi.getInternalPinInstances()[raspi.defaultLed];
+    raspi.pinMode(raspi.defaultLed, 1);
+    const newPeripheral = raspi.getInternalPinInstances()[raspi.defaultLed];
+    expect(oldPeripheral).toBe(newPeripheral);
+    done();
+  }));
+
   // Input tests
 
   it('can set a pin in input mode', (done) => createInstance((raspi) => {
