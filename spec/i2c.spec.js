@@ -30,6 +30,9 @@ const { createInstance } = require('./mocks');
 // This is used to control how many times we want to successively read using the `i2cRead` method
 const NUM_READS = 10;
 
+// This is used to control how long to wait in ms to ensure a second read wasn't initiated
+const READ_WAIT = 100;
+
 describe('I2C', () => {
 
   const inBytes = [ 0, 1, 2, 3, 4 ];
@@ -74,26 +77,97 @@ describe('I2C', () => {
     done();
   }));
 
-  it('can read from an address', (done) => createInstance((raspi) => {
+  it('can read continuously', (done) => createInstance((raspi) => {
     let numReadsRemaining = NUM_READS;
     const peripheral = raspi.getI2CInstance();
-    let testData = [ ...inBytes ];
-    peripheral.setReadBuffer(inAddress, [ ...testData ]);
-    raspi.i2cRead(inAddress, testData.length, (data) => {
-      expect(data).toEqual(testData);
+    const testData = [];
+    let testDataWindow = [ ...inBytes ];
+    for (let i = 0; i < numReadsRemaining + 1; i++) {
+      testData.push(...testDataWindow);
+    }
+    peripheral.setReadBuffer(inAddress, undefined, testData);
+    raspi.i2cRead(inAddress, inBytes.length, (data) => {
+      expect(data).toEqual(inBytes);
+    });
+    peripheral.on('read', ({ address, length, register, data }) => {
+      expect(data).toEqual(inBytes);
+      expect(length).toEqual(inBytes.length);
+      expect(address).toEqual(inAddress);
+      expect(register).toBeUndefined();
       if (!(--numReadsRemaining)) {
         peripheral.destroy();
         done();
         return;
       }
-      testData = [ testData.pop(), ...testData ];
-      peripheral.setReadBuffer(inAddress, [ ...testData ]);
     });
   }));
 
-  // i2cRead(address, register, bytesToRead, handler)
-  // i2cRead(address, bytesToRead, handler)
-  // i2cReadOnce(address, register, bytesToRead, handler)
-  // i2cReadOnce(address, bytesToRead, handler)
-  // i2cConfig(options)
+  it('can read from a register continuously', (done) => createInstance((raspi) => {
+    let numReadsRemaining = NUM_READS;
+    const peripheral = raspi.getI2CInstance();
+    const testData = [];
+    let testDataWindow = [ ...inBytes ];
+    for (let i = 0; i < numReadsRemaining + 1; i++) {
+      testData.push(...testDataWindow);
+    }
+    peripheral.setReadBuffer(inAddress, inRegister, testData);
+    raspi.i2cRead(inAddress, inRegister, inBytes.length, (data) => {
+      expect(data).toEqual(inBytes);
+    });
+    peripheral.on('read', ({ address, length, register, data }) => {
+      expect(data).toEqual(inBytes);
+      expect(length).toEqual(inBytes.length);
+      expect(address).toEqual(inAddress);
+      expect(register).toEqual(inRegister);
+      if (!(--numReadsRemaining)) {
+        peripheral.destroy();
+        done();
+        return;
+      }
+    });
+  }));
+
+  it('can read once', (done) => createInstance((raspi) => {
+    const peripheral = raspi.getI2CInstance();
+    const testData = [ ...inBytes ];
+    peripheral.setReadBuffer(inAddress, undefined, testData);
+    raspi.i2cReadOnce(inAddress, inBytes.length, (data) => {
+      expect(data).toEqual(inBytes);
+    });
+    let numReads = 0;
+    peripheral.on('read', ({ address, length, register, data }) => {
+      numReads++;
+      expect(data).toEqual(inBytes);
+      expect(length).toEqual(inBytes.length);
+      expect(address).toEqual(inAddress);
+      expect(register).toBeUndefined();
+      setTimeout(() => {
+        expect(numReads).toEqual(1);
+        peripheral.destroy();
+        done();
+      }, READ_WAIT);
+    });
+  }));
+
+  it('can read once from a register', (done) => createInstance((raspi) => {
+    const peripheral = raspi.getI2CInstance();
+    const testData = [ ...inBytes ];
+    peripheral.setReadBuffer(inAddress, inRegister, testData);
+    raspi.i2cReadOnce(inAddress, inRegister, inBytes.length, (data) => {
+      expect(data).toEqual(inBytes);
+    });
+    let numReads = 0;
+    peripheral.on('read', ({ address, length, register, data }) => {
+      numReads++;
+      expect(data).toEqual(inBytes);
+      expect(length).toEqual(inBytes.length);
+      expect(address).toEqual(inAddress);
+      expect(register).toEqual(inRegister);
+      setTimeout(() => {
+        expect(numReads).toEqual(1);
+        peripheral.destroy();
+        done();
+      }, READ_WAIT);
+    });
+  }));
 });

@@ -120,15 +120,27 @@ class I2C extends Peripheral {
     this.args = args;
   }
 
-  _mockRead(address, length) {
+  _mockRead(address, register, length) {
     if (!this._readBuffers.hasOwnProperty(address)) {
       throw new Error(`Internal test error: attempted to read from address without data preloaded`);
     }
-    return this._readBuffers[address].splice(0, length);
+    if (!register) {
+      register = 'global';
+    }
+    if (!this._readBuffers[address].hasOwnProperty(register)) {
+      throw new Error(`Internal test error: attempted to read from register without data preloaded`);
+    }
+    return this._readBuffers[address][register].splice(0, length);
   }
 
-  setReadBuffer(address, data) {
-    this._readBuffers[address] = data;
+  setReadBuffer(address, register, data) {
+    if (!this._readBuffers[address]) {
+      this._readBuffers[address] = {};
+    }
+    if (!register) {
+      register = 'global';
+    }
+    this._readBuffers[address][register] = data;
   }
 
   read(address, registerOrLength, lengthOrCb, cb) {
@@ -143,7 +155,7 @@ class I2C extends Peripheral {
       register = undefined;
     }
     setImmediate(() => {
-      const data = this._mockRead(address, length);
+      const data = this._mockRead(address, register, length);
       cb(undefined, data);
       this.emit('read', { address, length, register, data });
     })
