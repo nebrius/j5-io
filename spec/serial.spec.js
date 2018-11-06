@@ -51,6 +51,11 @@ describe('Serial', () => {
     done();
   }));
 
+  it('throws when configuring the port but serial is disabled', (done) => createInstance({ enableSerial: false }, (raspi) => {
+    expect(() => raspi.serialConfig({})).toThrow(new Error('Serial support is disabled'));
+    done();
+  }));
+
   it('sets default parameters on initialization', (done) => createInstance((raspi) => {
     raspi.on('$TEST_MODE-serial-instance-created', (peripheral) => {
       expect(peripheral.port).toEqual(raspi.SERIAL_PORT_IDs.DEFAULT);
@@ -97,6 +102,16 @@ describe('Serial', () => {
     });
   }));
 
+  it('throws when writing data to the port without a port ID', (done) => createInstance((raspi) => {
+    expect(() => raspi.serialWrite()).toThrow(new Error('"portId" argument missing'));
+    done();
+  }));
+
+  it('throws when writing data but serial is disabled', (done) => createInstance({ enableSerial: false }, (raspi) => {
+    expect(() => raspi.serialWrite()).toThrow(new Error('Serial support is disabled'));
+    done();
+  }));
+
   it('can read data from the port', (done) => createInstance((raspi) => {
     raspi.on('$TEST_MODE-serial-instance-created', (peripheral) => {
       peripheral.on('open', () => {
@@ -109,56 +124,106 @@ describe('Serial', () => {
       });
     });
   }));
-});
 
-it('can read data from the port using the `serial-data-${portId}` event', (done) => createInstance((raspi) => {
-  raspi.on('$TEST_MODE-serial-instance-created', (peripheral) => {
-    peripheral.on('open', () => {
-      const inBytes = [ 0, 1, 2, 3, 4 ];
-      raspi.on(`serial-data-${raspi.SERIAL_PORT_IDs.DEFAULT}`, (data) => {
-        expect(data).toEqual(inBytes);
+  it('can read data from the port using the `serial-data-${portId}` event', (done) => createInstance((raspi) => {
+    raspi.on('$TEST_MODE-serial-instance-created', (peripheral) => {
+      peripheral.on('open', () => {
+        const inBytes = [ 0, 1, 2, 3, 4 ];
+        raspi.on(`serial-data-${raspi.SERIAL_PORT_IDs.DEFAULT}`, (data) => {
+          expect(data).toEqual(inBytes);
+          done();
+        });
+        peripheral.fillReadBuffer(inBytes);
+      });
+    });
+  }));
+
+  it('throws when reading data from the port without a port ID', (done) => createInstance((raspi) => {
+    expect(() => raspi.serialRead()).toThrow(new Error('"portId" argument missing'));
+    done();
+  }));
+
+  it('throws when reading data but serial is disabled', (done) => createInstance({ enableSerial: false }, (raspi) => {
+    expect(() => raspi.serialRead()).toThrow(new Error('Serial support is disabled'));
+    done();
+  }));
+
+  // TODO: add support for maxBytesToRead in serialRead tests
+
+  it('can stop a serial port', (done) => createInstance((raspi) => {
+    raspi.on('$TEST_MODE-serial-instance-created', (peripheral) => {
+      peripheral.on('open', () => {
+        const inBytes = [ 0, 1, 2, 3, 4 ];
+        raspi.on(`serial-data-${raspi.SERIAL_PORT_IDs.DEFAULT}`, () => {
+          throw new Error('Serial did not stop');
+        });
+        raspi.serialStop(raspi.SERIAL_PORT_IDs.DEFAULT);
+        peripheral.fillReadBuffer(inBytes);
+        setTimeout(done, 10);
+      });
+    });
+  }));
+
+  it('throws when stopping the port without a port ID', (done) => createInstance((raspi) => {
+    expect(() => raspi.serialStop()).toThrow(new Error('"portId" argument missing'));
+    done();
+  }));
+
+  it('throws when stopping the port but serial is disabled', (done) => createInstance({ enableSerial: false }, (raspi) => {
+    expect(() => raspi.serialStop()).toThrow(new Error('Serial support is disabled'));
+    done();
+  }));
+
+  it('can close a serial port', (done) => createInstance((raspi) => {
+    raspi.on('$TEST_MODE-serial-instance-created', (peripheral) => {
+      peripheral.on('open', () => {
+        raspi.serialClose(raspi.SERIAL_PORT_IDs.DEFAULT);
+        peripheral.on('close', () => {
+          // TODO: this is kinda ugly, but the internal pump mechanism hasn't finished
+          // running when we get here, so we have to delay a little longer to make the
+          // exception thrown from a closed port asynchronous
+          setTimeout(() => {
+            expect(() => {
+              // TODO: test other serial methods, but these exceptions break the pump queue.
+              // See https://github.com/nebrius/raspi-io-core/issues/7
+              raspi.serialWrite(raspi.SERIAL_PORT_IDs.DEFAULT, []);
+            }).toThrow(new Error('Cannot write to closed serial port'));
+            done();
+          }, 10);
+        });
+      });
+    });
+  }));
+
+  it('throws when closing the port without a port ID', (done) => createInstance((raspi) => {
+    expect(() => raspi.serialClose()).toThrow(new Error('"portId" argument missing'));
+    done();
+  }));
+
+  it('throws when closing the port but serial is disabled', (done) => createInstance({ enableSerial: false }, (raspi) => {
+    expect(() => raspi.serialClose()).toThrow(new Error('Serial support is disabled'));
+    done();
+  }));
+
+  it('can flush a serial port', (done) => createInstance((raspi) => {
+    raspi.on('$TEST_MODE-serial-instance-created', (peripheral) => {
+      raspi.serialFlush(raspi.SERIAL_PORT_IDs.DEFAULT);
+      peripheral.on('flush', () => {
         done();
       });
-      peripheral.fillReadBuffer(inBytes);
     });
-  });
-}));
+  }));
 
-// TODO: add support for maxBytesToRead in serialRead tests
+  it('throws when flishing data from the port without a port ID', (done) => createInstance((raspi) => {
+    expect(() => raspi.serialFlush()).toThrow(new Error('"portId" argument missing'));
+    done();
+  }));
 
-it('can stop a serial port', (done) => createInstance((raspi) => {
-  raspi.on('$TEST_MODE-serial-instance-created', (peripheral) => {
-    peripheral.on('open', () => {
-      const inBytes = [ 0, 1, 2, 3, 4 ];
-      raspi.on(`serial-data-${raspi.SERIAL_PORT_IDs.DEFAULT}`, () => {
-        throw new Error('Serial did not stop');
-      });
-      raspi.serialStop(raspi.SERIAL_PORT_IDs.DEFAULT);
-      peripheral.fillReadBuffer(inBytes);
-      setTimeout(done, 10);
-    });
-  });
-}));
+  it('throws when flushing the port but serial is disabled', (done) => createInstance({ enableSerial: false }, (raspi) => {
+    expect(() => raspi.serialFlush()).toThrow(new Error('Serial support is disabled'));
+    done();
+  }));
 
-it('can close a serial port', (done) => createInstance((raspi) => {
-  raspi.on('$TEST_MODE-serial-instance-created', (peripheral) => {
-    peripheral.on('open', () => {
-      raspi.serialClose(raspi.SERIAL_PORT_IDs.DEFAULT);
-      peripheral.on('close', () => {
-        // TODO: this is kinda ugly, but the internal pump mechanism hasn't finished
-        // running when we get here, so we have to delay a little longer to make the
-        // exception thrown from a closed port asynchronous
-        setTimeout(() => {
-          expect(() => {
-            // TODO: test other serial methods, but these exceptions break the pump queue.
-            // See https://github.com/nebrius/raspi-io-core/issues/7
-            raspi.serialWrite(raspi.SERIAL_PORT_IDs.DEFAULT, []);
-          }).toThrow(new Error('Cannot write to closed serial port'));
-          done();
-        }, 10);
-      });
-    });
-  });
-}));
+  // TODO: test writes, etc on closed ports
 
-// TODO: test serialFlush
+});

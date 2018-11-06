@@ -176,4 +176,6 @@ describe('GPIO', () => {
 
   // TODO: test auto-converting of pin mode when calling, e.g., digitalRead
   // TODO: test invalid parameters to digitalWrite, digitalRead, and value setters
+  // TODO: test setting pull up resistors with digitalWrite
+  // TODO: query* methods
 });

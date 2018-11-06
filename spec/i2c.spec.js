@@ -40,9 +40,14 @@ describe('I2C', () => {
   const inAddress = 0x10;
   const inRegister = 0x20;
 
-  // TODO: ensure that doing GPIO things on I2C pins throws an error
+  // TODO: test i2cConfig and sendI2CConfig once https://github.com/nebrius/raspi-io-core/issues/8 has been resolved
 
-  // TODO: test i2cConfig once https://github.com/nebrius/raspi-io-core/issues/8 has been resolved
+  it('prevents GPIO from using I2C pins', (done) => createInstance((raspi) => {
+    expect(() => {
+      raspi.digitalWrite('SDA0', 1);
+    }).toThrow(new Error('Pin "SDA0" does not support mode "output"'));
+    done();
+  }));
 
   it('can write a buffer to an address', (done) => createInstance((raspi) => {
     const i2c = raspi.getI2CInstance();
@@ -52,6 +57,17 @@ describe('I2C', () => {
       expect(buffer).toEqual(inBytes);
     });
     raspi.i2cWrite(inAddress, inBytes)
+    done();
+  }));
+
+  it('can write a buffer to an address using sendI2CWriteRequest', (done) => createInstance((raspi) => {
+    const i2c = raspi.getI2CInstance();
+    i2c.on('write', ({ address, register, buffer }) => {
+      expect(address).toEqual(inAddress);
+      expect(register).toBeUndefined();
+      expect(buffer).toEqual(inBytes);
+    });
+    raspi.sendI2CWriteRequest(inAddress, inBytes)
     done();
   }));
 
@@ -132,6 +148,28 @@ describe('I2C', () => {
     const testData = [ ...inBytes ];
     peripheral.setReadBuffer(inAddress, undefined, testData);
     raspi.i2cReadOnce(inAddress, inBytes.length, (data) => {
+      expect(data).toEqual(inBytes);
+    });
+    let numReads = 0;
+    peripheral.on('read', ({ address, length, register, data }) => {
+      numReads++;
+      expect(data).toEqual(inBytes);
+      expect(length).toEqual(inBytes.length);
+      expect(address).toEqual(inAddress);
+      expect(register).toBeUndefined();
+      setTimeout(() => {
+        expect(numReads).toEqual(1);
+        peripheral.destroy();
+        done();
+      }, READ_WAIT);
+    });
+  }));
+
+  it('can read once using sendI2CReadRequest', (done) => createInstance((raspi) => {
+    const peripheral = raspi.getI2CInstance();
+    const testData = [ ...inBytes ];
+    peripheral.setReadBuffer(inAddress, undefined, testData);
+    raspi.sendI2CReadRequest(inAddress, inBytes.length, (data) => {
       expect(data).toEqual(inBytes);
     });
     let numReads = 0;

@@ -496,8 +496,12 @@ const raspiSoftPWMMock = {
   SoftPWM
 };
 
-function createInstance(cb) {
-  const raspi = new RaspiIOCore({
+function createInstance(options, cb) {
+  if (typeof cb === 'undefined') {
+    cb = options;
+    options = {};
+  }
+  options = {
     enableSerial: true,
     platform: {
       'raspi': raspiMock,
@@ -505,10 +509,14 @@ function createInstance(cb) {
       'raspi-gpio': raspiGpioMock,
       'raspi-i2c': raspiI2CMock,
       'raspi-led': raspiLEDMock,
-      'raspi-pwm': raspiPWMMock,
-      'raspi-serial': raspiSerialMock
-    }
-  });
+      'raspi-pwm': raspiPWMMock
+    },
+    ...options
+  };
+  if (options.enableSerial) {
+    options.platform['raspi-serial'] = raspiSerialMock;
+  }
+  const raspi = new RaspiIOCore(options);
   raspi.on('ready', () => cb(raspi));
 }
 
