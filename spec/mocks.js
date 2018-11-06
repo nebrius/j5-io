@@ -114,20 +114,21 @@ const raspiGpioMock = {
 
 class I2C extends Peripheral {
 
-  constructor() {
+  constructor(...args) {
     super([ 'SDA0', 'SCL0' ]);
     this._readBuffers = {};
+    this.args = args;
   }
 
   _mockRead(address, length) {
-    if (!this._readBuffer.hasOwnProperty(address)) {
+    if (!this._readBuffers.hasOwnProperty(address)) {
       throw new Error(`Internal test error: attempted to read from address without data preloaded`);
     }
     return this._readBuffers[address].splice(0, length);
   }
 
   setReadBuffer(address, data) {
-    this._readBuffer[address] = data;
+    this._readBuffers[address] = data;
   }
 
   read(address, registerOrLength, lengthOrCb, cb) {

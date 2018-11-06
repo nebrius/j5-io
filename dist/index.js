@@ -283,6 +283,9 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
       _this.getInternalPinInstances = function () {
         return _this[instances];
       };
+      _this.getI2CInstance = function () {
+        return _this[i2c];
+      };
     }
 
     _this[raspiModule].init(function () {
@@ -804,7 +807,7 @@ var RaspiIOCore = exports.RaspiIOCore = function (_EventEmitter) {
           // Convert buffer to Array before emit
           _this3.emit(event, Array.prototype.slice.call(buffer));
 
-          if (continuous) {
+          if (continuous && _this3[i2c].alive) {
             setTimeout(read, _this3[i2cDelay]);
           }
         };

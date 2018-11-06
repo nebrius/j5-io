@@ -303,9 +303,8 @@ export class RaspiIOCore extends EventEmitter {
     }
 
     if (process.env['RASPI_IO_TEST_MODE']) {
-      this.getInternalPinInstances = () => {
-        return this[instances];
-      };
+      this.getInternalPinInstances = () => this[instances];
+      this.getI2CInstance = () => this[i2c];
     }
 
     this[raspiModule].init(() => {
@@ -752,7 +751,7 @@ export class RaspiIOCore extends EventEmitter {
         // Convert buffer to Array before emit
         this.emit(event, Array.prototype.slice.call(buffer));
 
-        if (continuous) {
+        if (continuous && this[i2c].alive) {
           setTimeout(read, this[i2cDelay]);
         }
       };
