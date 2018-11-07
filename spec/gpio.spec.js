@@ -28,7 +28,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // This is used to control how many times we want to successively read using the `digitalRead` method
 const NUM_DIGITAL_READS = 10;
 
-const { createInstance } = require('./mocks');
+// This is used to control how long to wait in ms to ensure no callbacks are called after a peripheral is destroyed
+const DESTROY_WAIT = 100;
+
+const { createInstance, raspiGpioMock } = require('./mocks');
 
 describe('GPIO', () => {
 
@@ -126,6 +129,35 @@ describe('GPIO', () => {
     });
   }));
 
+  it('can read from a pin in a different mode using the `digitalRead` method', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+    raspi.pinMode(pinAlias, raspi.MODES.OUTPUT);
+    expect(raspi.pins[pin].mode).toEqual(raspi.MODES.OUTPUT);
+    raspi.digitalRead(pinAlias, () => {
+      expect(raspi.pins[pin].mode).toEqual(raspi.MODES.INPUT);
+      done();
+    });
+  }));
+
+  it('can read from a pin using the `digitalRead` method after being switched to write mode', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+    let numReadsRemaining = NUM_DIGITAL_READS;
+    let value = 0;
+    raspi.digitalRead(pinAlias, (newValue) => {
+      expect(raspi.pins[pin].mode).toEqual(raspi.MODES.OUTPUT);
+      expect(value).toEqual(newValue);
+      if (!(--numReadsRemaining)) {
+        done();
+        return;
+      }
+      value = value === 1 ? 0 : 1;
+      raspi.digitalWrite(pinAlias, value);
+    });
+    raspi.pinMode(pinAlias, raspi.MODES.OUTPUT);
+    expect(raspi.pins[pin].mode).toEqual(raspi.MODES.OUTPUT);
+    raspi.digitalWrite(pinAlias, value);
+  }));
+
   it('can read from a pin using the `digital-read-${pin}` event', (done) => createInstance((raspi) => {
     const pin = raspi.normalize(pinAlias);
     raspi.pinMode(pinAlias, raspi.MODES.INPUT);
@@ -168,6 +200,39 @@ describe('GPIO', () => {
         return;
       }
     });
+  }));
+
+  it('stops reading from the `digitalRead` method after being destroyed', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+    raspi.pinMode(pinAlias, raspi.MODES.INPUT);
+    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    raspi.digitalRead(pinAlias, () => {
+      expect(peripheral.alive).toBeTruthy();
+      peripheral.destroy();
+      setTimeout(done, DESTROY_WAIT);
+    });
+  }));
+
+  it('can enable the internal pull up resistor', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+    raspi.pinMode(pinAlias, raspi.MODES.INPUT);
+    const { peripheral: oldPeripheral } = raspi.getInternalPinInstances()[pin];
+    raspi.digitalWrite(pinAlias, raspi.HIGH);
+    const { peripheral: newPeripheral } = raspi.getInternalPinInstances()[pin];
+    expect(oldPeripheral).not.toBe(newPeripheral);
+    expect(newPeripheral.args[0].pullResistor).toEqual(raspiGpioMock.PULL_UP);
+    done();
+  }));
+
+  it('can enable the internal pull down resistor', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+    raspi.pinMode(pinAlias, raspi.MODES.INPUT);
+    const { peripheral: oldPeripheral } = raspi.getInternalPinInstances()[pin];
+    raspi.digitalWrite(pinAlias, raspi.LOW);
+    const { peripheral: newPeripheral } = raspi.getInternalPinInstances()[pin];
+    expect(oldPeripheral).not.toBe(newPeripheral);
+    expect(newPeripheral.args[0].pullResistor).toEqual(raspiGpioMock.PULL_DOWN);
+    done();
   }));
 
   // Output tests
