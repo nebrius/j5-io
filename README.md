@@ -2,6 +2,8 @@
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nebrius/raspi-io?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+[![Build Status](https://travis-ci.org/nebrius/raspi-io-core.svg?branch=master)](https://travis-ci.org/nebrius/raspi-io-core)
+
 Raspi IO Core is a Firmata API compatible abstract library for creating [Johnny-Five](http://johnny-five.io/) IO plugins targeting the [Raspberry Pi](http://www.raspberrypi.org/). The API docs for this module can be found on the [Johnny-Five Wiki](https://github.com/rwaldron/io-plugins), except for the constructor which is documented below.
 
 If you have a bug report, feature request, or wish to contribute code, please be sure to check out the [Raspi IO Contributing Guide](https://github.com/nebrius/raspi-io/blob/master/CONTRIBUTING.md).
@@ -16,12 +18,12 @@ npm install raspi-io-core
 
 ## Usage
 
-Using raspi-io-core to create a Johnny-Five IO plugin should look something like this:
+Using Raspi IO Core to create a Johnny-Five IO plugin should look something like this:
 
 ```JavaScript
 import { RaspiIOCore } from 'raspi-io-core';
 
-module.exports = function RaspiIO({ includePins, excludePins, enableSoftPwm = false } = {}) {
+export function RaspiIO({ includePins, excludePins, enableSoftPwm = false } = {}) {
 
   // Create the platform options
   const platform = {
