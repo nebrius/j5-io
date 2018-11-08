@@ -23,6 +23,9 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
+const { RaspiIOCore } = require('../dist/index');
+const { createInstance, raspiMock, raspiBoardMock, raspiI2CMock, raspiLEDMock, raspiPWMMock, raspiGpioMock } = require('./mocks');
+
 /*global it describe expect*/
 
 // This is used to control how many times we want to successively read using the `digitalRead` method
@@ -30,8 +33,6 @@ const NUM_DIGITAL_READS = 10;
 
 // This is used to control how long to wait in ms to ensure no callbacks are called after a peripheral is destroyed
 const DESTROY_WAIT = 100;
-
-const { createInstance, raspiGpioMock } = require('./mocks');
 
 describe('GPIO', () => {
 
@@ -282,8 +283,59 @@ describe('GPIO', () => {
     done();
   }));
 
-  // TODO: test auto-converting of pin mode when calling, e.g., digitalRead
-  // TODO: test invalid parameters to digitalWrite, digitalRead, and value setters
-  // TODO: test setting pull up resistors with digitalWrite
-  // TODO: query* methods
+  // Query tests (note that all query methods are just pass-through methods)
+
+  it('can query capabilities before the ready event has been fired', (done) => {
+    const raspi = new RaspiIOCore({
+      platform: {
+        'raspi': raspiMock,
+        'raspi-board': raspiBoardMock,
+        'raspi-gpio': raspiGpioMock,
+        'raspi-i2c': raspiI2CMock,
+        'raspi-led': raspiLEDMock,
+        'raspi-pwm': raspiPWMMock
+      }
+    });
+    raspi.queryCapabilities(done);
+  });
+
+  it('can query capabilities after the ready event has been fired', (done) => createInstance((raspi) => {
+    raspi.queryCapabilities(done);
+  }));
+
+  it('can query analog mappings before the ready event has been fired', (done) => {
+    const raspi = new RaspiIOCore({
+      platform: {
+        'raspi': raspiMock,
+        'raspi-board': raspiBoardMock,
+        'raspi-gpio': raspiGpioMock,
+        'raspi-i2c': raspiI2CMock,
+        'raspi-led': raspiLEDMock,
+        'raspi-pwm': raspiPWMMock
+      }
+    });
+    raspi.queryAnalogMapping(done);
+  });
+
+  it('can query analog mappings after the ready event has been fired', (done) => createInstance((raspi) => {
+    raspi.queryAnalogMapping(done);
+  }));
+
+  it('can query pin state before the ready event has been fired', (done) => {
+    const raspi = new RaspiIOCore({
+      platform: {
+        'raspi': raspiMock,
+        'raspi-board': raspiBoardMock,
+        'raspi-gpio': raspiGpioMock,
+        'raspi-i2c': raspiI2CMock,
+        'raspi-led': raspiLEDMock,
+        'raspi-pwm': raspiPWMMock
+      }
+    });
+    raspi.queryPinState(0, done);
+  });
+
+  it('can query pin state after the ready event has been fired', (done) => createInstance((raspi) => {
+    raspi.queryPinState(0, done);
+  }));
 });

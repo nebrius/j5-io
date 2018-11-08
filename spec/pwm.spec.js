@@ -62,6 +62,22 @@ describe('PWM', () => {
     done();
   }));
 
+  it('can set a pin in PWM mode by calling `pwmWrite`', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+    expect(raspi.pins[pin].mode).toEqual(1);
+    raspi.pwmWrite(pin, 0);
+    expect(raspi.pins[pin].mode).toEqual(3);
+    done();
+  }));
+
+  it('can set a pin in PWM mode by calling `servoWrite`', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+    expect(raspi.pins[pin].mode).toEqual(1);
+    raspi.servoWrite(pin, 0);
+    expect(raspi.pins[pin].mode).toEqual(4);
+    done();
+  }));
+
   it('can set the duty cycle via `pwmWrite`', (done) => createInstance((raspi) => {
     const pin = raspi.normalize(pinAlias);
     raspi.pinMode(pinAlias, raspi.MODES.PWM);
@@ -188,6 +204,26 @@ describe('PWM', () => {
     done();
   }));
 
+  it('can configure the servo for defaul min and max via `servoConfig` when sending degrees to `servoWrite`', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+    const min = 1000;
+    const max = 2000;
+
+    raspi.servoConfig(pinAlias);
+    const { peripheral } = raspi.getInternalPinInstances()[pin];
+
+    raspi.servoWrite(pinAlias, 0);
+    expectToRoughlyEqual(peripheral.dutyCycle, (min / 1000000) * peripheral.frequency);
+
+    raspi.servoWrite(pinAlias, 90);
+    expectToRoughlyEqual(peripheral.dutyCycle, (((max - min) / 2 + min) / 1000000) * peripheral.frequency);
+
+    raspi.servoWrite(pinAlias, 180);
+    expectToRoughlyEqual(peripheral.dutyCycle, (max / 1000000) * peripheral.frequency);
+
+    done();
+  }));
+
   it('can configure the servo for different min and max via `servoConfig` when sending degrees to `servoWrite`', (done) => createInstance((raspi) => {
     const pin = raspi.normalize(pinAlias);
     raspi.pinMode(pinAlias, raspi.MODES.SERVO);
@@ -214,6 +250,4 @@ describe('PWM', () => {
 
     done();
   }));
-
-  // TODO: test writing an invalid value to pwmWrite and servoWrite
 });
