@@ -4,6 +4,8 @@
 
 [![Build Status](https://travis-ci.org/nebrius/raspi-io-core.svg?branch=master)](https://travis-ci.org/nebrius/raspi-io-core)
 
+[![Coverage Status](https://coveralls.io/repos/github/nebrius/raspi-io-core/badge.svg?branch=master)](https://coveralls.io/github/nebrius/raspi-io-core?branch=master)
+
 Raspi IO Core is a Firmata API compatible abstract library for creating [Johnny-Five](http://johnny-five.io/) IO plugins targeting the [Raspberry Pi](http://www.raspberrypi.org/). The API docs for this module can be found on the [Johnny-Five Wiki](https://github.com/rwaldron/io-plugins), except for the constructor which is documented below.
 
 If you have a bug report, feature request, or wish to contribute code, please be sure to check out the [Raspi IO Contributing Guide](https://github.com/nebrius/raspi-io/blob/master/CONTRIBUTING.md).
