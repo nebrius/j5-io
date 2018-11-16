@@ -130,6 +130,20 @@ describe('GPIO', () => {
     });
   }));
 
+  it('only notifies the callback when the value has changed', (done) => createInstance((raspi) => {
+    const pin = raspi.normalize(pinAlias);
+    raspi.pinMode(pinAlias, raspi.MODES.INPUT);
+    const { peripheral } = raspi.getInternalPinInstances()[pin];
+
+    let previouslyReadValue = NaN;
+    peripheral.setMockedValue(0);
+    raspi.digitalRead(pinAlias, (newValue) => {
+      expect(newValue).not.toEqual(previouslyReadValue);
+      previouslyReadValue = newValue;
+    });
+    setTimeout(done, 100);
+  }));
+
   it('can read from a pin in a different mode using the `digitalRead` method', (done) => createInstance((raspi) => {
     const pin = raspi.normalize(pinAlias);
     raspi.pinMode(pinAlias, raspi.MODES.OUTPUT);
