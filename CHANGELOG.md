@@ -8,6 +8,7 @@
 - Added better error checking so that all serial* calls throw a readable error when `portId` is not included
 - Fixed a theoretical bug where i2cRead continues to read after the peripheral is destroyed, which never happens in practice except in unit tests.
 - POTENTIALLY BREAKING: Specifying both `includePins` and `excludePins` at the same time now throws synchronously from the constructor
+- POTENTIALLY BREAKING: The `name` property of this module now returns `"Raspi IO"` instead of `"RasperryPi-IO"` to conform with naming conventions elsewhere
 
 ## 2.1.0 (2018-04-02)
 

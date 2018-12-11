@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014 Bryan Hughes <bryan@nebri.us>
+Copyright (c) Bryan Hughes <bryan@nebri.us>
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -182,7 +182,7 @@ export class RaspiIOCore extends EventEmitter {
 
       name: {
         enumerable: true,
-        value: 'RaspberryPi-IO'
+        value: 'Raspi IO'
       },
 
       [instances]: {
