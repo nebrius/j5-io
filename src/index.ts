@@ -23,18 +23,20 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import { EventEmitter } from 'events';
+import {
+  IBaseModule,
+  IBoardModule,
+  IGPIOModule,
+  ILEDModule,
+  IPWMModule,
+  ISerialModule,
+  II2CModule
+} from 'core-io-types';
+import { AbstractIO, Value, Mode } from 'abstract-io';
+
+import { GPIOManager } from './managers/gpio';
 
 // Constants
-const INPUT_MODE = 0;
-const OUTPUT_MODE = 1;
-const ANALOG_MODE = 2;
-const PWM_MODE = 3;
-const SERVO_MODE = 4;
-const UNKNOWN_MODE = 99;
-
-const LOW = 0;
-const HIGH = 1;
 
 const LED_PIN = -1;
 
@@ -47,6 +49,9 @@ const DEFAULT_SERVO_MAX = 2000;
 const DIGITAL_READ_UPDATE_RATE = 18;
 
 // Private symbols
+const gpioManager = Symbol('gpioManager');
+
+// Old Private symbols
 const isReady = Symbol('isReady');
 const pins = Symbol('pins');
 const instances = Symbol('instances');
@@ -80,110 +85,63 @@ const SERIAL_ACTION_CONFIG = 'SERIAL_ACTION_CONFIG';
 const SERIAL_ACTION_READ = 'SERIAL_ACTION_READ';
 const SERIAL_ACTION_STOP = 'SERIAL_ACTION_STOP';
 
-function bufferToArray(buffer) {
-  const array = Array(buffer.length);
-  for (let i = 0; i < buffer.length; i++) {
-    array[i] = buffer[i];
-  }
-  return array;
-}
-
-function constrain(value, min, max) {
+function constrain(value: number, min: number, max: number): number {
   return value > max ? max : value < min ? min : value;
 }
 
-export class RaspiIOCore extends EventEmitter {
+export interface IOptions {
+  includePins?: Array<number | string>;
+  excludePins?: Array<number | string>;
+  pinPeripherals?: Array<{ pin: number | string, peripherals: string[] }> //TODO: rename?
+  platform: {
+    base: IBaseModule,
+    board: IBoardModule,
+    gpio: IGPIOModule,
+    pwm: IPWMModule,
+    led?: ILEDModule,
+    serial?: ISerialModule,
+    i2c?: II2CModule
+  }
+}
 
-  constructor(options) {
+export class CoreIO extends AbstractIO {
+
+  private [gpioManager]: GPIOManager;
+
+  public readonly defaultLed = LED_PIN;
+  public readonly name = 'Raspi IO';
+
+  constructor(options: IOptions) {
     super();
 
     if (typeof options !== 'object') {
       throw new Error('An options object is required');
     }
-    const { includePins, excludePins, enableSerial, enableSoftPwm = false, platform } = options;
+    const { includePins, excludePins, pinPeripherals, platform } = options;
 
-    if (!platform) {
-      throw new Error('"platform" option is required');
+    if (!platform || typeof platform !== 'object') {
+      throw new Error('"platform" option is required and must be an object');
     }
-    if (!platform['raspi']) {
-      throw new Error('"raspi" module is missing from "platform" option');
+    if (!platform.base) {
+      throw new Error('"base" module is missing from "platform" option');
     }
-    if (!platform['raspi-board']) {
-      throw new Error('"raspi-board" module is missing from "platform" option');
+    if (!platform.board) {
+      throw new Error('"board" module is missing from "platform" option');
     }
-    if (!platform['raspi-gpio']) {
-      throw new Error('"raspi-gpio" module is missing from "platform" option');
+    if (!platform.gpio) {
+      throw new Error('"gpio" module is missing from "platform" option');
     }
-    if (!platform['raspi-i2c']) {
-      throw new Error('"raspi-i2c" module is missing from "platform" option');
-    }
-    if (!platform['raspi-led']) {
-      throw new Error('"raspi-led" module is missing from "platform" option');
-    }
-    if (!platform['raspi-pwm']) {
-      throw new Error('"raspi-pwm" module is missing from "platform" option');
-    }
-    if (enableSerial && !platform['raspi-serial']) {
-      throw new Error('"enableSerial" is true and "raspi-serial" module is missing from "platform" option');
-    }
-    if (enableSoftPwm && !platform['raspi-soft-pwm']) {
-      throw new Error('"enableSoftPwm" is true and "raspi-soft-pwm" module is missing from "platform" option');
+    if (!platform.pwm) {
+      throw new Error('"pwm" module is missing from "platform" option');
     }
 
     if (includePins && excludePins) {
       throw new Error('"includePins" and "excludePins" cannot be specified at the same time');
     }
 
-    Object.defineProperties(this, {
-
-      [raspiModule]: {
-        writable: true,
-        value: platform['raspi']
-      },
-
-      [raspiBoardModule]: {
-        writable: true,
-        value: platform['raspi-board']
-      },
-
-      [raspiGpioModule]: {
-        writable: true,
-        value: platform['raspi-gpio']
-      },
-
-      [raspiI2cModule]: {
-        writable: true,
-        value: platform['raspi-i2c']
-      },
-
-      [raspiLedModule]: {
-        writable: true,
-        value: platform['raspi-led']
-      },
-
-      [raspiPwmModule]: {
-        writable: true,
-        value: platform['raspi-pwm']
-      },
-
-      [raspiSerialModule]: {
-        writable: true,
-        value: platform['raspi-serial']
-      },
-
-      [raspiSoftPwmModule]: {
-        writable: true,
-        value: platform['raspi-soft-pwm']
-      }
-
-    });
+    this[gpioManager] = new GPIOManager(platform.gpio);
 
     Object.defineProperties(this, {
-
-      name: {
-        enumerable: true,
-        value: 'Raspi IO'
-      },
 
       [instances]: {
         writable: true,
@@ -246,31 +204,6 @@ export class RaspiIOCore extends EventEmitter {
         writable: true,
         value: false
       },
-
-      MODES: {
-        enumerable: true,
-        value: Object.freeze({
-          INPUT: INPUT_MODE,
-          OUTPUT: OUTPUT_MODE,
-          ANALOG: ANALOG_MODE,
-          PWM: PWM_MODE,
-          SERVO: SERVO_MODE
-        })
-      },
-
-      HIGH: {
-        enumerable: true,
-        value: HIGH
-      },
-      LOW: {
-        enumerable: true,
-        value: LOW
-      },
-
-      defaultLed: {
-        enumerable: true,
-        value: LED_PIN
-      }
     });
 
     if (enableSerial) {
@@ -587,19 +520,8 @@ export class RaspiIOCore extends EventEmitter {
     });
   }
 
-  digitalWrite(pin, value) {
-    const pinInstance = this[getPinInstance](this.normalize(pin));
-    if (pinInstance.mode === INPUT_MODE && value === HIGH) {
-      this[pinMode]({ pin, mode: INPUT_MODE, pullResistor: this[raspiGpioModule].PULL_UP });
-    } else if (pinInstance.mode === INPUT_MODE && value === LOW) {
-      this[pinMode]({ pin, mode: INPUT_MODE, pullResistor: this[raspiGpioModule].PULL_DOWN });
-    } else if (pinInstance.mode != OUTPUT_MODE) {
-      this[pinMode]({ pin, mode: OUTPUT_MODE });
-    }
-    if (pinInstance.mode === OUTPUT_MODE && value != pinInstance.previousWrittenValue) {
-      pinInstance.peripheral.write(value ? HIGH : LOW);
-      pinInstance.previousWrittenValue = value;
-    }
+  public digitalWrite(pin: string | number, value: number): void {
+    this[gpioManager].digitalWrite(this.normalize(pin), value);
   }
 
   servoConfig(pin, min, max) {
@@ -959,65 +881,5 @@ export class RaspiIOCore extends EventEmitter {
       default:
         throw new Error('Internal error: unknown serial action type');
     }
-  }
-
-  sendOneWireConfig() {
-    throw new Error('sendOneWireConfig is not supported on the Raspberry Pi');
-  }
-
-  sendOneWireSearch() {
-    throw new Error('sendOneWireSearch is not supported on the Raspberry Pi');
-  }
-
-  sendOneWireAlarmsSearch() {
-    throw new Error('sendOneWireAlarmsSearch is not supported on the Raspberry Pi');
-  }
-
-  sendOneWireRead() {
-    throw new Error('sendOneWireRead is not supported on the Raspberry Pi');
-  }
-
-  sendOneWireReset() {
-    throw new Error('sendOneWireReset is not supported on the Raspberry Pi');
-  }
-
-  sendOneWireWrite() {
-    throw new Error('sendOneWireWrite is not supported on the Raspberry Pi');
-  }
-
-  sendOneWireDelay() {
-    throw new Error('sendOneWireDelay is not supported on the Raspberry Pi');
-  }
-
-  sendOneWireWriteAndRead() {
-    throw new Error('sendOneWireWriteAndRead is not supported on the Raspberry Pi');
-  }
-
-  setSamplingInterval() {
-    throw new Error('setSamplingInterval is not yet implemented');
-  }
-
-  reportAnalogPin() {
-    throw new Error('reportAnalogPin is not yet implemented');
-  }
-
-  reportDigitalPin() {
-    throw new Error('reportDigitalPin is not yet implemented');
-  }
-
-  pingRead() {
-    throw new Error('pingRead is not yet implemented');
-  }
-
-  pulseIn() {
-    throw new Error('pulseIn is not yet implemented');
-  }
-
-  stepperConfig() {
-    throw new Error('stepperConfig is not yet implemented');
-  }
-
-  stepperStep() {
-    throw new Error('stepperStep is not yet implemented');
   }
 }
