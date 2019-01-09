@@ -24,19 +24,42 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 import { Mode } from 'abstract-io';
+import { IPeripheral, IBaseModule } from 'core-io-types';
 
-const modes: Mode[] = [];
+let baseModule: IBaseModule | null = null;
 
-export function getMode(pin: number): Mode | undefined {
-  return modes[pin];
+const modeMapping = new WeakMap<IPeripheral, Mode>();
+
+export function setBaseModule(module: IBaseModule): void {
+  baseModule = module;
 }
 
-export function setMode(pin: number, mode: Mode): void {
-  // TODO: query whether or not this pin supports this mode
-  modes[pin] = mode;
+export function getPeripheral(pin: number): IPeripheral | undefined {
+  if (!baseModule) {
+    throw new Error(`Internal Error: "getPeripheral" method called without base module being set`);
+  }
+  return baseModule.getActivePeripheral(pin);
+}
+
+export function getMode(peripheral: IPeripheral): Mode {
+  const mode = modeMapping.get(peripheral);
+  if (!mode) {
+    throw new Error(`Internal Error: tried to get the mode for an unknown peripheral`);
+  }
+  return mode;
+}
+
+export function setMode(peripheral: IPeripheral, mode: Mode): void {
+  modeMapping.set(peripheral, mode);
 }
 
 export function normalizePin(pin: string | number): number {
-  // TODO
-  return 0;
+  if (!baseModule) {
+    throw new Error(`Internal Error: "normalizePin" method called without base module being set`);
+  }
+  const normalizedPin = baseModule.getPinNumber(pin);
+  if (typeof normalizedPin !== 'number') {
+    throw new Error(`Unknown pin "${pin}"`);
+  }
+  return normalizedPin;
 }

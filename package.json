@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@types/node": "^10.12.12",
-    "core-io-types": "^1.2.0",
+    "core-io-types": "^2.0.0",
     "coveralls": "^3.0.2",
     "cross-env": "^5.2.0",
     "istanbul": "^0.4.5",

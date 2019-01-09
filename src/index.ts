@@ -25,7 +25,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 import {
   IBaseModule,
-  IBoardModule,
   IGPIOModule,
   ILEDModule,
   IPWMModule,
@@ -34,6 +33,7 @@ import {
 } from 'core-io-types';
 import { AbstractIO, Value, Mode } from 'abstract-io';
 
+import { setBaseModule, normalizePin } from './core';
 import { GPIOManager } from './managers/gpio';
 
 // Constants
@@ -46,7 +46,6 @@ const SOFTWARE_PWM_FREQUENCY = 50;
 // Settings
 const DEFAULT_SERVO_MIN = 1000;
 const DEFAULT_SERVO_MAX = 2000;
-const DIGITAL_READ_UPDATE_RATE = 18;
 
 // Private symbols
 const gpioManager = Symbol('gpioManager');
@@ -92,10 +91,9 @@ function constrain(value: number, min: number, max: number): number {
 export interface IOptions {
   includePins?: Array<number | string>;
   excludePins?: Array<number | string>;
-  pinPeripherals?: Array<{ pin: number | string, peripherals: string[] }> //TODO: rename?
+  // TODO: add peripheral map here
   platform: {
     base: IBaseModule,
-    board: IBoardModule,
     gpio: IGPIOModule,
     pwm: IPWMModule,
     led?: ILEDModule,
@@ -117,16 +115,13 @@ export class CoreIO extends AbstractIO {
     if (typeof options !== 'object') {
       throw new Error('An options object is required');
     }
-    const { includePins, excludePins, pinPeripherals, platform } = options;
+    const { includePins, excludePins, platform } = options;
 
     if (!platform || typeof platform !== 'object') {
       throw new Error('"platform" option is required and must be an object');
     }
     if (!platform.base) {
       throw new Error('"base" module is missing from "platform" option');
-    }
-    if (!platform.board) {
-      throw new Error('"board" module is missing from "platform" option');
     }
     if (!platform.gpio) {
       throw new Error('"gpio" module is missing from "platform" option');
@@ -139,7 +134,8 @@ export class CoreIO extends AbstractIO {
       throw new Error('"includePins" and "excludePins" cannot be specified at the same time');
     }
 
-    this[gpioManager] = new GPIOManager(platform.gpio);
+    setBaseModule(platform.base);
+    this[gpioManager] = new GPIOManager(platform.gpio, this);
 
     Object.defineProperties(this, {
 
@@ -400,16 +396,12 @@ export class CoreIO extends AbstractIO {
     });
   }
 
-  reset() {
-    throw new Error('reset is not supported on the Raspberry Pi');
+  public normalize(pin: number | string): number {
+    return normalizePin(pin);
   }
 
-  normalize(pin) {
-    const normalizedPin = this[raspiBoardModule].getPinNumber(pin);
-    if (typeof normalizedPin !== 'number') {
-      throw new Error(`Unknown pin "${pin}"`);
-    }
-    return normalizedPin;
+  pinMode(pin, mode) {
+    this[pinMode]({ pin, mode });
   }
 
   [getPinInstance](pin) {
@@ -418,10 +410,6 @@ export class CoreIO extends AbstractIO {
       throw new Error(`Unknown pin "${pin}"`);
     }
     return pinInstance;
-  }
-
-  pinMode(pin, mode) {
-    this[pinMode]({ pin, mode });
   }
 
   [pinMode]({ pin, mode, pullResistor = this[raspiGpioModule].PULL_NONE }) {
@@ -478,408 +466,391 @@ export class CoreIO extends AbstractIO {
     pinInstance.mode = mode;
   }
 
-  analogRead() {
-    throw new Error('analogRead is not supported on the Raspberry Pi');
-  }
+  // GPIO methods
 
-  analogWrite(pin, value) {
-    this.pwmWrite(pin, value);
-  }
-
-  pwmWrite(pin, value) {
-    const pinInstance = this[getPinInstance](this.normalize(pin));
-    if (pinInstance.mode != PWM_MODE) {
-      this.pinMode(pin, PWM_MODE);
-    }
-    // TODO: need to constrain value to be between 0 and 255
-    pinInstance.peripheral.write(value / 255);
-  }
-
-  digitalRead(pin, handler) {
-    const pinInstance = this[getPinInstance](this.normalize(pin));
-    if (pinInstance.mode != INPUT_MODE) {
-      this.pinMode(pin, INPUT_MODE);
-    }
-    const interval = setInterval(() => {
-      let value;
-      if (pinInstance.mode == INPUT_MODE) {
-        value = pinInstance.peripheral.read();
-      } else {
-        value = pinInstance.previousWrittenValue;
-      }
-      if (value !== pinInstance.previousReadValue) {
-        pinInstance.previousReadValue = value;
-        if (handler) {
-          handler(value);
-        }
-        this.emit(`digital-read-${pin}`, value);
-      }
-    }, DIGITAL_READ_UPDATE_RATE);
-    pinInstance.peripheral.on('destroyed', () => {
-      clearInterval(interval);
-    });
+  public digitalRead(pin: string | number, handler: (value: Value) => void): void {
+    this[gpioManager].digitalRead(this.normalize(pin), handler);
   }
 
   public digitalWrite(pin: string | number, value: number): void {
     this[gpioManager].digitalWrite(this.normalize(pin), value);
   }
 
-  servoConfig(pin, min, max) {
-    let config = pin;
-    if (typeof config !== 'object') {
-      config = { pin, min, max };
-    }
-    if (typeof config.min !== 'number') {
-      config.min = DEFAULT_SERVO_MIN;
-    }
-    if (typeof config.max !== 'number') {
-      config.max = DEFAULT_SERVO_MAX;
-    }
-    const normalizedPin = this.normalize(pin);
-    let pinInstance = this[getPinInstance](this.normalize(normalizedPin));
-    if (pinInstance.mode != SERVO_MODE) {
-      this.pinMode(pin, SERVO_MODE);
-      pinInstance = this[getPinInstance](this.normalize(normalizedPin));
-    }
-    pinInstance.min = config.min;
-    pinInstance.max = config.max;
-  }
+  // Methods that need converting
 
-  servoWrite(pin, value) {
-    const pinInstance = this[getPinInstance](this.normalize(pin));
-    if (pinInstance.mode != SERVO_MODE) {
-      this.pinMode(pin, SERVO_MODE);
-    }
-    const period = 1000000 / pinInstance.peripheral.frequency; // in us
-    var pulseWidth;
-    if (value < 544) {
-      pulseWidth = pinInstance.min + constrain(value, 0, 180) / 180 * (pinInstance.max - pinInstance.min);
-    } else {
-      pulseWidth = constrain(value, pinInstance.min, pinInstance.max);
-    }
-    pinInstance.peripheral.write(pulseWidth / period);
-  }
+  // analogRead() {
+  //   throw new Error('analogRead is not supported on the Raspberry Pi');
+  // }
 
-  queryCapabilities(cb) {
-    if (this.isReady) {
-      process.nextTick(cb);
-    } else {
-      this.on('ready', cb);
-    }
-  }
+  // analogWrite(pin, value) {
+  //   this.pwmWrite(pin, value);
+  // }
 
-  queryAnalogMapping(cb) {
-    if (this.isReady) {
-      process.nextTick(cb);
-    } else {
-      this.on('ready', cb);
-    }
-  }
+  // pwmWrite(pin, value) {
+  //   const pinInstance = this[getPinInstance](this.normalize(pin));
+  //   if (pinInstance.mode != PWM_MODE) {
+  //     this.pinMode(pin, PWM_MODE);
+  //   }
+  //   // TODO: need to constrain value to be between 0 and 255
+  //   pinInstance.peripheral.write(value / 255);
+  // }
 
-  queryPinState(pin, cb) {
-    if (this.isReady) {
-      process.nextTick(cb);
-    } else {
-      this.on('ready', cb);
-    }
-  }
+  // servoConfig(pin, min, max) {
+  //   let config = pin;
+  //   if (typeof config !== 'object') {
+  //     config = { pin, min, max };
+  //   }
+  //   if (typeof config.min !== 'number') {
+  //     config.min = DEFAULT_SERVO_MIN;
+  //   }
+  //   if (typeof config.max !== 'number') {
+  //     config.max = DEFAULT_SERVO_MAX;
+  //   }
+  //   const normalizedPin = this.normalize(pin);
+  //   let pinInstance = this[getPinInstance](this.normalize(normalizedPin));
+  //   if (pinInstance.mode != SERVO_MODE) {
+  //     this.pinMode(pin, SERVO_MODE);
+  //     pinInstance = this[getPinInstance](this.normalize(normalizedPin));
+  //   }
+  //   pinInstance.min = config.min;
+  //   pinInstance.max = config.max;
+  // }
 
-  [i2cCheckAlive]() {
-    if (!this[i2c].alive) {
-      throw new Error('I2C pins not in I2C mode');
-    }
-  }
+  // servoWrite(pin, value) {
+  //   const pinInstance = this[getPinInstance](this.normalize(pin));
+  //   if (pinInstance.mode != SERVO_MODE) {
+  //     this.pinMode(pin, SERVO_MODE);
+  //   }
+  //   const period = 1000000 / pinInstance.peripheral.frequency; // in us
+  //   var pulseWidth;
+  //   if (value < 544) {
+  //     pulseWidth = pinInstance.min + constrain(value, 0, 180) / 180 * (pinInstance.max - pinInstance.min);
+  //   } else {
+  //     pulseWidth = constrain(value, pinInstance.min, pinInstance.max);
+  //   }
+  //   pinInstance.peripheral.write(pulseWidth / period);
+  // }
 
-  i2cConfig(options) {
-    let delay;
+  // queryCapabilities(cb) {
+  //   if (this.isReady) {
+  //     process.nextTick(cb);
+  //   } else {
+  //     this.on('ready', cb);
+  //   }
+  // }
 
-    if (typeof options === 'number') {
-      delay = options;
-    } else {
-      if (typeof options === 'object' && options !== null) {
-        delay = options.delay;
-      }
-    }
+  // queryAnalogMapping(cb) {
+  //   if (this.isReady) {
+  //     process.nextTick(cb);
+  //   } else {
+  //     this.on('ready', cb);
+  //   }
+  // }
 
-    this[i2cCheckAlive]();
+  // queryPinState(pin, cb) {
+  //   if (this.isReady) {
+  //     process.nextTick(cb);
+  //   } else {
+  //     this.on('ready', cb);
+  //   }
+  // }
 
-    this[i2cDelay] = Math.round((delay || 0) / 1000);
+  // [i2cCheckAlive]() {
+  //   if (!this[i2c].alive) {
+  //     throw new Error('I2C pins not in I2C mode');
+  //   }
+  // }
 
-    return this;
-  }
+  // i2cConfig(options) {
+  //   let delay;
 
-  i2cWrite(address, cmdRegOrData, inBytes) {
-    this[i2cCheckAlive]();
+  //   if (typeof options === 'number') {
+  //     delay = options;
+  //   } else {
+  //     if (typeof options === 'object' && options !== null) {
+  //       delay = options.delay;
+  //     }
+  //   }
 
-    // If i2cWrite was used for an i2cWriteReg call...
-    if (arguments.length === 3 &&
-        !Array.isArray(cmdRegOrData) &&
-        !Array.isArray(inBytes)) {
-      return this.i2cWriteReg(address, cmdRegOrData, inBytes);
-    }
+  //   this[i2cCheckAlive]();
 
-    // Fix arguments if called with Firmata.js API
-    if (arguments.length === 2) {
-      if (Array.isArray(cmdRegOrData)) {
-        inBytes = cmdRegOrData.slice();
-        cmdRegOrData = inBytes.shift();
-      } else {
-        inBytes = [];
-      }
-    }
+  //   this[i2cDelay] = Math.round((delay || 0) / 1000);
 
-    const buffer = new Buffer([cmdRegOrData].concat(inBytes));
+  //   return this;
+  // }
 
-    // Only write if bytes provided
-    if (buffer.length) {
-      this[i2c].writeSync(address, buffer);
-    }
+  // i2cWrite(address, cmdRegOrData, inBytes) {
+  //   this[i2cCheckAlive]();
 
-    return this;
-  }
+  //   // If i2cWrite was used for an i2cWriteReg call...
+  //   if (arguments.length === 3 &&
+  //       !Array.isArray(cmdRegOrData) &&
+  //       !Array.isArray(inBytes)) {
+  //     return this.i2cWriteReg(address, cmdRegOrData, inBytes);
+  //   }
 
-  i2cWriteReg(address, register, value) {
-    this[i2cCheckAlive]();
+  //   // Fix arguments if called with Firmata.js API
+  //   if (arguments.length === 2) {
+  //     if (Array.isArray(cmdRegOrData)) {
+  //       inBytes = cmdRegOrData.slice();
+  //       cmdRegOrData = inBytes.shift();
+  //     } else {
+  //       inBytes = [];
+  //     }
+  //   }
 
-    this[i2c].writeByteSync(address, register, value);
+  //   const buffer = new Buffer([cmdRegOrData].concat(inBytes));
 
-    return this;
-  }
+  //   // Only write if bytes provided
+  //   if (buffer.length) {
+  //     this[i2c].writeSync(address, buffer);
+  //   }
 
-  [i2cRead](continuous, address, register, bytesToRead, callback) {
-    this[i2cCheckAlive]();
+  //   return this;
+  // }
 
-    // Fix arguments if called with Firmata.js API
-    if (arguments.length == 4 &&
-      typeof register == 'number' &&
-      typeof bytesToRead == 'function'
-    ) {
-      callback = bytesToRead;
-      bytesToRead = register;
-      register = null;
-    }
+  // i2cWriteReg(address, register, value) {
+  //   this[i2cCheckAlive]();
 
-    callback = typeof callback === 'function' ? callback : () => {};
+  //   this[i2c].writeByteSync(address, register, value);
 
-    let event = `i2c-reply-${address}-`;
-    event += register !== null ? register : 0;
+  //   return this;
+  // }
 
-    const read = () => {
-      const afterRead = (err, buffer) => {
-        if (err) {
-          return this.emit('error', err);
-        }
+  // [i2cRead](continuous, address, register, bytesToRead, callback) {
+  //   this[i2cCheckAlive]();
 
-        // Convert buffer to Array before emit
-        this.emit(event, Array.prototype.slice.call(buffer));
+  //   // Fix arguments if called with Firmata.js API
+  //   if (arguments.length == 4 &&
+  //     typeof register == 'number' &&
+  //     typeof bytesToRead == 'function'
+  //   ) {
+  //     callback = bytesToRead;
+  //     bytesToRead = register;
+  //     register = null;
+  //   }
 
-        if (continuous && this[i2c].alive) {
-          setTimeout(read, this[i2cDelay]);
-        }
-      };
+  //   callback = typeof callback === 'function' ? callback : () => {};
 
-      this.once(event, callback);
+  //   let event = `i2c-reply-${address}-`;
+  //   event += register !== null ? register : 0;
 
-      if (register !== null) {
-        this[i2c].read(address, register, bytesToRead, afterRead);
-      } else {
-        this[i2c].read(address, bytesToRead, afterRead);
-      }
-    };
+  //   const read = () => {
+  //     const afterRead = (err, buffer) => {
+  //       if (err) {
+  //         return this.emit('error', err);
+  //       }
 
-    setTimeout(read, this[i2cDelay]);
+  //       // Convert buffer to Array before emit
+  //       this.emit(event, Array.prototype.slice.call(buffer));
 
-    return this;
-  }
+  //       if (continuous && this[i2c].alive) {
+  //         setTimeout(read, this[i2cDelay]);
+  //       }
+  //     };
 
-  i2cRead(...rest) {
-    return this[i2cRead](true, ...rest);
-  }
+  //     this.once(event, callback);
 
-  i2cReadOnce(...rest) {
-    return this[i2cRead](false, ...rest);
-  }
+  //     if (register !== null) {
+  //       this[i2c].read(address, register, bytesToRead, afterRead);
+  //     } else {
+  //       this[i2c].read(address, bytesToRead, afterRead);
+  //     }
+  //   };
 
-  sendI2CConfig(...rest) {
-    return this.i2cConfig(...rest);
-  }
+  //   setTimeout(read, this[i2cDelay]);
 
-  sendI2CWriteRequest(...rest) {
-    return this.i2cWrite(...rest);
-  }
+  //   return this;
+  // }
 
-  sendI2CReadRequest(...rest) {
-    return this.i2cReadOnce(...rest);
-  }
+  // i2cRead(...rest) {
+  //   return this[i2cRead](true, ...rest);
+  // }
 
-  // TODO: print a warning or throw an error (?) when rxPin or txPin are specified
-  serialConfig({ portId, baud }) {
-    if (!this[raspiSerialModule]) {
-      throw new Error('Serial support is disabled');
-    }
-    if (!portId) {
-      throw new Error('"portId" parameter missing in options');
-    }
-    if (!this[isSerialOpen] || (baud && baud !== this[serial].baudRate)) {
-      this[addToSerialQueue]({
-        type: SERIAL_ACTION_CONFIG,
-        portId,
-        baud
-      });
-    }
-  }
+  // i2cReadOnce(...rest) {
+  //   return this[i2cRead](false, ...rest);
+  // }
 
-  serialWrite(portId, inBytes) {
-    if (!this[raspiSerialModule]) {
-      throw new Error('Serial support is disabled');
-    }
-    if (!portId) {
-      throw new Error('"portId" argument missing');
-    }
-    this[addToSerialQueue]({
-      type: SERIAL_ACTION_WRITE,
-      portId,
-      inBytes
-    });
-  }
+  // sendI2CConfig(...rest) {
+  //   return this.i2cConfig(...rest);
+  // }
 
-  serialRead(portId, maxBytesToRead, handler) {
-    if (!this[raspiSerialModule]) {
-      throw new Error('Serial support is disabled');
-    }
-    if (!portId) {
-      throw new Error('"portId" argument missing');
-    }
-    if (typeof maxBytesToRead === 'function') {
-      handler = maxBytesToRead;
-      maxBytesToRead = undefined;
-    }
-    this[addToSerialQueue]({
-      type: SERIAL_ACTION_READ,
-      portId,
-      maxBytesToRead,
-      handler
-    });
-  }
+  // sendI2CWriteRequest(...rest) {
+  //   return this.i2cWrite(...rest);
+  // }
 
-  serialStop(portId) {
-    if (!this[raspiSerialModule]) {
-      throw new Error('Serial support is disabled');
-    }
-    if (!portId) {
-      throw new Error('"portId" argument missing');
-    }
-    this[addToSerialQueue]({
-      type: SERIAL_ACTION_STOP,
-      portId
-    });
-  }
+  // sendI2CReadRequest(...rest) {
+  //   return this.i2cReadOnce(...rest);
+  // }
 
-  serialClose(portId) {
-    if (!this[raspiSerialModule]) {
-      throw new Error('Serial support is disabled');
-    }
-    if (!portId) {
-      throw new Error('"portId" argument missing');
-    }
-    this[addToSerialQueue]({
-      type: SERIAL_ACTION_CLOSE,
-      portId
-    });
-  }
+  // // TODO: print a warning or throw an error (?) when rxPin or txPin are specified
+  // serialConfig({ portId, baud }) {
+  //   if (!this[raspiSerialModule]) {
+  //     throw new Error('Serial support is disabled');
+  //   }
+  //   if (!portId) {
+  //     throw new Error('"portId" parameter missing in options');
+  //   }
+  //   if (!this[isSerialOpen] || (baud && baud !== this[serial].baudRate)) {
+  //     this[addToSerialQueue]({
+  //       type: SERIAL_ACTION_CONFIG,
+  //       portId,
+  //       baud
+  //     });
+  //   }
+  // }
 
-  serialFlush(portId) {
-    if (!this[raspiSerialModule]) {
-      throw new Error('Serial support is disabled');
-    }
-    if (!portId) {
-      throw new Error('"portId" argument missing');
-    }
-    this[addToSerialQueue]({
-      type: SERIAL_ACTION_FLUSH,
-      portId
-    });
-  }
+  // serialWrite(portId, inBytes) {
+  //   if (!this[raspiSerialModule]) {
+  //     throw new Error('Serial support is disabled');
+  //   }
+  //   if (!portId) {
+  //     throw new Error('"portId" argument missing');
+  //   }
+  //   this[addToSerialQueue]({
+  //     type: SERIAL_ACTION_WRITE,
+  //     portId,
+  //     inBytes
+  //   });
+  // }
 
-  [addToSerialQueue](action) {
-    if (action.portId !== this[raspiSerialModule].DEFAULT_PORT) {
-      throw new Error(`Invalid serial port "${action.portId}"`);
-    }
-    this[serialQueue].push(action);
-    this[serialPump]();
-  }
+  // serialRead(portId, maxBytesToRead, handler) {
+  //   if (!this[raspiSerialModule]) {
+  //     throw new Error('Serial support is disabled');
+  //   }
+  //   if (!portId) {
+  //     throw new Error('"portId" argument missing');
+  //   }
+  //   if (typeof maxBytesToRead === 'function') {
+  //     handler = maxBytesToRead;
+  //     maxBytesToRead = undefined;
+  //   }
+  //   this[addToSerialQueue]({
+  //     type: SERIAL_ACTION_READ,
+  //     portId,
+  //     maxBytesToRead,
+  //     handler
+  //   });
+  // }
 
-  [serialPump]() {
-    if (this[isSerialProcessing] || !this[serialQueue].length) {
-      return;
-    }
-    this[isSerialProcessing] = true;
-    const action = this[serialQueue].shift();
-    const finalize = () => {
-      this[isSerialProcessing] = false;
-      this[serialPump]();
-    };
-    switch (action.type) {
-      case SERIAL_ACTION_WRITE:
-        if (!this[isSerialOpen]) {
-          throw new Error('Cannot write to closed serial port');
-        }
-        this[serial].write(action.inBytes, finalize);
-        break;
+  // serialStop(portId) {
+  //   if (!this[raspiSerialModule]) {
+  //     throw new Error('Serial support is disabled');
+  //   }
+  //   if (!portId) {
+  //     throw new Error('"portId" argument missing');
+  //   }
+  //   this[addToSerialQueue]({
+  //     type: SERIAL_ACTION_STOP,
+  //     portId
+  //   });
+  // }
 
-      case SERIAL_ACTION_READ:
-        if (!this[isSerialOpen]) {
-          throw new Error('Cannot read from closed serial port');
-        }
-        // TODO: add support for action.maxBytesToRead
-        this[serial].on('data', (data) => {
-          action.handler(bufferToArray(data));
-        });
-        process.nextTick(finalize);
-        break;
+  // serialClose(portId) {
+  //   if (!this[raspiSerialModule]) {
+  //     throw new Error('Serial support is disabled');
+  //   }
+  //   if (!portId) {
+  //     throw new Error('"portId" argument missing');
+  //   }
+  //   this[addToSerialQueue]({
+  //     type: SERIAL_ACTION_CLOSE,
+  //     portId
+  //   });
+  // }
 
-      case SERIAL_ACTION_STOP:
-        if (!this[isSerialOpen]) {
-          throw new Error('Cannot stop closed serial port');
-        }
-        this[serial].removeAllListeners();
-        process.nextTick(finalize);
-        break;
+  // serialFlush(portId) {
+  //   if (!this[raspiSerialModule]) {
+  //     throw new Error('Serial support is disabled');
+  //   }
+  //   if (!portId) {
+  //     throw new Error('"portId" argument missing');
+  //   }
+  //   this[addToSerialQueue]({
+  //     type: SERIAL_ACTION_FLUSH,
+  //     portId
+  //   });
+  // }
 
-      case SERIAL_ACTION_CONFIG:
-        this[serial].close(() => {
-          this[serial] = new this[raspiSerialModule].Serial({
-            baudRate: action.baud
-          });
-          if (process.env['RASPI_IO_TEST_MODE']) {
-            this.emit('$TEST_MODE-serial-instance-created', this[serial]);
-          }
-          this[serial].open(() => {
-            this[serial].on('data', (data) => {
-              this.emit(`serial-data-${action.portId}`, bufferToArray(data));
-            });
-            this[isSerialOpen] = true;
-            finalize();
-          });
-        });
-        break;
+  // [addToSerialQueue](action) {
+  //   if (action.portId !== this[raspiSerialModule].DEFAULT_PORT) {
+  //     throw new Error(`Invalid serial port "${action.portId}"`);
+  //   }
+  //   this[serialQueue].push(action);
+  //   this[serialPump]();
+  // }
 
-      case SERIAL_ACTION_CLOSE:
-        this[serial].close(() => {
-          this[isSerialOpen] = false;
-          finalize();
-        });
-        break;
+  // [serialPump]() {
+  //   if (this[isSerialProcessing] || !this[serialQueue].length) {
+  //     return;
+  //   }
+  //   this[isSerialProcessing] = true;
+  //   const action = this[serialQueue].shift();
+  //   const finalize = () => {
+  //     this[isSerialProcessing] = false;
+  //     this[serialPump]();
+  //   };
+  //   switch (action.type) {
+  //     case SERIAL_ACTION_WRITE:
+  //       if (!this[isSerialOpen]) {
+  //         throw new Error('Cannot write to closed serial port');
+  //       }
+  //       this[serial].write(action.inBytes, finalize);
+  //       break;
 
-      case SERIAL_ACTION_FLUSH:
-        if (!this[isSerialOpen]) {
-          throw new Error('Cannot flush closed serial port');
-        }
-        this[serial].flush(finalize);
-        break;
+  //     case SERIAL_ACTION_READ:
+  //       if (!this[isSerialOpen]) {
+  //         throw new Error('Cannot read from closed serial port');
+  //       }
+  //       // TODO: add support for action.maxBytesToRead
+  //       this[serial].on('data', (data) => {
+  //         action.handler(bufferToArray(data));
+  //       });
+  //       process.nextTick(finalize);
+  //       break;
 
-      default:
-        throw new Error('Internal error: unknown serial action type');
-    }
-  }
+  //     case SERIAL_ACTION_STOP:
+  //       if (!this[isSerialOpen]) {
+  //         throw new Error('Cannot stop closed serial port');
+  //       }
+  //       this[serial].removeAllListeners();
+  //       process.nextTick(finalize);
+  //       break;
+
+  //     case SERIAL_ACTION_CONFIG:
+  //       this[serial].close(() => {
+  //         this[serial] = new this[raspiSerialModule].Serial({
+  //           baudRate: action.baud
+  //         });
+  //         if (process.env['RASPI_IO_TEST_MODE']) {
+  //           this.emit('$TEST_MODE-serial-instance-created', this[serial]);
+  //         }
+  //         this[serial].open(() => {
+  //           this[serial].on('data', (data) => {
+  //             this.emit(`serial-data-${action.portId}`, bufferToArray(data));
+  //           });
+  //           this[isSerialOpen] = true;
+  //           finalize();
+  //         });
+  //       });
+  //       break;
+
+  //     case SERIAL_ACTION_CLOSE:
+  //       this[serial].close(() => {
+  //         this[isSerialOpen] = false;
+  //         finalize();
+  //       });
+  //       break;
+
+  //     case SERIAL_ACTION_FLUSH:
+  //       if (!this[isSerialOpen]) {
+  //         throw new Error('Cannot flush closed serial port');
+  //       }
+  //       this[serial].flush(finalize);
+  //       break;
+
+  //     default:
+  //       throw new Error('Internal error: unknown serial action type');
+  //   }
+  // }
 }

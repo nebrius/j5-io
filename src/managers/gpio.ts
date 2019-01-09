@@ -25,36 +25,77 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 import { IGPIOModule, IDigitalInput, IDigitalOutput } from 'core-io-types';
 import { Value, Mode } from 'abstract-io';
-import { getMode, setMode } from '../core';
+import { getMode, setMode, getPeripheral } from '../core';
+import { EventEmitter } from 'events';
+
+const DIGITAL_READ_UPDATE_RATE = 18;
 
 export class GPIOManager {
 
   private module: IGPIOModule;
-  private inputInstances: IDigitalInput[] = [];
-  private outputInstances: IDigitalOutput[] = [];
+  private eventEmitter: EventEmitter;
 
-  constructor(gpioModule: IGPIOModule) {
+  constructor(gpioModule: IGPIOModule, globalEventEmitter: EventEmitter) {
     this.module = gpioModule;
+    this.eventEmitter = globalEventEmitter;
+  }
+
+  public setInputMode(pin: number, pullResistor = this.module.PULL_NONE): void {
+    setMode(this.module.createDigitalInput({ pin, pullResistor }), Mode.INPUT);
+  }
+
+  public setOutputMode(pin: number): void {
+    setMode(this.module.createDigitalOutput(pin), Mode.OUTPUT);
   }
 
   public digitalWrite(pin: number, value: Value): void {
-    if (getMode(pin) === Mode.INPUT) {
-      this.inputInstances[pin] = this.module.createDigitalInput({
-        pin,
-        pullResistor: value
-      });
-      this.inputInstances[pin].on('destroyed', () => delete this.inputInstances[pin]);
-    } else if (getMode(pin) != Mode.OUTPUT) {
-      setMode(pin, Mode.OUTPUT);
-      // So what about the LED module?
-      this.outputInstances[pin] = this.module.createDigitalOutput(pin);
-      this.outputInstances[pin].on('destroyed', () => delete this.inputInstances[pin]);
+    const peripheral = getPeripheral(pin);
+    if (peripheral) {
+      const currentMode = getMode(peripheral);
+
+      // Note: if we are in input mode, digitalWrite sets the pull resistor value
+      // instead of changing to output mode and writing the value.
+      if (currentMode === Mode.INPUT) {
+        if ((peripheral as IDigitalInput).pullResistor !== value) {
+          this.setInputMode(pin, value);
+        }
+        return;
+      } else if (currentMode !== Mode.OUTPUT) {
+        this.setOutputMode(pin);
+      }
     }
-    if (getMode(pin) === Mode.OUTPUT) {
-      this.outputInstances[pin].write(value);
-    }
+
+    // Need to refetch the peripheral in case it was reinstantiated in the above logic
+    (getPeripheral(pin) as IDigitalOutput).write(value);
   }
 
-  public digitalRead(pin: string | number, handler: (value: Value) => void): void {
+  public digitalRead(pin: number, handler: (value: Value) => void): void {
+    let peripheral = getPeripheral(pin);
+    if (!peripheral || getMode(peripheral) !== Mode.INPUT) {
+      this.setInputMode(pin);
+      peripheral = getPeripheral(pin);
+    }
+    if (!peripheral) {
+      throw new Error(`Internal Error: peripheral is undefined even after setting the input mode`);
+    }
+
+    let previousReadValue = -1;
+    const interval = setInterval(() => {
+      if (!peripheral || !peripheral.alive) {
+        throw new Error(`Internal Error: read loop executed without a corresponding peripheral`);
+      }
+      const value = (peripheral as IDigitalInput).read();
+      if (value !== previousReadValue) {
+        previousReadValue = value;
+        if (handler) {
+          handler(value);
+        }
+        this.eventEmitter.emit(`digital-read-${pin}`, value);
+      }
+    }, DIGITAL_READ_UPDATE_RATE);
+
+    peripheral.on('destroyed', () => {
+      clearInterval(interval);
+    });
   }
 }
