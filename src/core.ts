@@ -41,6 +41,13 @@ export function getPeripheral(pin: number): IPeripheral | undefined {
   return baseModule.getActivePeripheral(pin);
 }
 
+export function getPeripherals(): { [ pin: number ]: IPeripheral } {
+  if (!baseModule) {
+    throw new Error(`Internal Error: "getPeripherals" method called without base module being set`);
+  }
+  return baseModule.getActivePeripherals();
+}
+
 export function getMode(peripheral: IPeripheral): Mode {
   const mode = modeMapping.get(peripheral);
   if (!mode) {
@@ -62,4 +69,8 @@ export function normalizePin(pin: string | number): number {
     throw new Error(`Unknown pin "${pin}"`);
   }
   return normalizedPin;
+}
+
+export function constrain(value: number, min: number, max: number): number {
+  return value > max ? max : value < min ? min : value;
 }

@@ -14,7 +14,7 @@
     "robots"
   ],
   "dependencies": {
-    "abstract-io": "^1.0.1"
+    "abstract-io": "^1.1.0"
   },
   "devDependencies": {
     "@types/node": "^10.12.12",

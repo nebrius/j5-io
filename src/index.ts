@@ -29,69 +29,83 @@ import {
   ILEDModule,
   IPWMModule,
   ISerialModule,
-  II2CModule
+  II2CModule,
+  IPeripheral,
+  IDigitalInput,
+  IDigitalOutput
 } from 'core-io-types';
-import { AbstractIO, Value, Mode } from 'abstract-io';
+import { AbstractIO, Value, Mode, IPinConfiguration } from 'abstract-io';
+import { setBaseModule, normalizePin, getPeripherals, getMode, getPeripheral } from './core';
 
-import { setBaseModule, normalizePin } from './core';
 import { GPIOManager } from './managers/gpio';
 
 // Constants
-
 const LED_PIN = -1;
 
-const SOFTWARE_PWM_RANGE = 1000;
-const SOFTWARE_PWM_FREQUENCY = 50;
-
-// Settings
-const DEFAULT_SERVO_MIN = 1000;
-const DEFAULT_SERVO_MAX = 2000;
-
-// Private symbols
-const gpioManager = Symbol('gpioManager');
-
-// Old Private symbols
+// Private symbols for public getters
+const serialPortIds = Symbol('serialPortIds');
+const name = Symbol('name');
 const isReady = Symbol('isReady');
 const pins = Symbol('pins');
-const instances = Symbol('instances');
-const analogPins = Symbol('analogPins');
-const getPinInstance = Symbol('getPinInstance');
-const i2c = Symbol('i2c');
-const i2cDelay = Symbol('i2cDelay');
-const i2cRead = Symbol('i2cRead');
-const i2cCheckAlive = Symbol('i2cCheckAlive');
-const pinMode = Symbol('pinMode');
-const serial = Symbol('serial');
-const serialQueue = Symbol('serialQueue');
-const addToSerialQueue = Symbol('addToSerialQueue');
-const serialPump = Symbol('serialPump');
-const isSerialProcessing = Symbol('isSerialProcessing');
-const isSerialOpen = Symbol('isSerialOpen');
 
-const raspiModule = Symbol('raspiModule');
-const raspiBoardModule = Symbol('raspiBoardModule');
-const raspiGpioModule = Symbol('raspiGpioModule');
-const raspiI2cModule = Symbol('raspiI2cModule');
-const raspiLedModule = Symbol('raspiLedModule');
-const raspiPwmModule = Symbol('raspiPwmModule');
-const raspiSerialModule = Symbol('raspiSerialModule');
-const raspiSoftPwmModule = Symbol('raspiSoftPwmModule');
+// Private symbols for internal properties
+const gpioManager = Symbol('gpioManager');
 
-const SERIAL_ACTION_WRITE = 'SERIAL_ACTION_WRITE';
-const SERIAL_ACTION_CLOSE = 'SERIAL_ACTION_CLOSE';
-const SERIAL_ACTION_FLUSH = 'SERIAL_ACTION_FLUSH';
-const SERIAL_ACTION_CONFIG = 'SERIAL_ACTION_CONFIG';
-const SERIAL_ACTION_READ = 'SERIAL_ACTION_READ';
-const SERIAL_ACTION_STOP = 'SERIAL_ACTION_STOP';
+// Old Constants
+// const SOFTWARE_PWM_RANGE = 1000;
+// const SOFTWARE_PWM_FREQUENCY = 50;
 
-function constrain(value: number, min: number, max: number): number {
-  return value > max ? max : value < min ? min : value;
+// Old Settings
+// const DEFAULT_SERVO_MIN = 1000;
+// const DEFAULT_SERVO_MAX = 2000;
+
+// Old Private symbols
+// const instances = Symbol('instances');
+// const analogPins = Symbol('analogPins');
+// const getPinInstance = Symbol('getPinInstance');
+// const i2c = Symbol('i2c');
+// const i2cDelay = Symbol('i2cDelay');
+// const i2cRead = Symbol('i2cRead');
+// const i2cCheckAlive = Symbol('i2cCheckAlive');
+// const pinMode = Symbol('pinMode');
+// const serial = Symbol('serial');
+// const serialQueue = Symbol('serialQueue');
+// const addToSerialQueue = Symbol('addToSerialQueue');
+// const serialPump = Symbol('serialPump');
+// const isSerialProcessing = Symbol('isSerialProcessing');
+// const isSerialOpen = Symbol('isSerialOpen');
+
+// const raspiModule = Symbol('raspiModule');
+// const raspiBoardModule = Symbol('raspiBoardModule');
+// const raspiGpioModule = Symbol('raspiGpioModule');
+// const raspiI2cModule = Symbol('raspiI2cModule');
+// const raspiLedModule = Symbol('raspiLedModule');
+// const raspiPwmModule = Symbol('raspiPwmModule');
+// const raspiSerialModule = Symbol('raspiSerialModule');
+// const raspiSoftPwmModule = Symbol('raspiSoftPwmModule');
+
+// const SERIAL_ACTION_WRITE = 'SERIAL_ACTION_WRITE';
+// const SERIAL_ACTION_CLOSE = 'SERIAL_ACTION_CLOSE';
+// const SERIAL_ACTION_FLUSH = 'SERIAL_ACTION_FLUSH';
+// const SERIAL_ACTION_CONFIG = 'SERIAL_ACTION_CONFIG';
+// const SERIAL_ACTION_READ = 'SERIAL_ACTION_READ';
+// const SERIAL_ACTION_STOP = 'SERIAL_ACTION_STOP';
+
+export enum PeripheralType {
+  GPIO = 'gpio',
+  PWM = 'pwm',
+  I2C = 'i2c',
+  SPI = 'spi',
+  UART = 'uart'
+}
+
+export interface IPinInfo {
+  pins: string[];
+  peripherals: PeripheralType[];
 }
 
 export interface IOptions {
-  includePins?: Array<number | string>;
-  excludePins?: Array<number | string>;
-  // TODO: add peripheral map here
+  pluginName: string;
   platform: {
     base: IBaseModule,
     gpio: IGPIOModule,
@@ -99,240 +113,216 @@ export interface IOptions {
     led?: ILEDModule,
     serial?: ISerialModule,
     i2c?: II2CModule
-  }
+  };
+  pinInfo: { [ pin: number ]: IPinInfo };
 }
 
 export class CoreIO extends AbstractIO {
 
-  private [gpioManager]: GPIOManager;
+  public get defaultLed() {
+    return LED_PIN;
+  }
 
-  public readonly defaultLed = LED_PIN;
-  public readonly name = 'Raspi IO';
+  public get name() {
+    return this[name];
+  }
+
+  public get SERIAL_PORT_IDs() {
+    return this[serialPortIds];
+  }
+
+  public get pins() {
+    return this[pins];
+  }
+
+  public get analogPins(): number[] {
+   return [];
+  }
+
+  public get isReady(): boolean {
+    return this[isReady];
+  }
+
+  public getInternalPinInstances?: () => { [ pin: number ]: IPeripheral };
+  public getI2CInstance?: () => void;
+
+  private [serialPortIds]: { [ id: string ]: any };
+  private [isReady] = false;
+  private [pins]: IPinConfiguration[] = [];
+  private [name]: string;
+
+  private [gpioManager]: GPIOManager;
 
   constructor(options: IOptions) {
     super();
 
+    // Verify the options. It's not very thorough, but should be sufficient
     if (typeof options !== 'object') {
-      throw new Error('An options object is required');
+      throw new Error('"options" is required and must be an object');
     }
-    const { includePins, excludePins, platform } = options;
-
-    if (!platform || typeof platform !== 'object') {
-      throw new Error('"platform" option is required and must be an object');
+    if (typeof options.pluginName !== 'string') {
+      throw new Error('"options.pluginName" is required and must be a string');
     }
-    if (!platform.base) {
-      throw new Error('"base" module is missing from "platform" option');
+    if (typeof options.platform !== 'object') {
+      throw new Error('"options.platform" is required and must be an object');
     }
-    if (!platform.gpio) {
-      throw new Error('"gpio" module is missing from "platform" option');
+    if (typeof options.platform.base !== 'object') {
+      throw new Error('"options.platform.base" is required and must be an object');
     }
-    if (!platform.pwm) {
-      throw new Error('"pwm" module is missing from "platform" option');
+    if (typeof options.platform.gpio !== 'object') {
+      throw new Error('"options.platform.gpio" is required and must be an object');
     }
-
-    if (includePins && excludePins) {
-      throw new Error('"includePins" and "excludePins" cannot be specified at the same time');
+    if (typeof options.platform.pwm !== 'object') {
+      throw new Error('"options.platform.pwm" is required and must be an object');
     }
 
+    // Create the plugin name
+    this[name] = options.pluginName;
+
+    const { pinInfo, platform } = options;
+
+    // Create the serial port IDs if serial is supported
+    if (platform.serial) {
+      // TODO: Add these in...where to get them from though?
+      this[serialPortIds] = Object.freeze({
+      });
+    } else {
+      this[serialPortIds] = Object.freeze({});
+    }
+
+    // Instantiate the peripheral managers
     setBaseModule(platform.base);
     this[gpioManager] = new GPIOManager(platform.gpio, this);
 
-    Object.defineProperties(this, {
-
-      [instances]: {
-        writable: true,
-        value: []
-      },
-
-      [isReady]: {
-        writable: true,
-        value: false
-      },
-      isReady: {
-        enumerable: true,
-        get() {
-          return this[isReady];
-        }
-      },
-
-      [pins]: {
-        writable: true,
-        value: []
-      },
-      pins: {
-        enumerable: true,
-        get() {
-          return this[pins];
-        }
-      },
-
-      [analogPins]: {
-        writable: true,
-        value: []
-      },
-      analogPins: {
-        enumerable: true,
-        get() {
-          return this[analogPins];
-        }
-      },
-
-      [i2c]: {
-        writable: true,
-        value: new this[raspiI2cModule].I2C()
-      },
-
-      [i2cDelay]: {
-        writable: true,
-        value: 0
-      },
-
-      [serialQueue]: {
-        value: []
-      },
-
-      [isSerialProcessing]: {
-        writable: true,
-        value: false
-      },
-
-      [isSerialOpen]: {
-        writable: true,
-        value: false
-      },
-    });
-
-    if (enableSerial) {
-      Object.defineProperties(this, {
-
-        [raspiSerialModule]: {
-          writable: true,
-          value: platform['raspi-serial']
-        },
-
-        [serial]: {
-          writable: true,
-          value: new this[raspiSerialModule].Serial()
-        },
-
-        SERIAL_PORT_IDs: {
-          enumerable: true,
-          value: Object.freeze({
-            HW_SERIAL0: this[raspiSerialModule].DEFAULT_PORT,
-            DEFAULT: this[raspiSerialModule].DEFAULT_PORT
-          })
-        }
-
-      });
-    } else {
-      Object.defineProperties(this, {
-
-        SERIAL_PORT_IDs: {
-          enumerable: true,
-          value: Object.freeze({})
-        }
-
-      });
+    // Inject the test only methods if we're in test mode
+    if (process.env.RASPI_IO_TEST_MODE) {
+      this.getInternalPinInstances = () => getPeripherals();
+      // TODO:
+      // this.getI2CInstance = () => this[i2c];
     }
 
-    if (process.env['RASPI_IO_TEST_MODE']) {
-      this.getInternalPinInstances = () => this[instances];
-      this.getI2CInstance = () => this[i2c];
-    }
+    // Create the pins object
+    this[pins] = [];
+    const pinMappings = { ...pinInfo };
 
-    this[raspiModule].init(() => {
-      let pinMappings = this[raspiBoardModule].getPins();
-      this[pins] = [];
+    // Slight hack to get the LED in there, since it's not actually a pin
+    pinMappings[LED_PIN] = {
+      pins: [ LED_PIN.toString() ],
+      peripherals: [ PeripheralType.GPIO ]
+    };
 
-      // Slight hack to get the LED in there, since it's not actually a pin
-      pinMappings[LED_PIN] = {
-        pins: [ LED_PIN ],
-        peripherals: [ 'gpio' ]
-      };
+    // TODO: Move to raspi-io
+    // if (Array.isArray(includePins)) {
+    //   const newPinMappings = {};
+    //   for (const pin of includePins) {
+    //     const normalizedPin = this[raspiBoardModule].getPinNumber(pin);
+    //     if (normalizedPin === null) {
+    //       throw new Error(`Invalid pin "${pin}" specified in includePins`);
+    //     }
+    //     newPinMappings[normalizedPin] = pinMappings[normalizedPin];
+    //   }
+    //   pinMappings = newPinMappings;
+    // } else if (Array.isArray(excludePins)) {
+    //   pinMappings = Object.assign({}, pinMappings);
+    //   for (const pin of excludePins) {
+    //     const normalizedPin = this[raspiBoardModule].getPinNumber(pin);
+    //     if (normalizedPin === null) {
+    //       throw new Error(`Invalid pin "${pin}" specified in excludePins`);
+    //     }
+    //     delete pinMappings[normalizedPin];
+    //   }
+    // }
 
-      if (Array.isArray(includePins)) {
-        const newPinMappings = {};
-        for (const pin of includePins) {
-          const normalizedPin = this[raspiBoardModule].getPinNumber(pin);
-          if (normalizedPin === null) {
-            throw new Error(`Invalid pin "${pin}" specified in includePins`);
-          }
-          newPinMappings[normalizedPin] = pinMappings[normalizedPin];
-        }
-        pinMappings = newPinMappings;
-      } else if (Array.isArray(excludePins)) {
-        pinMappings = Object.assign({}, pinMappings);
-        for (const pin of excludePins) {
-          const normalizedPin = this[raspiBoardModule].getPinNumber(pin);
-          if (normalizedPin === null) {
-            throw new Error(`Invalid pin "${pin}" specified in excludePins`);
-          }
-          delete pinMappings[normalizedPin];
-        }
+    function createPinEntry(pin: number, pinMapping: IPinInfo): IPinConfiguration {
+      const supportedModes = [];
+      // TODO: add logic to filter out I2C and Serial so they can't be used for GPIO in raspi-io
+      if (pin === LED_PIN) {
+        supportedModes.push(Mode.OUTPUT);
+      } else if (pinMapping.peripherals.indexOf(PeripheralType.GPIO) !== -1) {
+        supportedModes.push(Mode.INPUT, Mode.OUTPUT);
       }
-
-      Object.keys(pinMappings).forEach((pin) => {
-        const pinInfo = pinMappings[pin];
-        const supportedModes = [];
-        // We don't want I2C to be used for anything else, since changing the
-        // pin mode makes it unable to ever do I2C again.
-        if (pinInfo.peripherals.indexOf('i2c') == -1 && pinInfo.peripherals.indexOf('uart') == -1) {
-          if (pin == LED_PIN) {
-            supportedModes.push(OUTPUT_MODE);
-          } else if (pinInfo.peripherals.indexOf('gpio') != -1) {
-            supportedModes.push(INPUT_MODE, OUTPUT_MODE);
+      if (pinMapping.peripherals.indexOf(PeripheralType.PWM) !== -1) {
+        supportedModes.push(Mode.PWM, Mode.SERVO);
+      }
+      return Object.create(null, {
+        supportedModes: {
+          enumerable: true,
+          value: Object.freeze(supportedModes)
+        },
+        mode: {
+          enumerable: true,
+          get() {
+            const peripheral = getPeripheral(pin);
+            if (!peripheral) {
+              return Mode.UNKOWN;
+            }
+            return getMode(peripheral);
           }
-          if (pinInfo.peripherals.indexOf('pwm') != -1) {
-            supportedModes.push(PWM_MODE, SERVO_MODE);
-          } else if (enableSoftPwm === true && pinInfo.peripherals.indexOf('gpio') !== -1) {
-            supportedModes.push(PWM_MODE, SERVO_MODE);
+        },
+        value: {
+          enumerable: true,
+          get() {
+            const peripheral = getPeripheral(pin);
+            if (!peripheral) {
+              return null;
+            }
+            switch (getMode(peripheral)) {
+              case Mode.INPUT:
+                return (peripheral as IDigitalInput).read();
+              case Mode.OUTPUT:
+                return (peripheral as IDigitalOutput).value;
+              default:
+                return null;
+            }
+          },
+          set(value) {
+            const peripheral = getPeripheral(pin);
+            if (peripheral && getMode(peripheral) === Mode.OUTPUT) {
+              (peripheral as IDigitalOutput).write(value);
+            }
           }
+        },
+        report: {
+          enumerable: true,
+          value: 1
+        },
+        analogChannel: {
+          enumerable: true,
+          value: 127
         }
-        const instance = this[instances][pin] = {
-          peripheral: null,
-          mode: supportedModes.indexOf(OUTPUT_MODE) == -1 ? UNKNOWN_MODE : OUTPUT_MODE,
+      });
+    }
 
-          // Used to cache the previously written value for reading back in OUTPUT mode
-          // We start with undefined because it's in an unknown state
-          previousWrittenValue: undefined,
+    for (const pinKey in pinMappings) {
+      if (!pinMappings.hasOwnProperty(pinKey)) {
+        continue;
+      }
+      const pin = parseInt(pinKey, 10);
+      this[pins][pin] = createPinEntry(pin, pinMappings[pin]);
+      if (this[pins][pin].supportedModes.indexOf(Mode.OUTPUT) !== -1) {
+        this.pinMode(pin, Mode.OUTPUT);
+        this.digitalWrite(pin, Value.LOW);
+      }
+    }
 
-          // For comparing previous digital reads, as to only trigger event on change
-          previousReadValue: undefined,
-
-          // Used to set the default min and max values
-          min: DEFAULT_SERVO_MIN,
-          max: DEFAULT_SERVO_MAX,
-
-          // Used to track if this pin is capable of hardware PWM
-          isHardwarePwm: pinInfo.peripherals.indexOf('pwm') !== -1
-        };
-        this[pins][pin] = Object.create(null, {
+    // Fill in the holes, sins pins are sparse on the A+/B+/2
+    for (let i = 0; i < this[pins].length; i++) {
+      if (!this[pins][i]) {
+        this[pins][i] = Object.create(null, {
           supportedModes: {
             enumerable: true,
-            value: Object.freeze(supportedModes)
+            value: Object.freeze([])
           },
           mode: {
             enumerable: true,
             get() {
-              return instance.mode;
+              return Mode.OUTPUT;
             }
           },
           value: {
             enumerable: true,
             get() {
-              switch (instance.mode) {
-                case INPUT_MODE:
-                  return instance.peripheral.read();
-                case OUTPUT_MODE:
-                  return instance.previousWrittenValue;
-                default:
-                  return null;
-              }
-            },
-            set(value) {
-              if (instance.mode == OUTPUT_MODE) {
-                instance.peripheral.write(value);
-              }
+              return 0;
             }
           },
           report: {
@@ -344,48 +334,13 @@ export class CoreIO extends AbstractIO {
             value: 127
           }
         });
-        if (instance.mode == OUTPUT_MODE) {
-          this.pinMode(pin, OUTPUT_MODE);
-          this.digitalWrite(pin, LOW);
-        }
-      });
-
-      // Fill in the holes, sins pins are sparse on the A+/B+/2
-      for (let i = 0; i < this[pins].length; i++) {
-        if (!this[pins][i]) {
-          this[pins][i] = Object.create(null, {
-            supportedModes: {
-              enumerable: true,
-              value: Object.freeze([])
-            },
-            mode: {
-              enumerable: true,
-              get() {
-                return UNKNOWN_MODE;
-              }
-            },
-            value: {
-              enumerable: true,
-              get() {
-                return 0;
-              },
-              set() {}
-            },
-            report: {
-              enumerable: true,
-              value: 1
-            },
-            analogChannel: {
-              enumerable: true,
-              value: 127
-            }
-          });
-        }
       }
+    }
 
-      if (enableSerial) {
+    platform.base.init(() => {
+      if (platform.serial) {
         this.serialConfig({
-          portId: this[raspiSerialModule].DEFAULT_PORT,
+          portId: this.SERIAL_PORT_IDs.DEFAULT,
           baud: 9600
         });
       }
@@ -400,70 +355,47 @@ export class CoreIO extends AbstractIO {
     return normalizePin(pin);
   }
 
-  pinMode(pin, mode) {
-    this[pinMode]({ pin, mode });
-  }
-
-  [getPinInstance](pin) {
-    const pinInstance = this[instances][pin];
-    if (!pinInstance) {
-      throw new Error(`Unknown pin "${pin}"`);
-    }
-    return pinInstance;
-  }
-
-  [pinMode]({ pin, mode, pullResistor = this[raspiGpioModule].PULL_NONE }) {
+  public pinMode(pin: string | number, mode: Mode): void {
     const normalizedPin = this.normalize(pin);
-    const pinInstance = this[getPinInstance](normalizedPin);
-    pinInstance.pullResistor = pullResistor;
-    const config = {
-      pin: normalizedPin,
-      pullResistor: pinInstance.pullResistor
-    };
-    if (this[pins][normalizedPin].supportedModes.indexOf(mode) == -1) {
-      let modeName;
-      switch(mode) {
-        case INPUT_MODE: modeName = 'input'; break;
-        case OUTPUT_MODE: modeName = 'output'; break;
-        case ANALOG_MODE: modeName = 'analog'; break;
-        case PWM_MODE: modeName = 'pwm'; break;
-        case SERVO_MODE: modeName = 'servo'; break;
-        default: modeName = 'other'; break;
-      }
-      throw new Error(`Pin "${pin}" does not support mode "${modeName}"`);
+
+    // Make sure that the requested pin mode is valid and supported by the pin in question
+    if (!Mode.hasOwnProperty(mode)) {
+      throw new Error(`Unknown mode ${mode}`);
+    } else if (this[pins][normalizedPin].supportedModes.indexOf(mode) === -1) {
+      throw new Error(`Pin "${pin}" does not support mode "${Mode[mode].toLowerCase()}"`);
     }
 
-    if (pin == LED_PIN) {
-      if (pinInstance.peripheral instanceof this[raspiLedModule].LED) {
-        return;
-      }
-      pinInstance.peripheral = new this[raspiLedModule].LED();
+    if (pin === LED_PIN) {
+      // TODO
+      // if (pinInstance.peripheral instanceof this[raspiLedModule].LED) {
+      //   return;
+      // }
+      // pinInstance.peripheral = new this[raspiLedModule].LED();
     } else {
       switch (mode) {
-        case INPUT_MODE:
-          pinInstance.peripheral = new this[raspiGpioModule].DigitalInput(config);
+        case Mode.INPUT:
+          this[gpioManager].setInputMode(normalizedPin);
           break;
-        case OUTPUT_MODE:
-          pinInstance.peripheral = new this[raspiGpioModule].DigitalOutput(config);
+        case Mode.OUTPUT:
+          this[gpioManager].setOutputMode(normalizedPin);
           break;
-        case PWM_MODE:
-        case SERVO_MODE:
-          if (pinInstance.isHardwarePwm) {
-            pinInstance.peripheral = new this[raspiPwmModule].PWM(normalizedPin);
-          } else {
-            pinInstance.peripheral = new this[raspiSoftPwmModule].SoftPWM({
-              pin: normalizedPin,
-              frequency: SOFTWARE_PWM_FREQUENCY,
-              range: SOFTWARE_PWM_RANGE
-            });
-          }
+        case Mode.PWM:
+        case Mode.SERVO:
+          // TODO
+          // if (pinInstance.isHardwarePwm) {
+          //   pinInstance.peripheral = new this[raspiPwmModule].PWM(normalizedPin);
+          // } else {
+          //   pinInstance.peripheral = new this[raspiSoftPwmModule].SoftPWM({
+          //     pin: normalizedPin,
+          //     frequency: SOFTWARE_PWM_FREQUENCY,
+          //     range: SOFTWARE_PWM_RANGE
+          //   });
+          // }
           break;
         default:
-          console.warn(`Unknown pin mode: ${mode}`); // eslint-disable-line no-console
-          break;
+          throw new Error(`Internal Error: valid pin mode ${mode} not accounted for in switch statement`);
       }
     }
-    pinInstance.mode = mode;
   }
 
   // GPIO methods
@@ -475,6 +407,24 @@ export class CoreIO extends AbstractIO {
   public digitalWrite(pin: string | number, value: number): void {
     this[gpioManager].digitalWrite(this.normalize(pin), value);
   }
+
+  // PWM methods
+
+  /*
+  public pwmWrite(pin: string | number, value: number): void {
+    throw new Error(`pwmWrite is not supported by ${this.name}`);
+  }
+
+  public servoWrite(pin: string | number, value: number): void {
+    throw new Error(`servoWrite is not supported by ${this.name}`);
+  }
+
+  public servoConfig(options: IServoConfig): void;
+  public servoConfig(pin: number, min: number, max: number): void;
+  public servoConfig(optionsOrPin: IServoConfig | number, min?: number, max?: number): void {
+    throw new Error(`servoConfig is not supported by ${this.name}`);
+  }
+  */
 
   // Methods that need converting
 
