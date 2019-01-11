@@ -88,7 +88,7 @@ class DigitalOutput extends Peripheral implements IDigitalOutput {
   public args: any[];
 
   constructor(...args: any[]) {
-    super([ 0 ]);
+    super([ args[0] ]);
     this.args = args;
   }
   public write(value: number) {
@@ -103,7 +103,7 @@ class DigitalInput extends Peripheral implements IDigitalInput {
   public pullResistor = 0;
 
   constructor(...args: any[]) {
-    super([ 0 ]);
+    super([ args[0] ]);
     this.args = args;
     if (typeof args === 'object') {
       this.pullResistor = args[0].pullResistor || 0;

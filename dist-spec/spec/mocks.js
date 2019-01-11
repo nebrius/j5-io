@@ -69,7 +69,7 @@ class Peripheral extends events_1.EventEmitter {
 }
 class DigitalOutput extends Peripheral {
     constructor(...args) {
-        super([0]);
+        super([args[0]]);
         this.value = OFF;
         this.args = args;
     }
@@ -79,7 +79,7 @@ class DigitalOutput extends Peripheral {
 }
 class DigitalInput extends Peripheral {
     constructor(...args) {
-        super([0]);
+        super([args[0]]);
         this.value = OFF;
         this.pullResistor = 0;
         this.args = args;
