@@ -355,6 +355,11 @@ export class CoreIO extends AbstractIO {
   }
 
   public normalize(pin: number | string): number {
+    // LED is a special thing that the underlying platform doesn't know about, and isn't actually a pin.
+    // Gotta reroute it here, and we just have it return itself
+    if (pin === LED_PIN) {
+      return LED_PIN;
+    }
     return normalizePin(pin);
   }
 
@@ -408,6 +413,12 @@ export class CoreIO extends AbstractIO {
   }
 
   public digitalWrite(pin: string | number, value: number): void {
+    // Again, LED is a special thing that the underlying platform doesn't know about.
+    // Gotta reroute it here to the appropriate peripheral manager
+    if (pin === LED_PIN) {
+      // TODO
+      return;
+    }
     this[gpioManager].digitalWrite(this.normalize(pin), value);
   }
 

@@ -290,6 +290,11 @@ class CoreIO extends abstract_io_1.AbstractIO {
         return this[isReady];
     }
     normalize(pin) {
+        // LED is a special thing that the underlying platform doesn't know about, and isn't actually a pin.
+        // Gotta reroute it here, and we just have it return itself
+        if (pin === LED_PIN) {
+            return LED_PIN;
+        }
         return core_1.normalizePin(pin);
     }
     pinMode(pin, mode) {
@@ -339,6 +344,12 @@ class CoreIO extends abstract_io_1.AbstractIO {
         this[gpioManager].digitalRead(this.normalize(pin), handler);
     }
     digitalWrite(pin, value) {
+        // Again, LED is a special thing that the underlying platform doesn't know about.
+        // Gotta reroute it here to the appropriate peripheral manager
+        if (pin === LED_PIN) {
+            // TODO
+            return;
+        }
         this[gpioManager].digitalWrite(this.normalize(pin), value);
     }
 }

@@ -290,6 +290,9 @@ class CoreIO extends abstract_io_1.AbstractIO {
         return this[isReady];
     }
     normalize(pin) {
+        if (pin === LED_PIN) {
+            return LED_PIN;
+        }
         return core_1.normalizePin(pin);
     }
     pinMode(pin, mode) {
@@ -339,6 +342,10 @@ class CoreIO extends abstract_io_1.AbstractIO {
         this[gpioManager].digitalRead(this.normalize(pin), handler);
     }
     digitalWrite(pin, value) {
+        if (pin === LED_PIN) {
+            // TODO
+            return;
+        }
         this[gpioManager].digitalWrite(this.normalize(pin), value);
     }
 }
