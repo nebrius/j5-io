@@ -23,129 +23,137 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-const { EventEmitter } = require('events');
-const { RaspiIOCore } = require('../dist/index');
+import { EventEmitter } from 'events';
+import {
+  IPeripheral,
+  IGPIOModule, IDigitalInput, IDigitalOutput,
+  I2CWriteCallback, I2CReadBufferCallback, I2CReadNumberCallback, II2CModule, II2C,
+  ILED, ILEDModule,
+  IPWMModule, IPWM,
+  ISerial, ISerialOptions, ISerialModule
+} from 'core-io-types';
+import { CoreIO, IOptions } from '../src/index';
+
+// We can use the actual raspi and raspi-board modules in test mode here
+import { module as baseModule } from 'raspi';
+import { getPinNumber } from 'raspi-board';
 
 const OFF = 0;
-const ON = 1;
 
-const raspiMock = {
-  init(cb) {
-    setImmediate(cb);
-  }
-};
+class Peripheral extends EventEmitter implements IPeripheral {
 
-// We can use the actual raspi-board module in test mode here
-const raspiBoardMock = require('raspi-board');
-
-class Peripheral extends EventEmitter {
-  get alive() {
+  public get alive() {
     return this._alive;
   }
-  get pins() {
+  public get pins() {
     return this._pins;
   }
-  constructor(pins) {
+
+  private _alive = true;
+  private _pins: number[] = [];
+
+  constructor(pins: string | number | Array<string | number>) {
     super();
-    this._alive = true;
-    this._pins = [];
     if (!Array.isArray(pins)) {
       pins = [ pins ];
     }
     for (const alias of pins) {
-      const pin = raspiBoardMock.getPinNumber(alias);
+      const pin = getPinNumber(alias);
       if (pin === null) {
         throw new Error(`Invalid pin: ${alias}`);
       }
       this._pins.push(pin);
     }
   }
-  destroy() {
+
+  public destroy() {
     if (this._alive) {
       this._alive = false;
       this.emit('destroyed');
     }
   }
-  validateAlive() {
+
+  public validateAlive() {
     if (!this._alive) {
       throw new Error('Attempted to access a destroyed peripheral');
     }
   }
 }
 
-const raspiPeripheralMock = {
-  Peripheral
-};
+class DigitalOutput extends Peripheral implements IDigitalOutput {
 
-class DigitalOutput extends Peripheral {
-  constructor(...args) {
+  public value = OFF;
+  public args: any[];
+
+  constructor(...args: any[]) {
     super([ 0 ]);
-    this.value = OFF;
     this.args = args;
   }
-  write(value) {
+  public write(value: number) {
     this.value = value;
   }
 }
 
-class DigitalInput extends Peripheral {
-  constructor(...args) {
+class DigitalInput extends Peripheral implements IDigitalInput {
+
+  public value = OFF;
+  public args: any[];
+  public pullResistor = 0;
+
+  constructor(...args: any[]) {
     super([ 0 ]);
-    this.value = OFF;
     this.args = args;
+    if (typeof args === 'object') {
+      this.pullResistor = args[0].pullResistor || 0;
+    }
   }
-  read() {
+
+  public read() {
     return this.value;
   }
-  setMockedValue(value) {
+
+  public setMockedValue(value: number) {
     this.value = value;
   }
 }
 
-const raspiGpioMock = {
-  LOW: OFF,
-  HIGH: ON,
+const raspiGpioMock: IGPIOModule = {
   PULL_NONE: 0,
   PULL_DOWN: 1,
   PULL_UP: 2,
-  DigitalInput,
-  DigitalOutput
+  createDigitalInput: (config) => new DigitalInput(config),
+  createDigitalOutput: (config) => new DigitalOutput(config)
 };
 
-class I2C extends Peripheral {
+class I2C extends Peripheral implements II2C {
 
-  constructor(...args) {
+  public args: any[];
+
+  private _readBuffers: { [ address: number ]: { [ register: number ]: Buffer } } = {};
+
+  constructor(...args: any[]) {
     super([ 'SDA0', 'SCL0' ]);
-    this._readBuffers = {};
     this.args = args;
   }
 
-  _mockRead(address, register, length) {
-    if (!this._readBuffers.hasOwnProperty(address)) {
-      throw new Error(`Internal test error: attempted to read from address without data preloaded`);
-    }
-    if (!register) {
-      register = 'global';
-    }
-    if (!this._readBuffers[address].hasOwnProperty(register)) {
-      throw new Error(`Internal test error: attempted to read from register without data preloaded`);
-    }
-    return this._readBuffers[address][register].splice(0, length);
-  }
-
-  setReadBuffer(address, register, data) {
+  public setReadBuffer(address: number, register: number, data: Buffer) {
     if (!this._readBuffers[address]) {
       this._readBuffers[address] = {};
     }
     if (!register) {
-      register = 'global';
+      register = -1;
     }
     this._readBuffers[address][register] = data;
   }
 
-  read(address, registerOrLength, lengthOrCb, cb) {
-    let length;
-    let register;
+  public read(
+    address: number,
+    registerOrLength: number,
+    lengthOrCb: number | I2CReadBufferCallback,
+    cb?: I2CReadBufferCallback
+  ): void {
+    let length: number;
+    let register: number | undefined;
     if (typeof cb === 'function' && typeof lengthOrCb === 'number') {
       length = lengthOrCb;
       register = registerOrLength;
@@ -156,18 +164,20 @@ class I2C extends Peripheral {
     }
     setImmediate(() => {
       const data = this._mockRead(address, register, length);
-      cb(undefined, data);
+      if (cb) {
+        cb(null, data);
+      }
       this.emit('read', { address, length, register, data });
-    })
+    });
   }
 
-  readSync(address, registerOrLength, length) {
-    let register;
+  public readSync(address: number, registerOrLength: number | undefined, length?: number): Buffer {
+    let register: number | undefined;
     if (typeof length === 'undefined') {
-      length = +(registerOrLength);
+      length = registerOrLength;
     } else {
       register = registerOrLength;
-      length = +length;
+      length = length;
     }
     const data = this._mockRead(address, length);
     setImmediate(() => {
@@ -176,29 +186,31 @@ class I2C extends Peripheral {
     return data;
   }
 
-  readByte(address, registerOrCb, cb) {
-    let register;
+  public readByte(address: number, registerOrCb: number | I2CReadNumberCallback, cb?: I2CReadNumberCallback): void {
+    let register: number | undefined;
     if (typeof registerOrCb === 'function') {
       cb = registerOrCb;
       register = undefined;
     }
     setImmediate(() => {
       const data = this._mockRead(address, 1);
-      cb(undefined, data);
+      if (cb) {
+        cb(null, data[0]);
+      }
       this.emit('readByte', { address, register, data });
     });
   }
 
-  readByteSync(address, register) {
+  public readByteSync(address: number, register?: number): number {
     const data = this._mockRead(address, 1);
     setImmediate(() => {
       this.emit('readByteSync', { address, register, data });
     });
-    return data;
+    return data[0];
   }
 
-  readWord(address, registerOrCb, cb) {
-    let register;
+  public readWord(address: number, registerOrCb: number | I2CReadNumberCallback, cb?: I2CReadNumberCallback): void {
+    let register: number | undefined;
     if (typeof registerOrCb === 'function') {
       cb = registerOrCb;
     } else {
@@ -206,24 +218,31 @@ class I2C extends Peripheral {
     }
     const data = this._mockRead(address, 2);
     setImmediate(() => {
-      cb(undefined, data);
+      if (cb) {
+        cb(null, data[0]);
+      }
       this.emit('readWord', { address, register, data });
     });
   }
 
-  readWordSync(address, register) {
+  public readWordSync(address: number, register?: number): number {
     const data = this._mockRead(address, 2);
     setImmediate(() => {
       this.emit('readByteSync', { address, register, data });
     });
-    return data;
+    return data[0];
   }
 
-  write(address, registerOrBuffer, bufferOrCb, cb) {
-    let buffer;
-    let register;
+  public write(
+    address: number,
+    registerOrBuffer: number | Buffer,
+    bufferOrCb?: Buffer | I2CWriteCallback,
+    cb?: I2CWriteCallback
+  ): void {
+    let buffer: Buffer;
+    let register: number | undefined;
     if (Buffer.isBuffer(registerOrBuffer)) {
-      cb = bufferOrCb;
+      cb = bufferOrCb as I2CWriteCallback;
       buffer = registerOrBuffer;
       register = undefined;
     } else if (typeof registerOrBuffer === 'number' && Buffer.isBuffer(bufferOrCb)) {
@@ -233,13 +252,15 @@ class I2C extends Peripheral {
       throw new TypeError('Invalid I2C write arguments');
     }
     setImmediate(() => {
-      cb();
+      if (cb) {
+        cb(null);
+      }
       this.emit('write', { address, register, buffer });
     });
   }
 
-  writeSync(address, registerOrBuffer, buffer) {
-    let register;
+  public writeSync(address: number, registerOrBuffer: number | Buffer, buffer?: Buffer): void {
+    let register: number | undefined;
     if (Buffer.isBuffer(registerOrBuffer)) {
       buffer = registerOrBuffer;
     } else {
@@ -253,9 +274,14 @@ class I2C extends Peripheral {
     });
   }
 
-  writeByte(address, registerOrByte, byteOrCb, cb) {
-    let byte;
-    let register;
+  public writeByte(
+    address: number,
+    registerOrByte: number,
+    byteOrCb?: number | I2CWriteCallback,
+    cb?: I2CWriteCallback
+  ): void {
+    let byte: number;
+    let register: number | undefined;
     if (typeof byteOrCb === 'number') {
       byte = byteOrCb;
       register = registerOrByte;
@@ -264,13 +290,15 @@ class I2C extends Peripheral {
       byte = registerOrByte;
     }
     setImmediate(() => {
-      cb();
+      if (cb) {
+        cb(null);
+      }
       this.emit('writeByte', { address, register, byte });
     });
   }
 
-  writeByteSync(address, registerOrByte, byte) {
-    let register;
+  public writeByteSync(address: number, registerOrByte: number, byte?: number): void {
+    let register: number | undefined;
     if (byte === undefined) {
       byte = registerOrByte;
     } else {
@@ -281,9 +309,14 @@ class I2C extends Peripheral {
     });
   }
 
-  writeWord(address, registerOrWord, wordOrCb, cb) {
-    let register;
-    let word;
+  public writeWord(
+    address: number,
+    registerOrWord: number,
+    wordOrCb?: number | I2CWriteCallback,
+    cb?: I2CWriteCallback
+  ): void {
+    let register: number | undefined;
+    let word: number;
     if (typeof wordOrCb === 'number') {
       register = registerOrWord;
       word = wordOrCb;
@@ -294,13 +327,15 @@ class I2C extends Peripheral {
       throw new Error('Invalid I2C write arguments');
     }
     setImmediate(() => {
-      cb();
+      if (cb) {
+        cb(null);
+      }
       this.emit('writeWord', { address, register, word });
     });
   }
 
-  writeWordSync(address, registerOrWord, word) {
-    let register;
+  public writeWordSync(address: number, registerOrWord: number, word?: number): void {
+    let register: number | undefined;
     if (word === undefined) {
       word = registerOrWord;
     } else {
@@ -310,45 +345,71 @@ class I2C extends Peripheral {
       this.emit('writeWordSync', { address, register, word });
     });
   }
+
+  private _mockRead(address: number, register: number | undefined, length?: number) {
+    if (!this._readBuffers.hasOwnProperty(address)) {
+      throw new Error(`Internal test error: attempted to read from address without data preloaded`);
+    }
+    if (!register) {
+      register = -1;
+    }
+    if (!this._readBuffers[address].hasOwnProperty(register)) {
+      throw new Error(`Internal test error: attempted to read from register without data preloaded`);
+    }
+    const readBuffer = this._readBuffers[address][register].slice(0, length);
+    const unreadBuffer = this._readBuffers[address][register].slice(length);
+    this._readBuffers[address][register] = unreadBuffer;
+    return readBuffer;
+  }
 }
 
-const raspiI2CMock = {
-  I2C
+const raspiI2CMock: II2CModule = {
+  createI2C: () => new I2C()
 };
 
-class LED extends Peripheral {
-  constructor(...args) {
+class LED extends Peripheral implements ILED {
+
+  public args: any[];
+  private _value = OFF;
+
+  constructor(...args: any[]) {
     super([]);
-    this._value = OFF;
     this.args = args;
   }
-  hasLed() {
+  public hasLed() {
     return true;
   }
-  read() {
+  public read() {
     return this._value;
   }
-  write(value) {
+  public write(value: number) {
     this._value = value;
   }
 }
 
-const raspiLEDMock = {
-  OFF: 0,
-  ON: 1,
-  LED
+const raspiLEDMock: ILEDModule = {
+  createLED: () => new LED()
 };
 
-class PWM extends Peripheral {
+class PWM extends Peripheral implements IPWM {
   get frequency() {
     return this._frequencyValue;
   }
   get dutyCycle() {
     return this._dutyCycleValue;
   }
-  constructor(...args) {
-    let config = args[0];
-    let pin = 1;
+  get range() {
+    return this._range;
+  }
+  public args: any[];
+
+  private _frequencyValue: number;
+  private _dutyCycleValue: number;
+  private _range: number;
+
+  constructor(...args: any[]) {
+    const config = args[0];
+    let pin: string | number = 1;
     let frequency = 50;
     if (typeof config === 'number' || typeof config === 'string') {
       pin = config;
@@ -363,44 +424,48 @@ class PWM extends Peripheral {
     super(pin);
     this._frequencyValue = frequency;
     this._dutyCycleValue = 0;
+    this._range = 1000;
     this.args = args;
   }
-  write(dutyCycle) {
+  public write(dutyCycle: number) {
     this._dutyCycleValue = dutyCycle;
   }
 }
 
-const raspiPWMMock = {
-  PWM
+const raspiPWMMock: IPWMModule = {
+  createPWM: (config) => new PWM(config)
 };
 
-class Serial extends Peripheral {
+class Serial extends Peripheral implements ISerial {
   get port() {
     return this._portId;
   }
   get baudRate() {
-    return this._options.baudRate;
+    return this._options.baudRate as number;
   }
 
   get dataBits() {
-    return this._options.dataBits;
+    return this._options.dataBits as number;
   }
 
   get stopBits() {
-    return this._options.stopBits;
+    return this._options.stopBits as number;
   }
 
   get parity() {
-    return this._options.parity;
+    return this._options.parity as string;
   }
 
+  private _portId: string;
+  private _options: ISerialOptions;
+
   constructor({
-    portId = "/dev/ttyAMA0",
+    portId = '/dev/ttyAMA0',
     baudRate = 9600,
     dataBits = 8,
     stopBits = 1,
-    parity = "none"
-  } = {}) {
+    parity = 'none'
+  }: ISerialOptions = {}) {
     const pins = [ 'TXD0', 'RXD0' ];
     super(pins);
     this._portId = portId;
@@ -412,123 +477,72 @@ class Serial extends Peripheral {
       parity
     };
   }
-  open(cb) {
+  public open(cb: () => void) {
     setImmediate(() => {
       cb();
       this.emit('open');
     });
   }
-  close(cb) {
+  public close(cb: () => void) {
     setImmediate(() => {
       cb();
       this.emit('close');
     });
   }
-  write(data, cb) {
+  public write(data: Buffer | string, cb: () => void) {
     setImmediate(() => {
       cb();
       this.emit('write', data);
     });
   }
-  flush(cb) {
+  public flush(cb: () => void) {
     setImmediate(() => {
       cb();
       this.emit('flush');
     });
   }
-  fillReadBuffer(data) {
+  public fillReadBuffer(data: Buffer | string) {
     this.emit('data', data);
   }
 }
 
-const raspiSerialMock = {
-  PARITY_NONE: "none",
-  PARITY_EVEN: "even",
-  PARITY_ODD: "odd",
-  PARITY_MARK: "mark",
-  PARITY_SPACE: "space",
-  DEFAULT_PORT: "/dev/ttyAMA0",
-  Serial
+const raspiSerialMock: ISerialModule = {
+  createSerial: (options) => new Serial(options)
 };
 
-class SoftPWM extends Peripheral {
-  get frequency() {
-    return this._frequency;
-  }
-  get range() {
-    return this._range;
-  }
-  get dutyCycle() {
-    return this._dutyCycle;
-  }
-  constructor(config) {
-    let pin;
-    let frequency = 50;
-    let range = 40000;
-    if (typeof config === 'number' || typeof config === 'string') {
-      pin = config;
-    } else if (typeof config === 'object') {
-      if (typeof config.pin === 'number' || typeof config.pin === 'string') {
-        pin = config.pin;
-      } else {
-        throw new Error(`Invalid pin "${config.pin}". Pin must a number or string`);
-      }
-      if (typeof config.frequency === 'number') {
-        frequency = config.frequency;
-      }
-      if (typeof config.range === 'number') {
-        range = config.range;
-      }
-    } else {
-      throw new Error('Invalid config, must be a number, string, or object');
-    }
-    super(pin);
-    this._frequency = frequency;
-    this._range = range;
-    this._dutyCycle = 0;
-  }
-  write(dutyCycle) {
-    this._dutyCycle = dutyCycle;
-  }
+export type CreateCallback = (instance: CoreIO) => void;
+export interface ICreateOptions {
+  enableSerial: boolean;
 }
-
-const raspiSoftPWMMock = {
-  SoftPWM
-};
-
-function createInstance(options, cb) {
+function createInstance(options: CreateCallback | ICreateOptions, cb?: CreateCallback): void {
   if (typeof cb === 'undefined') {
-    cb = options;
-    options = {};
+    cb = options as CreateCallback;
+    options = { enableSerial: false };
   }
-  options = {
-    enableSerial: true,
+  const coreOptions: IOptions = {
+    pluginName: 'Raspi IO',
+    pinInfo: {},
     platform: {
-      'raspi': raspiMock,
-      'raspi-board': raspiBoardMock,
-      'raspi-gpio': raspiGpioMock,
-      'raspi-i2c': raspiI2CMock,
-      'raspi-led': raspiLEDMock,
-      'raspi-pwm': raspiPWMMock
-    },
-    ...options
+      base: baseModule,
+      gpio: raspiGpioMock,
+      i2c: raspiI2CMock,
+      led: raspiLEDMock,
+      pwm: raspiPWMMock
+    }
   };
-  if (options.enableSerial) {
-    options.platform['raspi-serial'] = raspiSerialMock;
+  if (options && (options as ICreateOptions).enableSerial) {
+    coreOptions.platform.serial = raspiSerialMock;
   }
-  const raspi = new RaspiIOCore(options);
-  raspi.on('ready', () => cb(raspi));
+  const raspi = new CoreIO(coreOptions);
+  raspi.on('ready', () => (cb as CreateCallback)(raspi));
 }
 
 module.exports = {
-  raspiMock,
-  raspiBoardMock,
-  raspiPeripheralMock,
+  raspiMock: baseModule,
   raspiGpioMock,
   raspiI2CMock,
   raspiLEDMock,
   raspiPWMMock,
   raspiSerialMock,
-  raspiSoftPWMMock,
   createInstance
 };

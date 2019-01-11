@@ -23,11 +23,11 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*global it describe expect*/
+/*global it xdescribe expect*/
 
 const { createInstance } = require('./mocks');
 
-describe('Serial', () => {
+xdescribe('Serial', () => {
   it('rejects on a missing options object', (done) => createInstance((raspi) => {
     expect(() => {
       raspi.serialConfig();

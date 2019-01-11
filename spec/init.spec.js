@@ -26,7 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 /*global it describe expect*/
 
 const { EventEmitter } = require('events');
-const { RaspiIOCore } = require('../dist/index');
+const { CoreIO } = require('../dist/index');
 const {
   raspiMock,
   raspiBoardMock,
@@ -43,33 +43,33 @@ describe('App Instantiation', () => {
 
   it('requires an options argument', () => {
     expect(() => {
-      new RaspiIOCore();
+      new CoreIO();
     }).toThrow(new Error('An options object is required'));
   });
 
   it('requires an options argument to be an object', () => {
     expect(() => {
-      new RaspiIOCore(`I'm not an object`);
+      new CoreIO(`I'm not an object`);
     }).toThrow(new Error('An options object is required'));
   });
 
   it('requires the platform argument', () => {
     expect(() => {
-      new RaspiIOCore({});
+      new CoreIO({});
     }).toThrow(new Error('"platform" option is required'));
   });
 
   it('requires the raspi argument', () => {
     expect(() => {
-      new RaspiIOCore({
+      new CoreIO({
         platform: {}
       });
-    }).toThrow(new Error('"raspi" module is missing from "platform" option'));
+    }).toThrow(new Error('"base " module is missing from "platform" option'));
   });
 
   it('requires the raspi-board argument', () => {
     expect(() => {
-      new RaspiIOCore({
+      new CoreIO({
         platform: {
           'raspi': raspiMock
         }
@@ -79,7 +79,7 @@ describe('App Instantiation', () => {
 
   it('requires the raspi-gpio argument', () => {
     expect(() => {
-      new RaspiIOCore({
+      new CoreIO({
         platform: {
           'raspi': raspiMock,
           'raspi-board': raspiBoardMock
@@ -90,7 +90,7 @@ describe('App Instantiation', () => {
 
   it('requires the raspi-i2c argument', () => {
     expect(() => {
-      new RaspiIOCore({
+      new CoreIO({
         platform: {
           'raspi': raspiMock,
           'raspi-board': raspiBoardMock,
@@ -102,7 +102,7 @@ describe('App Instantiation', () => {
 
   it('requires the raspi-led argument', () => {
     expect(() => {
-      new RaspiIOCore({
+      new CoreIO({
         platform: {
           'raspi': raspiMock,
           'raspi-board': raspiBoardMock,
@@ -115,7 +115,7 @@ describe('App Instantiation', () => {
 
   it('requires the raspi-pwm argument', () => {
     expect(() => {
-      new RaspiIOCore({
+      new CoreIO({
         platform: {
           'raspi': raspiMock,
           'raspi-board': raspiBoardMock,
@@ -129,7 +129,7 @@ describe('App Instantiation', () => {
 
   it('throws an error if the `raspi-serial` argument is missing and the `enableSerial` flag is set', () => {
     expect(() => {
-      new RaspiIOCore({
+      new CoreIO({
         enableSerial: true,
         platform: {
           'raspi': raspiMock,
@@ -145,7 +145,7 @@ describe('App Instantiation', () => {
 
   it('does not throw an error if the `raspi-serial` argument is present and the `enableSerial` flag is set', () => {
     expect(() => {
-      new RaspiIOCore({
+      new CoreIO({
         enableSerial: true,
         platform: {
           'raspi': raspiMock,
@@ -162,7 +162,7 @@ describe('App Instantiation', () => {
 
   it('does not throw an error if the `raspi-serial` argument is not present and the `enableSerial` flag is not set', () => {
     expect(() => {
-      new RaspiIOCore({
+      new CoreIO({
         platform: {
           'raspi': raspiMock,
           'raspi-board': raspiBoardMock,
@@ -177,7 +177,7 @@ describe('App Instantiation', () => {
 
   it('throws an error if the `raspi-soft-pwm` argument is missing and the `enableSoftPwm` flag is set', () => {
     expect(() => {
-      new RaspiIOCore({
+      new CoreIO({
         enableSoftPwm: true,
         platform: {
           'raspi': raspiMock,
@@ -193,7 +193,7 @@ describe('App Instantiation', () => {
 
   it('does not throw an error if the `raspi-soft-pwm` argument is present and the `enableSoftPwm` flag is set', () => {
     expect(() => {
-      new RaspiIOCore({
+      new CoreIO({
         enableSoftPwm: true,
         platform: {
           'raspi': raspiMock,
@@ -210,7 +210,7 @@ describe('App Instantiation', () => {
 
   it('does not throw an error if the `raspi-soft-pwm` argument is not present and the `enableSoftPwm` flag is not set', () => {
     expect(() => {
-      new RaspiIOCore({
+      new CoreIO({
         platform: {
           'raspi': raspiMock,
           'raspi-board': raspiBoardMock,
@@ -224,7 +224,7 @@ describe('App Instantiation', () => {
   });
 
   it('is an instance of an Event Emitter', () => {
-    const raspi = new RaspiIOCore({
+    const raspi = new CoreIO({
       platform: {
         'raspi': raspiMock,
         'raspi-board': raspiBoardMock,
@@ -238,7 +238,7 @@ describe('App Instantiation', () => {
   });
 
   it('throws when `excludePins` and `includePins` are both defined', (done) => {
-    expect(() => new RaspiIOCore({
+    expect(() => new CoreIO({
       includePins: [],
       excludePins: [],
       platform: {
@@ -272,7 +272,7 @@ describe('App Instantiation', () => {
 
 describe('App Initialization', () => {
   it('emits "ready" and "connect" events on initialization', (done) => {
-    const raspi = new RaspiIOCore({
+    const raspi = new CoreIO({
       platform: {
         'raspi': raspiMock,
         'raspi-board': raspiBoardMock,

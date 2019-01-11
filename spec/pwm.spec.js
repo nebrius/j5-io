@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*global it describe expect*/
+/*global it xdescribe expect*/
 
 const { createInstance } = require('./mocks');
 
@@ -34,7 +34,7 @@ function expectToRoughlyEqual(value, expectedValue) {
   expect(value).toBeGreaterThan(expectedValue - VALUE_TOLERANCE);
 }
 
-describe('PWM', () => {
+xdescribe('PWM', () => {
 
   const pinAlias = 'GPIO18';
 

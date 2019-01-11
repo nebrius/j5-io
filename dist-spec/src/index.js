@@ -287,6 +287,11 @@ class CoreIO extends abstract_io_1.AbstractIO {
         return this[isReady];
     }
     normalize(pin) {
+        // This one is special because the base modules don't actually know about it.
+        // It's always initialized to the correct thing, so we can skip it here.
+        if (pin === LED_PIN) {
+            return LED_PIN;
+        }
         return core_1.normalizePin(pin);
     }
     pinMode(pin, mode) {
