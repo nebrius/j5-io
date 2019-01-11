@@ -121,7 +121,7 @@ describe('App Initialization', () => {
                 pwm: raspiPWMMock
             }
         });
-        expect(raspi.hasOwnProperty('isReady')).toBeTruthy();
+        expect('isReady' in raspi).toBeTruthy();
         expect(raspi.isReady).toBe(false);
         let readyEmitted = false;
         let connectEmitted = false;
@@ -163,7 +163,8 @@ describe('App Initialization', () => {
             OUTPUT: 1,
             ANALOG: 2,
             PWM: 3,
-            SERVO: 4
+            SERVO: 4,
+            UNKNOWN: 99
         }));
         done();
     }));

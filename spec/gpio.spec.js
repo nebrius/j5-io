@@ -69,7 +69,7 @@ describe('GPIO', () => {
   }));
 
   it('throws an error when setting a pin to other mode that doesn\'t support it', (done) => createInstance((raspi) => {
-    expect(() => raspi.pinMode('P1-3', 5)).toThrow(new Error('Pin "P1-3" does not support mode "other"'));
+    expect(() => raspi.pinMode('P1-3', 98)).toThrow(new Error('Unknown mode 98'));
     done();
   }));
 
@@ -264,10 +264,7 @@ describe('GPIO', () => {
 
     const peripheral = raspi.getInternalPinInstances()[pin];
     expect(peripheral.args.length).toEqual(1);
-    expect(peripheral.args[0]).toEqual({
-      pin,
-      pullResistor: 0
-    });
+    expect(peripheral.args[0]).toEqual(pin);
     done();
   }));
 

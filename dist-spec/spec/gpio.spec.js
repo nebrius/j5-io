@@ -57,7 +57,7 @@ describe('GPIO', () => {
         done();
     }));
     it('throws an error when setting a pin to other mode that doesn\'t support it', (done) => createInstance((raspi) => {
-        expect(() => raspi.pinMode('P1-3', 5)).toThrow(new Error('Pin "P1-3" does not support mode "other"'));
+        expect(() => raspi.pinMode('P1-3', 98)).toThrow(new Error('Unknown mode 98'));
         done();
     }));
     it('ignores changes to the default LED pin mode', (done) => createInstance((raspi) => {
@@ -226,10 +226,7 @@ describe('GPIO', () => {
         expect(raspi.pins[pin].mode).toEqual(1);
         const peripheral = raspi.getInternalPinInstances()[pin];
         expect(peripheral.args.length).toEqual(1);
-        expect(peripheral.args[0]).toEqual({
-            pin,
-            pullResistor: 0
-        });
+        expect(peripheral.args[0]).toEqual(pin);
         done();
     }));
     it('can write a value to a pin using the `digitalWrite` method', (done) => createInstance((raspi) => {
