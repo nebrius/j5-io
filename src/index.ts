@@ -32,7 +32,9 @@ import {
   II2CModule,
   IPeripheral,
   IDigitalInput,
-  IDigitalOutput
+  IDigitalOutput,
+  IPinInfo,
+  PeripheralType
 } from 'core-io-types';
 import { AbstractIO, Value, Mode, IPinConfiguration } from 'abstract-io';
 import { setBaseModule, normalizePin, getPeripherals, getMode, getPeripheral } from './core';
@@ -90,19 +92,6 @@ const gpioManager = Symbol('gpioManager');
 // const SERIAL_ACTION_CONFIG = 'SERIAL_ACTION_CONFIG';
 // const SERIAL_ACTION_READ = 'SERIAL_ACTION_READ';
 // const SERIAL_ACTION_STOP = 'SERIAL_ACTION_STOP';
-
-export enum PeripheralType {
-  GPIO = 'gpio',
-  PWM = 'pwm',
-  I2C = 'i2c',
-  SPI = 'spi',
-  UART = 'uart'
-}
-
-export interface IPinInfo {
-  pins: string[];
-  peripherals: PeripheralType[];
-}
 
 export interface IOptions {
   pluginName: string;
@@ -370,7 +359,7 @@ export class CoreIO extends AbstractIO {
     if (!Mode.hasOwnProperty(mode)) {
       throw new Error(`Unknown mode ${mode}`);
     } else if (this[pins][normalizedPin].supportedModes.indexOf(mode) === -1) {
-      throw new Error(`Pin "${pin}" does not support mode "${Mode[mode].toLowerCase()}"`);
+      throw new Error(`Pin "${pin}" does not support mode "${Mode[mode]}"`);
     }
 
     if (pin === LED_PIN) {

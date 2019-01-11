@@ -46,6 +46,7 @@ class Peripheral extends events_1.EventEmitter {
                 throw new Error(`Invalid pin: ${alias}`);
             }
             this._pins.push(pin);
+            raspi_1.module.setActivePeripheral(pin, this);
         }
     }
     get alive() {
@@ -429,7 +430,7 @@ class Serial extends Peripheral {
 exports.raspiSerialMock = {
     createSerial: (options) => new Serial(options)
 };
-exports.pinInfo = {};
+exports.pinInfo = raspi_board_1.getPins();
 function createInstance(options, cb) {
     if (typeof cb === 'undefined') {
         cb = options;
@@ -437,7 +438,7 @@ function createInstance(options, cb) {
     }
     const coreOptions = {
         pluginName: 'Raspi IO',
-        pinInfo: {},
+        pinInfo: exports.pinInfo,
         platform: {
             base: raspi_1.module,
             gpio: exports.raspiGpioMock,

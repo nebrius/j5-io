@@ -46,7 +46,7 @@ function getPeripherals() {
 exports.getPeripherals = getPeripherals;
 function getMode(peripheral) {
     const mode = modeMapping.get(peripheral);
-    if (!mode) {
+    if (typeof mode !== 'number') {
         throw new Error(`Internal Error: tried to get the mode for an unknown peripheral`);
     }
     return mode;

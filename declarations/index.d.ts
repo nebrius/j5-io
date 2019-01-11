@@ -1,21 +1,10 @@
-import { IBaseModule, IGPIOModule, ILEDModule, IPWMModule, ISerialModule, II2CModule, IPeripheral } from 'core-io-types';
+import { IBaseModule, IGPIOModule, ILEDModule, IPWMModule, ISerialModule, II2CModule, IPeripheral, IPinInfo } from 'core-io-types';
 import { AbstractIO, Value, Mode, IPinConfiguration } from 'abstract-io';
 declare const serialPortIds: unique symbol;
 declare const name: unique symbol;
 declare const isReady: unique symbol;
 declare const pins: unique symbol;
 declare const gpioManager: unique symbol;
-export declare enum PeripheralType {
-    GPIO = "gpio",
-    PWM = "pwm",
-    I2C = "i2c",
-    SPI = "spi",
-    UART = "uart"
-}
-export interface IPinInfo {
-    pins: string[];
-    peripherals: PeripheralType[];
-}
 export interface IOptions {
     pluginName: string;
     platform: {

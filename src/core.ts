@@ -50,7 +50,7 @@ export function getPeripherals(): { [ pin: number ]: IPeripheral } {
 
 export function getMode(peripheral: IPeripheral): Mode {
   const mode = modeMapping.get(peripheral);
-  if (!mode) {
+  if (typeof mode !== 'number') {
     throw new Error(`Internal Error: tried to get the mode for an unknown peripheral`);
   }
   return mode;

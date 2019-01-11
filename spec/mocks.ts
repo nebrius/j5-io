@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 import { EventEmitter } from 'events';
 import {
-  IPeripheral,
+  IPeripheral, IPinInfo,
   IGPIOModule, IDigitalInput, IDigitalOutput,
   I2CWriteCallback, I2CReadBufferCallback, I2CReadNumberCallback, II2CModule, II2C,
   ILED, ILEDModule,
@@ -37,7 +37,7 @@ import { CoreIO, IOptions } from '../src/index';
 // We can use the actual raspi and raspi-board modules in test mode here
 import { module as baseModule } from 'raspi';
 export { module as raspiMock } from 'raspi';
-import { getPinNumber } from 'raspi-board';
+import { getPinNumber, getPins } from 'raspi-board';
 
 const OFF = 0;
 
@@ -64,6 +64,7 @@ class Peripheral extends EventEmitter implements IPeripheral {
         throw new Error(`Invalid pin: ${alias}`);
       }
       this._pins.push(pin);
+      baseModule.setActivePeripheral(pin, this);
     }
   }
 
@@ -511,7 +512,7 @@ export const raspiSerialMock: ISerialModule = {
   createSerial: (options) => new Serial(options)
 };
 
-export const pinInfo: { [ pin: number ]: IPeripheral } = {};
+export const pinInfo: { [ pin: number ]: IPinInfo } = getPins();
 
 export type CreateCallback = (instance: CoreIO) => void;
 export interface ICreateOptions {
@@ -525,7 +526,7 @@ export function createInstance(options: CreateCallback | ICreateOptions, cb?: Cr
   }
   const coreOptions: IOptions = {
     pluginName: 'Raspi IO',
-    pinInfo: {},
+    pinInfo,
     platform: {
       base: baseModule,
       gpio: raspiGpioMock,

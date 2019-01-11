@@ -14,17 +14,17 @@
     "robots"
   ],
   "dependencies": {
-    "abstract-io": "^1.1.0"
+    "abstract-io": "^1.2.0"
   },
   "devDependencies": {
     "@types/node": "^10.12.12",
-    "core-io-types": "^2.0.1",
+    "core-io-types": "^2.1.0",
     "coveralls": "^3.0.2",
     "cross-env": "^5.2.0",
     "istanbul": "^0.4.5",
     "jasmine": "^3.3.0",
     "raspi": "^6.0.0",
-    "raspi-board": "^7.0.0",
+    "raspi-board": "^7.1.0",
     "tslint": "^5.11.0",
     "typescript": "^3.2.2",
     "typescript-tslint-plugin": "^0.2.1"

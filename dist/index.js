@@ -26,6 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 Object.defineProperty(exports, "__esModule", { value: true });
 var _a, _b;
 "use strict";
+const core_io_types_1 = require("core-io-types");
 const abstract_io_1 = require("abstract-io");
 const core_1 = require("./core");
 const gpio_1 = require("./managers/gpio");
@@ -38,49 +39,6 @@ const isReady = Symbol('isReady');
 const pins = Symbol('pins');
 // Private symbols for internal properties
 const gpioManager = Symbol('gpioManager');
-// Old Constants
-// const SOFTWARE_PWM_RANGE = 1000;
-// const SOFTWARE_PWM_FREQUENCY = 50;
-// Old Settings
-// const DEFAULT_SERVO_MIN = 1000;
-// const DEFAULT_SERVO_MAX = 2000;
-// Old Private symbols
-// const instances = Symbol('instances');
-// const analogPins = Symbol('analogPins');
-// const getPinInstance = Symbol('getPinInstance');
-// const i2c = Symbol('i2c');
-// const i2cDelay = Symbol('i2cDelay');
-// const i2cRead = Symbol('i2cRead');
-// const i2cCheckAlive = Symbol('i2cCheckAlive');
-// const pinMode = Symbol('pinMode');
-// const serial = Symbol('serial');
-// const serialQueue = Symbol('serialQueue');
-// const addToSerialQueue = Symbol('addToSerialQueue');
-// const serialPump = Symbol('serialPump');
-// const isSerialProcessing = Symbol('isSerialProcessing');
-// const isSerialOpen = Symbol('isSerialOpen');
-// const raspiModule = Symbol('raspiModule');
-// const raspiBoardModule = Symbol('raspiBoardModule');
-// const raspiGpioModule = Symbol('raspiGpioModule');
-// const raspiI2cModule = Symbol('raspiI2cModule');
-// const raspiLedModule = Symbol('raspiLedModule');
-// const raspiPwmModule = Symbol('raspiPwmModule');
-// const raspiSerialModule = Symbol('raspiSerialModule');
-// const raspiSoftPwmModule = Symbol('raspiSoftPwmModule');
-// const SERIAL_ACTION_WRITE = 'SERIAL_ACTION_WRITE';
-// const SERIAL_ACTION_CLOSE = 'SERIAL_ACTION_CLOSE';
-// const SERIAL_ACTION_FLUSH = 'SERIAL_ACTION_FLUSH';
-// const SERIAL_ACTION_CONFIG = 'SERIAL_ACTION_CONFIG';
-// const SERIAL_ACTION_READ = 'SERIAL_ACTION_READ';
-// const SERIAL_ACTION_STOP = 'SERIAL_ACTION_STOP';
-var PeripheralType;
-(function (PeripheralType) {
-    PeripheralType["GPIO"] = "gpio";
-    PeripheralType["PWM"] = "pwm";
-    PeripheralType["I2C"] = "i2c";
-    PeripheralType["SPI"] = "spi";
-    PeripheralType["UART"] = "uart";
-})(PeripheralType = exports.PeripheralType || (exports.PeripheralType = {}));
 class CoreIO extends abstract_io_1.AbstractIO {
     constructor(options) {
         super();
@@ -134,7 +92,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
         // Slight hack to get the LED in there, since it's not actually a pin
         pinMappings[LED_PIN] = {
             pins: [LED_PIN.toString()],
-            peripherals: [PeripheralType.GPIO]
+            peripherals: [core_io_types_1.PeripheralType.GPIO]
         };
         // TODO: Move to raspi-io
         // if (Array.isArray(includePins)) {
@@ -163,10 +121,10 @@ class CoreIO extends abstract_io_1.AbstractIO {
             if (pin === LED_PIN) {
                 supportedModes.push(abstract_io_1.Mode.OUTPUT);
             }
-            else if (pinMapping.peripherals.indexOf(PeripheralType.GPIO) !== -1) {
+            else if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.GPIO) !== -1) {
                 supportedModes.push(abstract_io_1.Mode.INPUT, abstract_io_1.Mode.OUTPUT);
             }
-            if (pinMapping.peripherals.indexOf(PeripheralType.PWM) !== -1) {
+            if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.PWM) !== -1) {
                 supportedModes.push(abstract_io_1.Mode.PWM, abstract_io_1.Mode.SERVO);
             }
             return Object.create(null, {
@@ -304,7 +262,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
             throw new Error(`Unknown mode ${mode}`);
         }
         else if (this[pins][normalizedPin].supportedModes.indexOf(mode) === -1) {
-            throw new Error(`Pin "${pin}" does not support mode "${abstract_io_1.Mode[mode].toLowerCase()}"`);
+            throw new Error(`Pin "${pin}" does not support mode "${abstract_io_1.Mode[mode]}"`);
         }
         if (pin === LED_PIN) {
             // TODO
