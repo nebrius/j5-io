@@ -41,6 +41,10 @@ node_modules
 
 # package specific
 src/
-test/
+spec/
+dist-spec/
+tsconfig.json
+ts-src-config.json
+ts-test-config.json
 tsconfig.json
 tslint.json

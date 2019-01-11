@@ -93,6 +93,9 @@ class CoreIO extends abstract_io_1.AbstractIO {
         if (typeof options.pluginName !== 'string') {
             throw new Error('"options.pluginName" is required and must be a string');
         }
+        if (typeof options.pinInfo !== 'object') {
+            throw new Error('"options.pinInfo" is required and must be an object');
+        }
         if (typeof options.platform !== 'object') {
             throw new Error('"options.platform" is required and must be an object');
         }

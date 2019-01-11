@@ -1,5 +1,7 @@
 ## 3.0.0 ()
 
+- POTENTIALLY BREAKING CHANGE: Rewrote this module from the ground up in TypeScript
+- Removed any Raspberry Pi specific code and renamed this module to Core IO
 - Added unit tests, yay!
 - Changed the `digitalRead` update interval to be every 18ms instead of every 19ms to get it spec compliant in practice, not just in theory (must be at least 50Hz/20ms in practice)
 - Removed some dead code (no change to behavior)
@@ -7,8 +9,10 @@
 - Changed `servoConfig` so that it only changes pin mode if it's not already in Servo mode.
 - Added better error checking so that all serial* calls throw a readable error when `portId` is not included
 - Fixed a theoretical bug where i2cRead continues to read after the peripheral is destroyed, which never happens in practice except in unit tests.
-- POTENTIALLY BREAKING: Specifying both `includePins` and `excludePins` at the same time now throws synchronously from the constructor
-- POTENTIALLY BREAKING: The `name` property of this module now returns `"Raspi IO"` instead of `"RasperryPi-IO"` to conform with naming conventions elsewhere
+- BREAKING CHANGE: Removed `includePins` and `excludePins`, which is replaced with `pinInfo`
+- BREAKING CHANGE: Now, only base, gpio, and pwm platform modules are required. The rest are optional
+- BREAKING CHANGE: Removed support for software PWM here (it should be handled by Raspi IO, not Core IO)
+- POTENTIALLY BREAKING CHANGE: The `name` property of this module now returns `"Raspi IO"` instead of `"RasperryPi-IO"` to conform with naming conventions elsewhere
 
 ## 2.1.0 (2018-04-02)
 

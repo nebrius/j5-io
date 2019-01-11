@@ -93,6 +93,9 @@ class CoreIO extends abstract_io_1.AbstractIO {
         if (typeof options.pluginName !== 'string') {
             throw new Error('"options.pluginName" is required and must be a string');
         }
+        if (typeof options.pinInfo !== 'object') {
+            throw new Error('"options.pinInfo" is required and must be an object');
+        }
         if (typeof options.platform !== 'object') {
             throw new Error('"options.platform" is required and must be an object');
         }
@@ -287,11 +290,6 @@ class CoreIO extends abstract_io_1.AbstractIO {
         return this[isReady];
     }
     normalize(pin) {
-        // This one is special because the base modules don't actually know about it.
-        // It's always initialized to the correct thing, so we can skip it here.
-        if (pin === LED_PIN) {
-            return LED_PIN;
-        }
         return core_1.normalizePin(pin);
     }
     pinMode(pin, mode) {

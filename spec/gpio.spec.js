@@ -23,8 +23,8 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-const { RaspiIOCore } = require('../dist/index');
-const { createInstance, raspiMock, raspiBoardMock, raspiI2CMock, raspiLEDMock, raspiPWMMock, raspiGpioMock } = require('./mocks');
+const { CoreIO } = require('../dist/index');
+const { createInstance, raspiMock, pinInfo, raspiPWMMock, raspiGpioMock } = require('./mocks');
 
 /*global it describe expect*/
 
@@ -300,14 +300,13 @@ describe('GPIO', () => {
   // Query tests (note that all query methods are just pass-through methods)
 
   it('can query capabilities before the ready event has been fired', (done) => {
-    const raspi = new RaspiIOCore({
+    const raspi = new CoreIO({
+      pluginName: 'Raspi IO',
+      pinInfo,
       platform: {
-        'raspi': raspiMock,
-        'raspi-board': raspiBoardMock,
-        'raspi-gpio': raspiGpioMock,
-        'raspi-i2c': raspiI2CMock,
-        'raspi-led': raspiLEDMock,
-        'raspi-pwm': raspiPWMMock
+        base: raspiMock,
+        gpio: raspiGpioMock,
+        pwm: raspiPWMMock
       }
     });
     raspi.queryCapabilities(done);
@@ -318,14 +317,13 @@ describe('GPIO', () => {
   }));
 
   it('can query analog mappings before the ready event has been fired', (done) => {
-    const raspi = new RaspiIOCore({
+    const raspi = new CoreIO({
+      pluginName: 'Raspi IO',
+      pinInfo,
       platform: {
-        'raspi': raspiMock,
-        'raspi-board': raspiBoardMock,
-        'raspi-gpio': raspiGpioMock,
-        'raspi-i2c': raspiI2CMock,
-        'raspi-led': raspiLEDMock,
-        'raspi-pwm': raspiPWMMock
+        base: raspiMock,
+        gpio: raspiGpioMock,
+        pwm: raspiPWMMock
       }
     });
     raspi.queryAnalogMapping(done);
@@ -336,14 +334,13 @@ describe('GPIO', () => {
   }));
 
   it('can query pin state before the ready event has been fired', (done) => {
-    const raspi = new RaspiIOCore({
+    const raspi = new CoreIO({
+      pluginName: 'Raspi IO',
+      pinInfo,
       platform: {
-        'raspi': raspiMock,
-        'raspi-board': raspiBoardMock,
-        'raspi-gpio': raspiGpioMock,
-        'raspi-i2c': raspiI2CMock,
-        'raspi-led': raspiLEDMock,
-        'raspi-pwm': raspiPWMMock
+        base: raspiMock,
+        gpio: raspiGpioMock,
+        pwm: raspiPWMMock
       }
     });
     raspi.queryPinState(0, done);

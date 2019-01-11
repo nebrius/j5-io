@@ -33,7 +33,7 @@
     "prebuild": "tslint 'src/**/*.ts'",
     "lint": "tslint --project tslint.json",
     "build": "tsc --build ts-src-config.json",
-    "pretest": "tsc --build ts-test-config.json",
+    "build-tests": "tsc --build ts-test-config.json",
     "test": "cross-env RASPI_IO_TEST_MODE=true istanbul cover -x dist-spec/spec/mocks.js ./node_modules/jasmine/bin/jasmine.js --captureExceptions dist-spec/spec/**/*.spec.js && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
   },
   "author": "Bryan Hughes <bryan@nebri.us>",

@@ -31,11 +31,9 @@ const {
   raspiMock,
   raspiBoardMock,
   raspiGpioMock,
-  raspiI2CMock,
-  raspiLEDMock,
   raspiPWMMock,
   raspiSerialMock,
-  raspiSoftPWMMock,
+  pinInfo,
   createInstance
 } = require('./mocks');
 
@@ -44,242 +42,104 @@ describe('App Instantiation', () => {
   it('requires an options argument', () => {
     expect(() => {
       new CoreIO();
-    }).toThrow(new Error('An options object is required'));
+    }).toThrow(new Error('"options" is required and must be an object'));
   });
 
   it('requires an options argument to be an object', () => {
     expect(() => {
       new CoreIO(`I'm not an object`);
-    }).toThrow(new Error('An options object is required'));
+    }).toThrow(new Error('"options" is required and must be an object'));
+  });
+
+  it('requires the pluginName argument', () => {
+    expect(() => {
+      new CoreIO({});
+    }).toThrow(new Error('"options.pluginName" is required and must be a string'));
+  });
+
+  it('requires the pluginName argument to be a string', () => {
+    expect(() => {
+      new CoreIO({
+        pluginName: 10
+      });
+    }).toThrow(new Error('"options.pluginName" is required and must be a string'));
+  });
+
+  it('requires the pinInfo argument', () => {
+    expect(() => {
+      new CoreIO({
+        pluginName: 'Raspi IO'
+      });
+    }).toThrow(new Error('"options.pinInfo" is required and must be an object'));
   });
 
   it('requires the platform argument', () => {
     expect(() => {
-      new CoreIO({});
-    }).toThrow(new Error('"platform" option is required'));
+      new CoreIO({
+        pluginName: 'Raspi IO',
+        pinInfo: {}
+      });
+    }).toThrow(new Error('"options.platform" option is required and must be an object'));
   });
 
-  it('requires the raspi argument', () => {
+  it('requires the platform.base argument', () => {
     expect(() => {
       new CoreIO({
+        pluginName: 'Raspi IO',
+        pinInfo,
         platform: {}
       });
-    }).toThrow(new Error('"base " module is missing from "platform" option'));
+    }).toThrow(new Error('"options.platform.base" option is required and must be an object'));
   });
 
-  it('requires the raspi-board argument', () => {
+  it('requires the platform.gpio argument', () => {
     expect(() => {
       new CoreIO({
+        pluginName: 'Raspi IO',
+        pinInfo,
         platform: {
-          'raspi': raspiMock
+          base: raspiMock
         }
       });
-    }).toThrow(new Error('"raspi-board" module is missing from "platform" option'));
+    }).toThrow(new Error('"options.platform.gpio" option is required and must be an object'));
   });
 
-  it('requires the raspi-gpio argument', () => {
+  it('requires the platform.pwm argument', () => {
     expect(() => {
       new CoreIO({
+        pluginName: 'Raspi IO',
+        pinInfo,
         platform: {
-          'raspi': raspiMock,
-          'raspi-board': raspiBoardMock
+          base: raspiMock,
+          gpio: raspiGpioMock
         }
       });
-    }).toThrow(new Error('"raspi-gpio" module is missing from "platform" option'));
-  });
-
-  it('requires the raspi-i2c argument', () => {
-    expect(() => {
-      new CoreIO({
-        platform: {
-          'raspi': raspiMock,
-          'raspi-board': raspiBoardMock,
-          'raspi-gpio': raspiGpioMock
-        }
-      });
-    }).toThrow(new Error('"raspi-i2c" module is missing from "platform" option'));
-  });
-
-  it('requires the raspi-led argument', () => {
-    expect(() => {
-      new CoreIO({
-        platform: {
-          'raspi': raspiMock,
-          'raspi-board': raspiBoardMock,
-          'raspi-gpio': raspiGpioMock,
-          'raspi-i2c': raspiI2CMock
-        }
-      });
-    }).toThrow(new Error('"raspi-led" module is missing from "platform" option'));
-  });
-
-  it('requires the raspi-pwm argument', () => {
-    expect(() => {
-      new CoreIO({
-        platform: {
-          'raspi': raspiMock,
-          'raspi-board': raspiBoardMock,
-          'raspi-gpio': raspiGpioMock,
-          'raspi-i2c': raspiI2CMock,
-          'raspi-led': raspiLEDMock
-        }
-      });
-    }).toThrow(new Error('"raspi-pwm" module is missing from "platform" option'));
-  });
-
-  it('throws an error if the `raspi-serial` argument is missing and the `enableSerial` flag is set', () => {
-    expect(() => {
-      new CoreIO({
-        enableSerial: true,
-        platform: {
-          'raspi': raspiMock,
-          'raspi-board': raspiBoardMock,
-          'raspi-gpio': raspiGpioMock,
-          'raspi-i2c': raspiI2CMock,
-          'raspi-led': raspiLEDMock,
-          'raspi-pwm': raspiPWMMock
-        }
-      });
-    }).toThrow(new Error('"enableSerial" is true and "raspi-serial" module is missing from "platform" option'));
-  });
-
-  it('does not throw an error if the `raspi-serial` argument is present and the `enableSerial` flag is set', () => {
-    expect(() => {
-      new CoreIO({
-        enableSerial: true,
-        platform: {
-          'raspi': raspiMock,
-          'raspi-board': raspiBoardMock,
-          'raspi-gpio': raspiGpioMock,
-          'raspi-i2c': raspiI2CMock,
-          'raspi-led': raspiLEDMock,
-          'raspi-pwm': raspiPWMMock,
-          'raspi-serial': raspiSerialMock
-        }
-      });
-    }).not.toThrow();
-  });
-
-  it('does not throw an error if the `raspi-serial` argument is not present and the `enableSerial` flag is not set', () => {
-    expect(() => {
-      new CoreIO({
-        platform: {
-          'raspi': raspiMock,
-          'raspi-board': raspiBoardMock,
-          'raspi-gpio': raspiGpioMock,
-          'raspi-i2c': raspiI2CMock,
-          'raspi-led': raspiLEDMock,
-          'raspi-pwm': raspiPWMMock
-        }
-      });
-    }).not.toThrow();
-  });
-
-  it('throws an error if the `raspi-soft-pwm` argument is missing and the `enableSoftPwm` flag is set', () => {
-    expect(() => {
-      new CoreIO({
-        enableSoftPwm: true,
-        platform: {
-          'raspi': raspiMock,
-          'raspi-board': raspiBoardMock,
-          'raspi-gpio': raspiGpioMock,
-          'raspi-i2c': raspiI2CMock,
-          'raspi-led': raspiLEDMock,
-          'raspi-pwm': raspiPWMMock
-        }
-      });
-    }).toThrow(new Error('"enableSoftPwm" is true and "raspi-soft-pwm" module is missing from "platform" option'));
-  });
-
-  it('does not throw an error if the `raspi-soft-pwm` argument is present and the `enableSoftPwm` flag is set', () => {
-    expect(() => {
-      new CoreIO({
-        enableSoftPwm: true,
-        platform: {
-          'raspi': raspiMock,
-          'raspi-board': raspiBoardMock,
-          'raspi-gpio': raspiGpioMock,
-          'raspi-i2c': raspiI2CMock,
-          'raspi-led': raspiLEDMock,
-          'raspi-pwm': raspiPWMMock,
-          'raspi-soft-pwm': raspiSoftPWMMock
-        }
-      });
-    }).not.toThrow();
-  });
-
-  it('does not throw an error if the `raspi-soft-pwm` argument is not present and the `enableSoftPwm` flag is not set', () => {
-    expect(() => {
-      new CoreIO({
-        platform: {
-          'raspi': raspiMock,
-          'raspi-board': raspiBoardMock,
-          'raspi-gpio': raspiGpioMock,
-          'raspi-i2c': raspiI2CMock,
-          'raspi-led': raspiLEDMock,
-          'raspi-pwm': raspiPWMMock
-        }
-      });
-    }).not.toThrow();
+    }).toThrow(new Error('"options.platform.pwm" option is required and must be an object'));
   });
 
   it('is an instance of an Event Emitter', () => {
     const raspi = new CoreIO({
+      pluginName: 'Raspi IO',
+      pinInfo,
       platform: {
-        'raspi': raspiMock,
-        'raspi-board': raspiBoardMock,
-        'raspi-gpio': raspiGpioMock,
-        'raspi-i2c': raspiI2CMock,
-        'raspi-led': raspiLEDMock,
-        'raspi-pwm': raspiPWMMock
+        base: raspiMock,
+        gpio: raspiGpioMock,
+        pwm: raspiPWMMock
       }
     });
     expect(raspi instanceof EventEmitter).toBeTruthy();
   });
-
-  it('throws when `excludePins` and `includePins` are both defined', (done) => {
-    expect(() => new CoreIO({
-      includePins: [],
-      excludePins: [],
-      platform: {
-        'raspi': raspiMock,
-        'raspi-board': raspiBoardMock,
-        'raspi-gpio': raspiGpioMock,
-        'raspi-i2c': raspiI2CMock,
-        'raspi-led': raspiLEDMock,
-        'raspi-pwm': raspiPWMMock
-      }
-    })).toThrow(new Error('"includePins" and "excludePins" cannot be specified at the same time'));
-    done();
-  });
-
-  // TODO: test excludePins and includePins with invalid pin definitions
-
-  it('can limit pins with `includePins`', (done) => createInstance({ includePins: [ 'GPIO9' ] }, (raspi) => {
-    expect(raspi.pins[12].supportedModes.length).toEqual(0); // We fill in up to 7, but with non-functional pins
-    expect(raspi.pins[13].supportedModes.length).not.toEqual(0);
-    expect(raspi.pins.hasOwnProperty('14')).toBeFalsy();
-    done();
-  }));
-
-  it('can limit pins with `excludePins`', (done) => createInstance({ excludePins: [ 'GPIO9' ] }, (raspi) => {
-    expect(raspi.pins[12].supportedModes.length).not.toEqual(0);
-    expect(raspi.pins[13].supportedModes.length).toEqual(0);
-    expect(raspi.pins[14].supportedModes.length).not.toEqual(0);
-    done();
-  }));
 });
 
 describe('App Initialization', () => {
   it('emits "ready" and "connect" events on initialization', (done) => {
     const raspi = new CoreIO({
+      pluginName: 'Raspi IO',
+      pinInfo,
       platform: {
-        'raspi': raspiMock,
-        'raspi-board': raspiBoardMock,
-        'raspi-gpio': raspiGpioMock,
-        'raspi-i2c': raspiI2CMock,
-        'raspi-led': raspiLEDMock,
-        'raspi-pwm': raspiPWMMock
+        base: raspiMock,
+        gpio: raspiGpioMock,
+        pwm: raspiPWMMock
       }
     });
     expect(raspi.hasOwnProperty('isReady')).toBeTruthy();

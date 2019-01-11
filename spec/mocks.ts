@@ -36,6 +36,7 @@ import { CoreIO, IOptions } from '../src/index';
 
 // We can use the actual raspi and raspi-board modules in test mode here
 import { module as baseModule } from 'raspi';
+export { module as raspiMock } from 'raspi';
 import { getPinNumber } from 'raspi-board';
 
 const OFF = 0;
@@ -117,7 +118,7 @@ class DigitalInput extends Peripheral implements IDigitalInput {
   }
 }
 
-const raspiGpioMock: IGPIOModule = {
+export const raspiGpioMock: IGPIOModule = {
   PULL_NONE: 0,
   PULL_DOWN: 1,
   PULL_UP: 2,
@@ -363,7 +364,7 @@ class I2C extends Peripheral implements II2C {
   }
 }
 
-const raspiI2CMock: II2CModule = {
+export const raspiI2CMock: II2CModule = {
   createI2C: () => new I2C()
 };
 
@@ -387,7 +388,7 @@ class LED extends Peripheral implements ILED {
   }
 }
 
-const raspiLEDMock: ILEDModule = {
+export const raspiLEDMock: ILEDModule = {
   createLED: () => new LED()
 };
 
@@ -432,7 +433,7 @@ class PWM extends Peripheral implements IPWM {
   }
 }
 
-const raspiPWMMock: IPWMModule = {
+export const raspiPWMMock: IPWMModule = {
   createPWM: (config) => new PWM(config)
 };
 
@@ -506,15 +507,18 @@ class Serial extends Peripheral implements ISerial {
   }
 }
 
-const raspiSerialMock: ISerialModule = {
+export const raspiSerialMock: ISerialModule = {
   createSerial: (options) => new Serial(options)
 };
+
+export const pinInfo: { [ pin: number ]: IPeripheral } = {};
 
 export type CreateCallback = (instance: CoreIO) => void;
 export interface ICreateOptions {
   enableSerial: boolean;
 }
-function createInstance(options: CreateCallback | ICreateOptions, cb?: CreateCallback): void {
+
+export function createInstance(options: CreateCallback | ICreateOptions, cb?: CreateCallback): void {
   if (typeof cb === 'undefined') {
     cb = options as CreateCallback;
     options = { enableSerial: false };
@@ -536,13 +540,3 @@ function createInstance(options: CreateCallback | ICreateOptions, cb?: CreateCal
   const raspi = new CoreIO(coreOptions);
   raspi.on('ready', () => (cb as CreateCallback)(raspi));
 }
-
-module.exports = {
-  raspiMock: baseModule,
-  raspiGpioMock,
-  raspiI2CMock,
-  raspiLEDMock,
-  raspiPWMMock,
-  raspiSerialMock,
-  createInstance
-};

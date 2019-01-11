@@ -28,6 +28,8 @@ const events_1 = require("events");
 const index_1 = require("../src/index");
 // We can use the actual raspi and raspi-board modules in test mode here
 const raspi_1 = require("raspi");
+var raspi_2 = require("raspi");
+exports.raspiMock = raspi_2.module;
 const raspi_board_1 = require("raspi-board");
 const OFF = 0;
 class Peripheral extends events_1.EventEmitter {
@@ -91,7 +93,7 @@ class DigitalInput extends Peripheral {
         this.value = value;
     }
 }
-const raspiGpioMock = {
+exports.raspiGpioMock = {
     PULL_NONE: 0,
     PULL_DOWN: 1,
     PULL_UP: 2,
@@ -308,7 +310,7 @@ class I2C extends Peripheral {
         return readBuffer;
     }
 }
-const raspiI2CMock = {
+exports.raspiI2CMock = {
     createI2C: () => new I2C()
 };
 class LED extends Peripheral {
@@ -327,7 +329,7 @@ class LED extends Peripheral {
         this._value = value;
     }
 }
-const raspiLEDMock = {
+exports.raspiLEDMock = {
     createLED: () => new LED()
 };
 class PWM extends Peripheral {
@@ -365,7 +367,7 @@ class PWM extends Peripheral {
         this._dutyCycleValue = dutyCycle;
     }
 }
-const raspiPWMMock = {
+exports.raspiPWMMock = {
     createPWM: (config) => new PWM(config)
 };
 class Serial extends Peripheral {
@@ -424,9 +426,10 @@ class Serial extends Peripheral {
         this.emit('data', data);
     }
 }
-const raspiSerialMock = {
+exports.raspiSerialMock = {
     createSerial: (options) => new Serial(options)
 };
+exports.pinInfo = {};
 function createInstance(options, cb) {
     if (typeof cb === 'undefined') {
         cb = options;
@@ -437,25 +440,17 @@ function createInstance(options, cb) {
         pinInfo: {},
         platform: {
             base: raspi_1.module,
-            gpio: raspiGpioMock,
-            i2c: raspiI2CMock,
-            led: raspiLEDMock,
-            pwm: raspiPWMMock
+            gpio: exports.raspiGpioMock,
+            i2c: exports.raspiI2CMock,
+            led: exports.raspiLEDMock,
+            pwm: exports.raspiPWMMock
         }
     };
     if (options && options.enableSerial) {
-        coreOptions.platform.serial = raspiSerialMock;
+        coreOptions.platform.serial = exports.raspiSerialMock;
     }
     const raspi = new index_1.CoreIO(coreOptions);
     raspi.on('ready', () => cb(raspi));
 }
-module.exports = {
-    raspiMock: raspi_1.module,
-    raspiGpioMock,
-    raspiI2CMock,
-    raspiLEDMock,
-    raspiPWMMock,
-    raspiSerialMock,
-    createInstance
-};
+exports.createInstance = createInstance;
 //# sourceMappingURL=mocks.js.map
