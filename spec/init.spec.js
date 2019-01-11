@@ -79,7 +79,7 @@ describe('App Instantiation', () => {
         pluginName: 'Raspi IO',
         pinInfo: {}
       });
-    }).toThrow(new Error('"options.platform" option is required and must be an object'));
+    }).toThrow(new Error('"options.platform" is required and must be an object'));
   });
 
   it('requires the platform.base argument', () => {
@@ -89,7 +89,7 @@ describe('App Instantiation', () => {
         pinInfo,
         platform: {}
       });
-    }).toThrow(new Error('"options.platform.base" option is required and must be an object'));
+    }).toThrow(new Error('"options.platform.base" is required and must be an object'));
   });
 
   it('requires the platform.gpio argument', () => {
@@ -101,7 +101,7 @@ describe('App Instantiation', () => {
           base: raspiMock
         }
       });
-    }).toThrow(new Error('"options.platform.gpio" option is required and must be an object'));
+    }).toThrow(new Error('"options.platform.gpio" is required and must be an object'));
   });
 
   it('requires the platform.pwm argument', () => {
@@ -114,7 +114,7 @@ describe('App Instantiation', () => {
           gpio: raspiGpioMock
         }
       });
-    }).toThrow(new Error('"options.platform.pwm" option is required and must be an object'));
+    }).toThrow(new Error('"options.platform.pwm" is required and must be an object'));
   });
 
   it('is an instance of an Event Emitter', () => {

@@ -30,7 +30,7 @@ describe('Unsupported', () => {
         it(`throws an exception when trying to call \`${method}\``, (done) => createInstance((raspi) => {
             expect(() => {
                 raspi[method]();
-            }).toThrow(new Error(`${method} is not supported on the Raspberry Pi`));
+            }).toThrow(new Error(`${method} is not supported by Raspi IO`));
             done();
         }));
     }
@@ -44,20 +44,12 @@ describe('Unsupported', () => {
     testUnsupported('sendOneWireWrite');
     testUnsupported('sendOneWireDelay');
     testUnsupported('sendOneWireWriteAndRead');
-    function testUnimplemented(method) {
-        it(`throws an exception when trying to call \`${method}\``, (done) => createInstance((raspi) => {
-            expect(() => {
-                raspi[method]();
-            }).toThrow(new Error(`${method} is not yet implemented`));
-            done();
-        }));
-    }
-    testUnimplemented('setSamplingInterval');
-    testUnimplemented('reportAnalogPin');
-    testUnimplemented('reportDigitalPin');
-    testUnimplemented('pingRead');
-    testUnimplemented('pulseIn');
-    testUnimplemented('stepperConfig');
-    testUnimplemented('stepperStep');
+    testUnsupported('setSamplingInterval');
+    testUnsupported('reportAnalogPin');
+    testUnsupported('reportDigitalPin');
+    testUnsupported('pingRead');
+    testUnsupported('pulseIn');
+    testUnsupported('stepperConfig');
+    testUnsupported('stepperStep');
 });
 //# sourceMappingURL=unsupported.spec.js.map
