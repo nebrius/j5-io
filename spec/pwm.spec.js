@@ -44,7 +44,7 @@ xdescribe('PWM', () => {
     raspi.pinMode(pinAlias, raspi.MODES.PWM);
     expect(raspi.pins[pin].mode).toEqual(3);
 
-    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    const peripheral = raspi.getInternalPinInstances()[pin];
     expect(peripheral.args.length).toEqual(1);
     expect(peripheral.args[0]).toEqual(pin);
     done();
@@ -56,7 +56,7 @@ xdescribe('PWM', () => {
     raspi.pinMode(pinAlias, raspi.MODES.SERVO);
     expect(raspi.pins[pin].mode).toEqual(4);
 
-    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    const peripheral = raspi.getInternalPinInstances()[pin];
     expect(peripheral.args.length).toEqual(1);
     expect(peripheral.args[0]).toEqual(pin);
     done();
@@ -81,7 +81,7 @@ xdescribe('PWM', () => {
   it('can set the duty cycle via `pwmWrite`', (done) => createInstance((raspi) => {
     const pin = raspi.normalize(pinAlias);
     raspi.pinMode(pinAlias, raspi.MODES.PWM);
-    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    const peripheral = raspi.getInternalPinInstances()[pin];
 
     raspi.pwmWrite(pinAlias, 0);
     expectToRoughlyEqual(peripheral.dutyCycle, 0);
@@ -101,7 +101,7 @@ xdescribe('PWM', () => {
   it('can set the duty cycle via `analogWrite`', (done) => createInstance((raspi) => {
     const pin = raspi.normalize(pinAlias);
     raspi.pinMode(pinAlias, raspi.MODES.PWM);
-    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    const peripheral = raspi.getInternalPinInstances()[pin];
 
     raspi.analogWrite(pinAlias, 0);
     expectToRoughlyEqual(peripheral.dutyCycle, 0);
@@ -121,7 +121,7 @@ xdescribe('PWM', () => {
   it('can set the duty cycle in degrees via `servoWrite`', (done) => createInstance((raspi) => {
     const pin = raspi.normalize(pinAlias);
     raspi.pinMode(pinAlias, raspi.MODES.SERVO);
-    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    const peripheral = raspi.getInternalPinInstances()[pin];
 
     raspi.servoWrite(pinAlias, 0);
     expectToRoughlyEqual(peripheral.dutyCycle, 0.001 * peripheral.frequency);
@@ -138,7 +138,7 @@ xdescribe('PWM', () => {
   it('can set the duty cycle in degrees over 180 that get constrained to 180 via `servoWrite`', (done) => createInstance((raspi) => {
     const pin = raspi.normalize(pinAlias);
     raspi.pinMode(pinAlias, raspi.MODES.SERVO);
-    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    const peripheral = raspi.getInternalPinInstances()[pin];
 
     raspi.servoWrite(pinAlias, 190);
     expectToRoughlyEqual(peripheral.dutyCycle, 0.002 * peripheral.frequency);
@@ -155,7 +155,7 @@ xdescribe('PWM', () => {
   it('can set the duty cycle in nanoseconds over 543 via `servoWrite`', (done) => createInstance((raspi) => {
     const pin = raspi.normalize(pinAlias);
     raspi.pinMode(pinAlias, raspi.MODES.SERVO);
-    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    const peripheral = raspi.getInternalPinInstances()[pin];
 
     raspi.servoWrite(pinAlias, 1000);
     expectToRoughlyEqual(peripheral.dutyCycle, 0.001 * peripheral.frequency);
@@ -186,7 +186,7 @@ xdescribe('PWM', () => {
   it('can configure the servo for different min and max via `servoConfig` when sending degrees to `servoWrite`', (done) => createInstance((raspi) => {
     const pin = raspi.normalize(pinAlias);
     raspi.pinMode(pinAlias, raspi.MODES.SERVO);
-    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    const peripheral = raspi.getInternalPinInstances()[pin];
     const min = 700;
     const max = 2400;
 
@@ -210,7 +210,7 @@ xdescribe('PWM', () => {
     const max = 2000;
 
     raspi.servoConfig(pinAlias);
-    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    const peripheral = raspi.getInternalPinInstances()[pin];
 
     raspi.servoWrite(pinAlias, 0);
     expectToRoughlyEqual(peripheral.dutyCycle, (min / 1000000) * peripheral.frequency);
@@ -227,7 +227,7 @@ xdescribe('PWM', () => {
   it('can configure the servo for different min and max via `servoConfig` when sending degrees to `servoWrite`', (done) => createInstance((raspi) => {
     const pin = raspi.normalize(pinAlias);
     raspi.pinMode(pinAlias, raspi.MODES.SERVO);
-    const { peripheral } = raspi.getInternalPinInstances()[pin];
+    const peripheral = raspi.getInternalPinInstances()[pin];
     const min = 700;
     const max = 2400;
 

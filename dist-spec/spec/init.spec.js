@@ -26,7 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 /*global it describe expect*/
 const { EventEmitter } = require('events');
 const { CoreIO } = require('../dist/index');
-const { raspiMock, raspiBoardMock, raspiGpioMock, raspiPWMMock, raspiSerialMock, pinInfo, createInstance } = require('./mocks');
+const { raspiMock, raspiGpioMock, raspiPWMMock, raspiSerialMock, pinInfo, createInstance, pinInfo: boardPins } = require('./mocks');
 describe('App Instantiation', () => {
     it('requires an options argument', () => {
         expect(() => {
@@ -141,10 +141,19 @@ describe('App Initialization', () => {
         });
     });
     function isPropertyFrozenAndReadOnly(obj, property) {
-        expect(obj.hasOwnProperty(property)).toBeTruthy();
-        expect(Object.isFrozen(obj['property'])).toBeTruthy();
-        const descriptor = Object.getOwnPropertyDescriptor(obj, property);
-        expect(descriptor.configurable).toBeFalsy();
+        expect(property in obj).toBeTruthy();
+        expect(Object.isFrozen(obj[property])).toBeTruthy();
+        // We have to loop up the prototype chain, cause sometimes these properties come from the Abstract IO base class
+        let descriptor;
+        let proto = obj;
+        while (proto !== null) {
+            descriptor = Object.getOwnPropertyDescriptor(proto, property);
+            if (descriptor) {
+                break;
+            }
+            proto = Object.getPrototypeOf(proto);
+        }
+        expect(descriptor).not.toBeUndefined();
         expect(descriptor.writable).toBeFalsy();
     }
     it('creates the `MODES` property', (done) => createInstance((raspi) => {
@@ -169,7 +178,6 @@ describe('App Initialization', () => {
     it('creates the `pins` property', (done) => createInstance((raspi) => {
         isPropertyFrozenAndReadOnly(raspi, 'pins');
         const pins = [];
-        const boardPins = raspiBoardMock.getPins();
         Object.keys(boardPins).forEach((pin) => {
             const supportedModes = [];
             const pinInfo = boardPins[pin];

@@ -239,10 +239,10 @@ class CoreIO extends abstract_io_1.AbstractIO {
         return this[serialPortIds];
     }
     get pins() {
-        return this[pins];
+        return Object.freeze(this[pins]);
     }
     get analogPins() {
-        return [];
+        return Object.freeze([]);
     }
     get isReady() {
         return this[isReady];
@@ -262,7 +262,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
             throw new Error(`Unknown mode ${mode}`);
         }
         else if (this[pins][normalizedPin].supportedModes.indexOf(mode) === -1) {
-            throw new Error(`Pin "${pin}" does not support mode "${abstract_io_1.Mode[mode]}"`);
+            throw new Error(`Pin "${pin}" does not support mode "${abstract_io_1.Mode[mode].toLowerCase()}"`);
         }
         if (pin === LED_PIN) {
             // TODO

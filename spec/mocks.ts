@@ -82,13 +82,17 @@ class Peripheral extends EventEmitter implements IPeripheral {
   }
 }
 
+function getPinFromConfig(config: number | { pin: number }): number[] {
+  return [ typeof config === 'number' ? config : config.pin ];
+}
+
 class DigitalOutput extends Peripheral implements IDigitalOutput {
 
   public value = OFF;
   public args: any[];
 
   constructor(...args: any[]) {
-    super([ args[0] ]);
+    super(getPinFromConfig(args[0]));
     this.args = args;
   }
   public write(value: number) {
@@ -103,7 +107,7 @@ class DigitalInput extends Peripheral implements IDigitalInput {
   public pullResistor = 0;
 
   constructor(...args: any[]) {
-    super([ args[0] ]);
+    super(getPinFromConfig(args[0]));
     this.args = args;
     if (typeof args === 'object') {
       this.pullResistor = args[0].pullResistor || 0;

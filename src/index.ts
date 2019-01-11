@@ -120,12 +120,12 @@ export class CoreIO extends AbstractIO {
     return this[serialPortIds];
   }
 
-  public get pins() {
-    return this[pins];
+  public get pins(): ReadonlyArray<IPinConfiguration> {
+    return Object.freeze(this[pins]);
   }
 
-  public get analogPins(): number[] {
-   return [];
+  public get analogPins(): ReadonlyArray<number> {
+   return Object.freeze([]);
   }
 
   public get isReady(): boolean {
@@ -359,7 +359,7 @@ export class CoreIO extends AbstractIO {
     if (!Mode.hasOwnProperty(mode)) {
       throw new Error(`Unknown mode ${mode}`);
     } else if (this[pins][normalizedPin].supportedModes.indexOf(mode) === -1) {
-      throw new Error(`Pin "${pin}" does not support mode "${Mode[mode]}"`);
+      throw new Error(`Pin "${pin}" does not support mode "${Mode[mode].toLowerCase()}"`);
     }
 
     if (pin === LED_PIN) {

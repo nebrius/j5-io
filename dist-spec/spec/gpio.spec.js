@@ -73,7 +73,7 @@ describe('GPIO', () => {
         expect(raspi.pins[pin].mode).toEqual(1);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
         expect(raspi.pins[pin].mode).toEqual(0);
-        const { peripheral } = raspi.getInternalPinInstances()[pin];
+        const peripheral = raspi.getInternalPinInstances()[pin];
         expect(peripheral.args.length).toEqual(1);
         expect(peripheral.args[0]).toEqual({
             pin,
@@ -84,7 +84,7 @@ describe('GPIO', () => {
     it('can read from a pin using the `value` property', (done) => createInstance((raspi) => {
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
-        const { peripheral } = raspi.getInternalPinInstances()[pin];
+        const peripheral = raspi.getInternalPinInstances()[pin];
         peripheral.setMockedValue(0);
         expect(raspi.pins[pin].value).toEqual(0);
         peripheral.setMockedValue(1);
@@ -94,7 +94,7 @@ describe('GPIO', () => {
     it('can read from a pin using the `digitalRead` method', (done) => createInstance((raspi) => {
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
-        const { peripheral } = raspi.getInternalPinInstances()[pin];
+        const peripheral = raspi.getInternalPinInstances()[pin];
         let numReadsRemaining = NUM_DIGITAL_READS;
         let value = 0;
         peripheral.setMockedValue(value);
@@ -111,7 +111,7 @@ describe('GPIO', () => {
     it('only notifies the callback when the value has changed', (done) => createInstance((raspi) => {
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
-        const { peripheral } = raspi.getInternalPinInstances()[pin];
+        const peripheral = raspi.getInternalPinInstances()[pin];
         let previouslyReadValue = NaN;
         peripheral.setMockedValue(0);
         raspi.digitalRead(pinAlias, (newValue) => {
@@ -150,7 +150,7 @@ describe('GPIO', () => {
     it('can read from a pin using the `digital-read-${pin}` event', (done) => createInstance((raspi) => {
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
-        const { peripheral } = raspi.getInternalPinInstances()[pin];
+        const peripheral = raspi.getInternalPinInstances()[pin];
         let numReadsRemaining = NUM_DIGITAL_READS;
         let value = 0;
         peripheral.setMockedValue(value);
@@ -169,7 +169,7 @@ describe('GPIO', () => {
     it('can read from a pin using the `digitalRead` method at no more than 200Hz and no less than 50Hz', (done) => createInstance((raspi) => {
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
-        const { peripheral } = raspi.getInternalPinInstances()[pin];
+        const peripheral = raspi.getInternalPinInstances()[pin];
         let numReadsRemaining = NUM_DIGITAL_READS;
         let value = 0;
         const startTime = Date.now();
@@ -188,7 +188,7 @@ describe('GPIO', () => {
     it('stops reading from the `digitalRead` method after being destroyed', (done) => createInstance((raspi) => {
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
-        const { peripheral } = raspi.getInternalPinInstances()[pin];
+        const peripheral = raspi.getInternalPinInstances()[pin];
         raspi.digitalRead(pinAlias, () => {
             expect(peripheral.alive).toBeTruthy();
             peripheral.destroy();
@@ -198,9 +198,9 @@ describe('GPIO', () => {
     it('can enable the internal pull up resistor', (done) => createInstance((raspi) => {
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
-        const { peripheral: oldPeripheral } = raspi.getInternalPinInstances()[pin];
+        const oldPeripheral = raspi.getInternalPinInstances()[pin];
         raspi.digitalWrite(pinAlias, raspi.HIGH);
-        const { peripheral: newPeripheral } = raspi.getInternalPinInstances()[pin];
+        const newPeripheral = raspi.getInternalPinInstances()[pin];
         expect(oldPeripheral).not.toBe(newPeripheral);
         expect(newPeripheral.args[0].pullResistor).toEqual(raspiGpioMock.PULL_UP);
         done();
@@ -208,9 +208,9 @@ describe('GPIO', () => {
     it('can enable the internal pull down resistor', (done) => createInstance((raspi) => {
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
-        const { peripheral: oldPeripheral } = raspi.getInternalPinInstances()[pin];
+        const oldPeripheral = raspi.getInternalPinInstances()[pin];
         raspi.digitalWrite(pinAlias, raspi.LOW);
-        const { peripheral: newPeripheral } = raspi.getInternalPinInstances()[pin];
+        const newPeripheral = raspi.getInternalPinInstances()[pin];
         expect(oldPeripheral).not.toBe(newPeripheral);
         expect(newPeripheral.args[0].pullResistor).toEqual(raspiGpioMock.PULL_DOWN);
         done();
@@ -224,7 +224,7 @@ describe('GPIO', () => {
         expect(raspi.pins[pin].mode).toEqual(0);
         raspi.pinMode(pinAlias, raspi.MODES.OUTPUT);
         expect(raspi.pins[pin].mode).toEqual(1);
-        const { peripheral } = raspi.getInternalPinInstances()[pin];
+        const peripheral = raspi.getInternalPinInstances()[pin];
         expect(peripheral.args.length).toEqual(1);
         expect(peripheral.args[0]).toEqual({
             pin,
@@ -235,7 +235,7 @@ describe('GPIO', () => {
     it('can write a value to a pin using the `digitalWrite` method', (done) => createInstance((raspi) => {
         const pin = raspi.normalize(pinAlias);
         expect(raspi.pins[pin].mode).toEqual(1);
-        const { peripheral } = raspi.getInternalPinInstances()[pin];
+        const peripheral = raspi.getInternalPinInstances()[pin];
         raspi.digitalWrite(pinAlias, 0);
         expect(peripheral.value).toEqual(0);
         expect(raspi.pins[pin].value).toEqual(0);
@@ -247,7 +247,7 @@ describe('GPIO', () => {
     it('can write a value to a pin using the `value` setter', (done) => createInstance((raspi) => {
         const pin = raspi.normalize(pinAlias);
         expect(raspi.pins[pin].mode).toEqual(1);
-        const { peripheral } = raspi.getInternalPinInstances()[pin];
+        const peripheral = raspi.getInternalPinInstances()[pin];
         raspi.pins[pin].value = 0;
         expect(peripheral.value).toEqual(0);
         raspi.pins[pin].value = 1;

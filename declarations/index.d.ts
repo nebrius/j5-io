@@ -25,8 +25,8 @@ export declare class CoreIO extends AbstractIO {
     readonly SERIAL_PORT_IDs: {
         [id: string]: any;
     };
-    readonly pins: IPinConfiguration[];
-    readonly analogPins: number[];
+    readonly pins: ReadonlyArray<IPinConfiguration>;
+    readonly analogPins: ReadonlyArray<number>;
     readonly isReady: boolean;
     getInternalPinInstances?: () => {
         [pin: number]: IPeripheral;

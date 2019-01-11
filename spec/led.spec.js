@@ -32,7 +32,7 @@ xdescribe('LED', () => {
     expect(raspi.defaultLed).toEqual(-1);
     expect(raspi.pins[raspi.defaultLed].supportedModes.indexOf(1)).not.toEqual(-1);
 
-    const { peripheral } = raspi.getInternalPinInstances()[-1];
+    const peripheral = raspi.getInternalPinInstances()[-1];
     expect(peripheral instanceof raspiLEDMock.LED).toBeTruthy();
     expect(peripheral.args.length).toEqual(0);
 
@@ -40,7 +40,7 @@ xdescribe('LED', () => {
   }));
 
   it('can write to the LED', (done) => createInstance((raspi) => {
-    const { peripheral } = raspi.getInternalPinInstances()[-1];
+    const peripheral = raspi.getInternalPinInstances()[-1];
     raspi.digitalWrite(raspi.defaultLed, 0);
     expect(peripheral.read()).toEqual(0);
     raspi.digitalWrite(raspi.defaultLed, 1);

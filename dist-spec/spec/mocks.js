@@ -67,9 +67,12 @@ class Peripheral extends events_1.EventEmitter {
         }
     }
 }
+function getPinFromConfig(config) {
+    return [typeof config === 'number' ? config : config.pin];
+}
 class DigitalOutput extends Peripheral {
     constructor(...args) {
-        super([args[0]]);
+        super(getPinFromConfig(args[0]));
         this.value = OFF;
         this.args = args;
     }
@@ -79,7 +82,7 @@ class DigitalOutput extends Peripheral {
 }
 class DigitalInput extends Peripheral {
     constructor(...args) {
-        super([args[0]]);
+        super(getPinFromConfig(args[0]));
         this.value = OFF;
         this.pullResistor = 0;
         this.args = args;

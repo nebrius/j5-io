@@ -57,7 +57,7 @@ export class GPIOManager {
       // instead of changing to output mode and writing the value.
       if (currentMode === Mode.INPUT) {
         if ((peripheral as IDigitalInput).pullResistor !== value) {
-          this.setInputMode(pin, value);
+          this.setInputMode(pin, value ? this.module.PULL_UP : this.module.PULL_DOWN);
         }
         return;
       } else if (currentMode !== Mode.OUTPUT) {
