@@ -96,11 +96,6 @@ class CoreIO extends abstract_io_1.AbstractIO {
         // Create the pins object
         this[pins] = [];
         const pinMappings = Object.assign({}, pinInfo);
-        // Slight hack to get the LED in there, since it's not actually a pin
-        pinMappings[LED_PIN] = {
-            pins: [LED_PIN.toString()],
-            peripherals: [core_io_types_1.PeripheralType.GPIO]
-        };
         // TODO: Move to raspi-io
         // if (Array.isArray(includePins)) {
         //   const newPinMappings = {};
@@ -193,6 +188,34 @@ class CoreIO extends abstract_io_1.AbstractIO {
                 this.digitalWrite(pin, abstract_io_1.Value.LOW);
             }
         }
+        // Slight hack to get the LED in there, since it's not actually a pin
+        this[pins][LED_PIN] = Object.create(null, {
+            supportedModes: {
+                enumerable: true,
+                value: Object.freeze([abstract_io_1.Mode.OUTPUT])
+            },
+            mode: {
+                enumerable: true,
+                get() {
+                    return abstract_io_1.Mode.OUTPUT;
+                }
+            },
+            value: {
+                enumerable: true,
+                get() {
+                    // TODO: wire into LED manager or something
+                    return 0;
+                }
+            },
+            report: {
+                enumerable: true,
+                value: 1
+            },
+            analogChannel: {
+                enumerable: true,
+                value: 127
+            }
+        });
         // Fill in the holes, sins pins are sparse on the A+/B+/2
         for (let i = 0; i < this[pins].length; i++) {
             if (!this[pins][i]) {

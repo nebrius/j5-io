@@ -45,8 +45,9 @@ class GPIOManager {
             // Note: if we are in input mode, digitalWrite sets the pull resistor value
             // instead of changing to output mode and writing the value.
             if (currentMode === abstract_io_1.Mode.INPUT) {
-                if (peripheral.pullResistor !== value) {
-                    this.setInputMode(pin, value ? this.module.PULL_UP : this.module.PULL_DOWN);
+                const newPullResistor = value ? this.module.PULL_UP : this.module.PULL_DOWN;
+                if (peripheral.pullResistor !== newPullResistor) {
+                    this.setInputMode(pin, newPullResistor);
                 }
                 return;
             }
