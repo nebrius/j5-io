@@ -447,7 +447,11 @@ function createInstance(options, cb) {
             gpio: exports.raspiGpioMock,
             i2c: exports.raspiI2CMock,
             led: exports.raspiLEDMock,
-            pwm: exports.raspiPWMMock
+            pwm: exports.raspiPWMMock,
+            serial: exports.raspiSerialMock
+        },
+        serialIds: {
+            DEFAULT: '/dev/ttyAMA0'
         }
     };
     if (options && options.enableSerial) {

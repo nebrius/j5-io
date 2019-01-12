@@ -25,18 +25,16 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 import {
   IBaseModule,
-  IGPIOModule,
+  IGPIOModule, IDigitalInput, IDigitalOutput,
   ILEDModule,
   IPWMModule,
   ISerialModule,
   II2CModule,
   IPeripheral,
-  IDigitalInput,
-  IDigitalOutput,
   IPinInfo,
   PeripheralType
 } from 'core-io-types';
-import { AbstractIO, Value, Mode, IPinConfiguration } from 'abstract-io';
+import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig } from 'abstract-io';
 import { setBaseModule, normalizePin, getPeripherals, getMode, getPeripheral } from './core';
 
 import { GPIOManager } from './managers/gpio';
@@ -103,6 +101,7 @@ export interface IOptions {
     serial?: ISerialModule,
     i2c?: II2CModule
   };
+  serialIds?: { [ id: string ]: any };
   pinInfo: { [ pin: number ]: IPinInfo };
 }
 
@@ -167,17 +166,24 @@ export class CoreIO extends AbstractIO {
     if (typeof options.platform.pwm !== 'object') {
       throw new Error('"options.platform.pwm" is required and must be an object');
     }
+    if (typeof options.platform.serial === 'object') {
+      if (typeof options.serialIds !== 'object') {
+        throw new Error(
+          '"options.serialIds" is required and must be an object when options.platform.serial is also supplied');
+      }
+      if (typeof options.serialIds.DEFAULT === 'undefined') {
+        throw new Error('"DEFAULT" serial ID is required in options.serialIds');
+      }
+    }
 
     // Create the plugin name
     this[name] = options.pluginName;
 
-    const { pinInfo, platform } = options;
+    const { pinInfo, serialIds, platform } = options;
 
     // Create the serial port IDs if serial is supported
-    if (platform.serial) {
-      // TODO: Add these in...where to get them from though?
-      this[serialPortIds] = Object.freeze({
-      });
+    if (serialIds) {
+      this[serialPortIds] = Object.freeze(serialIds);
     } else {
       this[serialPortIds] = Object.freeze({});
     }
@@ -196,12 +202,6 @@ export class CoreIO extends AbstractIO {
     // Create the pins object
     this[pins] = [];
     const pinMappings = { ...pinInfo };
-
-    // Slight hack to get the LED in there, since it's not actually a pin
-    pinMappings[LED_PIN] = {
-      pins: [ LED_PIN.toString() ],
-      peripherals: [ PeripheralType.GPIO ]
-    };
 
     // TODO: Move to raspi-io
     // if (Array.isArray(includePins)) {
@@ -297,6 +297,35 @@ export class CoreIO extends AbstractIO {
       }
     }
 
+    // Slight hack to get the LED in there, since it's not actually a pin
+    this[pins][LED_PIN] = Object.create(null, {
+      supportedModes: {
+        enumerable: true,
+        value: Object.freeze([ Mode.OUTPUT ])
+      },
+      mode: {
+        enumerable: true,
+        get() {
+          return Mode.OUTPUT;
+        }
+      },
+      value: {
+        enumerable: true,
+        get() {
+          // TODO: wire into LED manager or something
+          return 0;
+        }
+      },
+      report: {
+        enumerable: true,
+        value: 1
+      },
+      analogChannel: {
+        enumerable: true,
+        value: 127
+      }
+    });
+
     // Fill in the holes, sins pins are sparse on the A+/B+/2
     for (let i = 0; i < this[pins].length; i++) {
       if (!this[pins][i]) {
@@ -308,7 +337,7 @@ export class CoreIO extends AbstractIO {
           mode: {
             enumerable: true,
             get() {
-              return Mode.OUTPUT;
+              return Mode.UNKOWN;
             }
           },
           value: {
@@ -635,6 +664,10 @@ export class CoreIO extends AbstractIO {
   // sendI2CReadRequest(...rest) {
   //   return this.i2cReadOnce(...rest);
   // }
+
+  public serialConfig(options: ISerialConfig): void {
+    // TODO
+  }
 
   // // TODO: print a warning or throw an error (?) when rxPin or txPin are specified
   // serialConfig({ portId, baud }) {

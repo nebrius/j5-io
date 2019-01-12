@@ -66,13 +66,20 @@ class CoreIO extends abstract_io_1.AbstractIO {
         if (typeof options.platform.pwm !== 'object') {
             throw new Error('"options.platform.pwm" is required and must be an object');
         }
+        if (typeof options.platform.serial === 'object') {
+            if (typeof options.serialIds !== 'object') {
+                throw new Error('"options.serialIds" is required and must be an object when options.platform.serial is also supplied');
+            }
+            if (typeof options.serialIds.DEFAULT === 'undefined') {
+                throw new Error('"DEFAULT" serial ID is required in options.serialIds');
+            }
+        }
         // Create the plugin name
         this[name] = options.pluginName;
-        const { pinInfo, platform } = options;
+        const { pinInfo, serialIds, platform } = options;
         // Create the serial port IDs if serial is supported
-        if (platform.serial) {
-            // TODO: Add these in...where to get them from though?
-            this[serialPortIds] = Object.freeze({});
+        if (serialIds) {
+            this[serialPortIds] = Object.freeze(serialIds);
         }
         else {
             this[serialPortIds] = Object.freeze({});
@@ -89,11 +96,6 @@ class CoreIO extends abstract_io_1.AbstractIO {
         // Create the pins object
         this[pins] = [];
         const pinMappings = Object.assign({}, pinInfo);
-        // Slight hack to get the LED in there, since it's not actually a pin
-        pinMappings[LED_PIN] = {
-            pins: [LED_PIN.toString()],
-            peripherals: [core_io_types_1.PeripheralType.GPIO]
-        };
         // TODO: Move to raspi-io
         // if (Array.isArray(includePins)) {
         //   const newPinMappings = {};
@@ -186,6 +188,34 @@ class CoreIO extends abstract_io_1.AbstractIO {
                 this.digitalWrite(pin, abstract_io_1.Value.LOW);
             }
         }
+        // Slight hack to get the LED in there, since it's not actually a pin
+        this[pins][LED_PIN] = Object.create(null, {
+            supportedModes: {
+                enumerable: true,
+                value: Object.freeze([abstract_io_1.Mode.OUTPUT])
+            },
+            mode: {
+                enumerable: true,
+                get() {
+                    return abstract_io_1.Mode.OUTPUT;
+                }
+            },
+            value: {
+                enumerable: true,
+                get() {
+                    // TODO: wire into LED manager or something
+                    return 0;
+                }
+            },
+            report: {
+                enumerable: true,
+                value: 1
+            },
+            analogChannel: {
+                enumerable: true,
+                value: 127
+            }
+        });
         // Fill in the holes, sins pins are sparse on the A+/B+/2
         for (let i = 0; i < this[pins].length; i++) {
             if (!this[pins][i]) {
@@ -197,7 +227,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
                     mode: {
                         enumerable: true,
                         get() {
-                            return abstract_io_1.Mode.OUTPUT;
+                            return abstract_io_1.Mode.UNKOWN;
                         }
                     },
                     value: {
@@ -309,6 +339,192 @@ class CoreIO extends abstract_io_1.AbstractIO {
             return;
         }
         this[gpioManager].digitalWrite(this.normalize(pin), value);
+    }
+    // PWM methods
+    /*
+    public pwmWrite(pin: string | number, value: number): void {
+      throw new Error(`pwmWrite is not supported by ${this.name}`);
+    }
+  
+    public servoWrite(pin: string | number, value: number): void {
+      throw new Error(`servoWrite is not supported by ${this.name}`);
+    }
+  
+    public servoConfig(options: IServoConfig): void;
+    public servoConfig(pin: number, min: number, max: number): void;
+    public servoConfig(optionsOrPin: IServoConfig | number, min?: number, max?: number): void {
+      throw new Error(`servoConfig is not supported by ${this.name}`);
+    }
+    */
+    // Methods that need converting
+    // analogRead() {
+    //   throw new Error('analogRead is not supported on the Raspberry Pi');
+    // }
+    // analogWrite(pin, value) {
+    //   this.pwmWrite(pin, value);
+    // }
+    // pwmWrite(pin, value) {
+    //   const pinInstance = this[getPinInstance](this.normalize(pin));
+    //   if (pinInstance.mode != PWM_MODE) {
+    //     this.pinMode(pin, PWM_MODE);
+    //   }
+    //   // TODO: need to constrain value to be between 0 and 255
+    //   pinInstance.peripheral.write(value / 255);
+    // }
+    // servoConfig(pin, min, max) {
+    //   let config = pin;
+    //   if (typeof config !== 'object') {
+    //     config = { pin, min, max };
+    //   }
+    //   if (typeof config.min !== 'number') {
+    //     config.min = DEFAULT_SERVO_MIN;
+    //   }
+    //   if (typeof config.max !== 'number') {
+    //     config.max = DEFAULT_SERVO_MAX;
+    //   }
+    //   const normalizedPin = this.normalize(pin);
+    //   let pinInstance = this[getPinInstance](this.normalize(normalizedPin));
+    //   if (pinInstance.mode != SERVO_MODE) {
+    //     this.pinMode(pin, SERVO_MODE);
+    //     pinInstance = this[getPinInstance](this.normalize(normalizedPin));
+    //   }
+    //   pinInstance.min = config.min;
+    //   pinInstance.max = config.max;
+    // }
+    // servoWrite(pin, value) {
+    //   const pinInstance = this[getPinInstance](this.normalize(pin));
+    //   if (pinInstance.mode != SERVO_MODE) {
+    //     this.pinMode(pin, SERVO_MODE);
+    //   }
+    //   const period = 1000000 / pinInstance.peripheral.frequency; // in us
+    //   var pulseWidth;
+    //   if (value < 544) {
+    //     pulseWidth = pinInstance.min + constrain(value, 0, 180) / 180 * (pinInstance.max - pinInstance.min);
+    //   } else {
+    //     pulseWidth = constrain(value, pinInstance.min, pinInstance.max);
+    //   }
+    //   pinInstance.peripheral.write(pulseWidth / period);
+    // }
+    // queryCapabilities(cb) {
+    //   if (this.isReady) {
+    //     process.nextTick(cb);
+    //   } else {
+    //     this.on('ready', cb);
+    //   }
+    // }
+    // queryAnalogMapping(cb) {
+    //   if (this.isReady) {
+    //     process.nextTick(cb);
+    //   } else {
+    //     this.on('ready', cb);
+    //   }
+    // }
+    // queryPinState(pin, cb) {
+    //   if (this.isReady) {
+    //     process.nextTick(cb);
+    //   } else {
+    //     this.on('ready', cb);
+    //   }
+    // }
+    // [i2cCheckAlive]() {
+    //   if (!this[i2c].alive) {
+    //     throw new Error('I2C pins not in I2C mode');
+    //   }
+    // }
+    // i2cConfig(options) {
+    //   let delay;
+    //   if (typeof options === 'number') {
+    //     delay = options;
+    //   } else {
+    //     if (typeof options === 'object' && options !== null) {
+    //       delay = options.delay;
+    //     }
+    //   }
+    //   this[i2cCheckAlive]();
+    //   this[i2cDelay] = Math.round((delay || 0) / 1000);
+    //   return this;
+    // }
+    // i2cWrite(address, cmdRegOrData, inBytes) {
+    //   this[i2cCheckAlive]();
+    //   // If i2cWrite was used for an i2cWriteReg call...
+    //   if (arguments.length === 3 &&
+    //       !Array.isArray(cmdRegOrData) &&
+    //       !Array.isArray(inBytes)) {
+    //     return this.i2cWriteReg(address, cmdRegOrData, inBytes);
+    //   }
+    //   // Fix arguments if called with Firmata.js API
+    //   if (arguments.length === 2) {
+    //     if (Array.isArray(cmdRegOrData)) {
+    //       inBytes = cmdRegOrData.slice();
+    //       cmdRegOrData = inBytes.shift();
+    //     } else {
+    //       inBytes = [];
+    //     }
+    //   }
+    //   const buffer = new Buffer([cmdRegOrData].concat(inBytes));
+    //   // Only write if bytes provided
+    //   if (buffer.length) {
+    //     this[i2c].writeSync(address, buffer);
+    //   }
+    //   return this;
+    // }
+    // i2cWriteReg(address, register, value) {
+    //   this[i2cCheckAlive]();
+    //   this[i2c].writeByteSync(address, register, value);
+    //   return this;
+    // }
+    // [i2cRead](continuous, address, register, bytesToRead, callback) {
+    //   this[i2cCheckAlive]();
+    //   // Fix arguments if called with Firmata.js API
+    //   if (arguments.length == 4 &&
+    //     typeof register == 'number' &&
+    //     typeof bytesToRead == 'function'
+    //   ) {
+    //     callback = bytesToRead;
+    //     bytesToRead = register;
+    //     register = null;
+    //   }
+    //   callback = typeof callback === 'function' ? callback : () => {};
+    //   let event = `i2c-reply-${address}-`;
+    //   event += register !== null ? register : 0;
+    //   const read = () => {
+    //     const afterRead = (err, buffer) => {
+    //       if (err) {
+    //         return this.emit('error', err);
+    //       }
+    //       // Convert buffer to Array before emit
+    //       this.emit(event, Array.prototype.slice.call(buffer));
+    //       if (continuous && this[i2c].alive) {
+    //         setTimeout(read, this[i2cDelay]);
+    //       }
+    //     };
+    //     this.once(event, callback);
+    //     if (register !== null) {
+    //       this[i2c].read(address, register, bytesToRead, afterRead);
+    //     } else {
+    //       this[i2c].read(address, bytesToRead, afterRead);
+    //     }
+    //   };
+    //   setTimeout(read, this[i2cDelay]);
+    //   return this;
+    // }
+    // i2cRead(...rest) {
+    //   return this[i2cRead](true, ...rest);
+    // }
+    // i2cReadOnce(...rest) {
+    //   return this[i2cRead](false, ...rest);
+    // }
+    // sendI2CConfig(...rest) {
+    //   return this.i2cConfig(...rest);
+    // }
+    // sendI2CWriteRequest(...rest) {
+    //   return this.i2cWrite(...rest);
+    // }
+    // sendI2CReadRequest(...rest) {
+    //   return this.i2cReadOnce(...rest);
+    // }
+    serialConfig(options) {
+        // TODO
     }
 }
 _a = isReady, _b = pins;

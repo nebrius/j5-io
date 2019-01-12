@@ -536,7 +536,11 @@ export function createInstance(options: CreateCallback | ICreateOptions, cb?: Cr
       gpio: raspiGpioMock,
       i2c: raspiI2CMock,
       led: raspiLEDMock,
-      pwm: raspiPWMMock
+      pwm: raspiPWMMock,
+      serial: raspiSerialMock
+    },
+    serialIds: {
+      DEFAULT: '/dev/ttyAMA0'
     }
   };
   if (options && (options as ICreateOptions).enableSerial) {

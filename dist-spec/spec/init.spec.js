@@ -97,6 +97,48 @@ describe('App Instantiation', () => {
             });
         }).toThrow(new Error('"options.platform.pwm" is required and must be an object'));
     });
+    it('does not require the platform.serial argument', () => {
+        expect(() => {
+            new CoreIO({
+                pluginName: 'Raspi IO',
+                pinInfo,
+                platform: {
+                    base: raspiMock,
+                    gpio: raspiGpioMock,
+                    pwm: raspiPWMMock
+                }
+            });
+        }).not.toThrow();
+    });
+    it('requires the serialIds argument when the platform.serial argument is present', () => {
+        expect(() => {
+            new CoreIO({
+                pluginName: 'Raspi IO',
+                pinInfo,
+                platform: {
+                    base: raspiMock,
+                    gpio: raspiGpioMock,
+                    pwm: raspiPWMMock,
+                    serial: raspiSerialMock
+                }
+            });
+        }).toThrow(new Error('"options.serialIds" is required and must be an object when options.platform.serial is also supplied'));
+    });
+    it('requires the serialIds.DEFAULT argument when the platform.serial argument is present', () => {
+        expect(() => {
+            new CoreIO({
+                pluginName: 'Raspi IO',
+                pinInfo,
+                platform: {
+                    base: raspiMock,
+                    gpio: raspiGpioMock,
+                    pwm: raspiPWMMock,
+                    serial: raspiSerialMock
+                },
+                serialIds: {}
+            });
+        }).toThrow(new Error('"DEFAULT" serial ID is required in options.serialIds'));
+    });
     it('is an instance of an Event Emitter', () => {
         const raspi = new CoreIO({
             pluginName: 'Raspi IO',
@@ -171,27 +213,28 @@ describe('App Initialization', () => {
     it('creates the `SERIAL_PORT_IDs` property', (done) => createInstance((raspi) => {
         isPropertyFrozenAndReadOnly(raspi, 'SERIAL_PORT_IDs');
         expect(raspi.SERIAL_PORT_IDs).toEqual(Object.freeze({
-            HW_SERIAL0: raspiSerialMock.DEFAULT_PORT,
-            DEFAULT: raspiSerialMock.DEFAULT_PORT
+            DEFAULT: '/dev/ttyAMA0'
         }));
         done();
     }));
     it('creates the `pins` property', (done) => createInstance((raspi) => {
         isPropertyFrozenAndReadOnly(raspi, 'pins');
         const pins = [];
+        pins[-1] = {
+            supportedModes: Object.freeze([1]),
+            mode: 1,
+            value: 0,
+            report: 1,
+            analogChannel: 127
+        };
         Object.keys(boardPins).forEach((pin) => {
             const supportedModes = [];
             const pinInfo = boardPins[pin];
-            if (pinInfo.peripherals.indexOf('i2c') == -1 && pinInfo.peripherals.indexOf('uart') == -1) {
-                if (pin == -1) {
-                    supportedModes.push(1);
-                }
-                else if (pinInfo.peripherals.indexOf('gpio') != -1) {
-                    supportedModes.push(0, 1);
-                }
-                if (pinInfo.peripherals.indexOf('pwm') != -1) {
-                    supportedModes.push(3, 4);
-                }
+            if (pinInfo.peripherals.indexOf('gpio') != -1) {
+                supportedModes.push(0, 1);
+            }
+            if (pinInfo.peripherals.indexOf('pwm') != -1) {
+                supportedModes.push(3, 4);
             }
             const mode = supportedModes.indexOf(1) == -1 ? 99 : 1;
             pins[pin] = {

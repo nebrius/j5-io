@@ -44,12 +44,7 @@ describe('GPIO', () => {
   }));
 
   it('throws an error when setting a pin to input mode that doesn\'t support it', (done) => createInstance((raspi) => {
-    expect(() => raspi.pinMode('P1-3', 0)).toThrow(new Error('Pin "P1-3" does not support mode "input"'));
-    done();
-  }));
-
-  it('throws an error when setting a pin to output mode that doesn\'t support it', (done) => createInstance((raspi) => {
-    expect(() => raspi.pinMode('P1-3', 1)).toThrow(new Error('Pin "P1-3" does not support mode "output"'));
+    expect(() => raspi.pinMode(raspi.defaultLed, 0)).toThrow(new Error('Pin "-1" does not support mode "input"'));
     done();
   }));
 

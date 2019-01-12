@@ -1,5 +1,5 @@
 import { IBaseModule, IGPIOModule, ILEDModule, IPWMModule, ISerialModule, II2CModule, IPeripheral, IPinInfo } from 'core-io-types';
-import { AbstractIO, Value, Mode, IPinConfiguration } from 'abstract-io';
+import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig } from 'abstract-io';
 declare const serialPortIds: unique symbol;
 declare const name: unique symbol;
 declare const isReady: unique symbol;
@@ -14,6 +14,9 @@ export interface IOptions {
         led?: ILEDModule;
         serial?: ISerialModule;
         i2c?: II2CModule;
+    };
+    serialIds?: {
+        [id: string]: any;
     };
     pinInfo: {
         [pin: number]: IPinInfo;
@@ -42,5 +45,6 @@ export declare class CoreIO extends AbstractIO {
     pinMode(pin: string | number, mode: Mode): void;
     digitalRead(pin: string | number, handler: (value: Value) => void): void;
     digitalWrite(pin: string | number, value: number): void;
+    serialConfig(options: ISerialConfig): void;
 }
 export {};
