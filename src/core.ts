@@ -30,20 +30,24 @@ let baseModule: IBaseModule | null = null;
 
 const modeMapping = new WeakMap<IPeripheral, Mode>();
 
+export function createInternalErrorMessage(msg: string): string {
+  return `Internal Error: ${msg}. This is a bug, please file an issue at https://github.com/nebrius/core-io/issues.`;
+}
+
 export function setBaseModule(module: IBaseModule): void {
   baseModule = module;
 }
 
 export function getPeripheral(pin: number): IPeripheral | undefined {
   if (!baseModule) {
-    throw new Error(`Internal Error: "getPeripheral" method called without base module being set`);
+    throw new Error(createInternalErrorMessage(`"getPeripheral" method called without base module being set`));
   }
   return baseModule.getActivePeripheral(pin);
 }
 
 export function getPeripherals(): { [ pin: number ]: IPeripheral } {
   if (!baseModule) {
-    throw new Error(`Internal Error: "getPeripherals" method called without base module being set`);
+    throw new Error(createInternalErrorMessage(`"getPeripherals" method called without base module being set`));
   }
   return baseModule.getActivePeripherals();
 }
@@ -51,7 +55,7 @@ export function getPeripherals(): { [ pin: number ]: IPeripheral } {
 export function getMode(peripheral: IPeripheral): Mode {
   const mode = modeMapping.get(peripheral);
   if (typeof mode !== 'number') {
-    throw new Error(`Internal Error: tried to get the mode for an unknown peripheral`);
+    throw new Error(createInternalErrorMessage(`tried to get the mode for an unknown peripheral`));
   }
   return mode;
 }
@@ -62,7 +66,7 @@ export function setMode(peripheral: IPeripheral, mode: Mode): void {
 
 export function normalizePin(pin: string | number): number {
   if (!baseModule) {
-    throw new Error(`Internal Error: "normalizePin" method called without base module being set`);
+    throw new Error(createInternalErrorMessage(`"normalizePin" method called without base module being set`));
   }
   const normalizedPin = baseModule.getPinNumber(pin);
   if (typeof normalizedPin !== 'number') {

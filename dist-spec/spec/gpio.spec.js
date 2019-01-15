@@ -90,10 +90,9 @@ describe('GPIO', () => {
     it('can read from a pin using the `digitalRead` method', (done) => createInstance((raspi) => {
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
-        const peripheral = raspi.getInternalPinInstances()[pin];
         let numReadsRemaining = NUM_DIGITAL_READS;
         let value = 0;
-        peripheral.setMockedValue(value);
+        raspi.getInternalPinInstances()[pin].setMockedValue(value);
         raspi.digitalRead(pinAlias, (newValue) => {
             expect(value).toEqual(newValue);
             if (!(--numReadsRemaining)) {
@@ -101,7 +100,7 @@ describe('GPIO', () => {
                 return;
             }
             value = value === 1 ? 0 : 1;
-            peripheral.setMockedValue(value);
+            raspi.getInternalPinInstances()[pin].setMockedValue(value);
         });
     }));
     it('only notifies the callback when the value has changed', (done) => createInstance((raspi) => {
@@ -146,32 +145,30 @@ describe('GPIO', () => {
     it('can read from a pin using the `digital-read-${pin}` event', (done) => createInstance((raspi) => {
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
-        const peripheral = raspi.getInternalPinInstances()[pin];
         let numReadsRemaining = NUM_DIGITAL_READS;
         let value = 0;
-        peripheral.setMockedValue(value);
-        raspi.digitalRead(pinAlias);
+        raspi.getInternalPinInstances()[pin].setMockedValue(value);
+        raspi.digitalRead(pinAlias, () => { });
         // TODO: follow up on https://github.com/rwaldron/io-plugins/issues/16 to see if we need to rename this event
-        raspi.on(`digital-read-${pinAlias}`, (newValue) => {
+        raspi.on(`digital-read-${pin}`, (newValue) => {
             expect(value).toEqual(newValue);
             if (!(--numReadsRemaining)) {
                 done();
                 return;
             }
             value = value === 1 ? 0 : 1;
-            peripheral.setMockedValue(value);
+            raspi.getInternalPinInstances()[pin].setMockedValue(value);
         });
     }));
     it('can read from a pin using the `digitalRead` method at no more than 200Hz and no less than 50Hz', (done) => createInstance((raspi) => {
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
-        const peripheral = raspi.getInternalPinInstances()[pin];
         let numReadsRemaining = NUM_DIGITAL_READS;
         let value = 0;
         const startTime = Date.now();
         raspi.digitalRead(pinAlias, () => {
             value = value === 1 ? 0 : 1;
-            peripheral.setMockedValue(value);
+            raspi.getInternalPinInstances()[pin].setMockedValue(value);
             if (!(--numReadsRemaining)) {
                 const averagePeriod = (Date.now() - startTime) / NUM_DIGITAL_READS;
                 expect(averagePeriod).toBeGreaterThanOrEqual(5); // Less than or equal to 200Hz

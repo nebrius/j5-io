@@ -119,7 +119,12 @@ class DigitalInput extends Peripheral implements IDigitalInput {
   }
 
   public setMockedValue(value: number) {
-    this.value = value;
+    if (value !== this.value) {
+      this.value = value;
+      setImmediate(() => {
+        this.emit('change', value);
+      });
+    }
   }
 }
 

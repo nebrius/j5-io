@@ -94,7 +94,12 @@ class DigitalInput extends Peripheral {
         return this.value;
     }
     setMockedValue(value) {
-        this.value = value;
+        if (value !== this.value) {
+            this.value = value;
+            setImmediate(() => {
+                this.emit('change', value);
+            });
+        }
     }
 }
 exports.raspiGpioMock = {

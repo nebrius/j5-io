@@ -26,20 +26,24 @@ OTHER DEALINGS IN THE SOFTWARE.
 Object.defineProperty(exports, "__esModule", { value: true });
 let baseModule = null;
 const modeMapping = new WeakMap();
+function createInternalErrorMessage(msg) {
+    return `Internal Error: ${msg}. This is a bug, please file an issue at https://github.com/nebrius/core-io/issues.`;
+}
+exports.createInternalErrorMessage = createInternalErrorMessage;
 function setBaseModule(module) {
     baseModule = module;
 }
 exports.setBaseModule = setBaseModule;
 function getPeripheral(pin) {
     if (!baseModule) {
-        throw new Error(`Internal Error: "getPeripheral" method called without base module being set`);
+        throw new Error(createInternalErrorMessage(`"getPeripheral" method called without base module being set`));
     }
     return baseModule.getActivePeripheral(pin);
 }
 exports.getPeripheral = getPeripheral;
 function getPeripherals() {
     if (!baseModule) {
-        throw new Error(`Internal Error: "getPeripherals" method called without base module being set`);
+        throw new Error(createInternalErrorMessage(`"getPeripherals" method called without base module being set`));
     }
     return baseModule.getActivePeripherals();
 }
@@ -47,7 +51,7 @@ exports.getPeripherals = getPeripherals;
 function getMode(peripheral) {
     const mode = modeMapping.get(peripheral);
     if (typeof mode !== 'number') {
-        throw new Error(`Internal Error: tried to get the mode for an unknown peripheral`);
+        throw new Error(createInternalErrorMessage(`tried to get the mode for an unknown peripheral`));
     }
     return mode;
 }
@@ -58,7 +62,7 @@ function setMode(peripheral, mode) {
 exports.setMode = setMode;
 function normalizePin(pin) {
     if (!baseModule) {
-        throw new Error(`Internal Error: "normalizePin" method called without base module being set`);
+        throw new Error(createInternalErrorMessage(`"normalizePin" method called without base module being set`));
     }
     const normalizedPin = baseModule.getPinNumber(pin);
     if (typeof normalizedPin !== 'number') {

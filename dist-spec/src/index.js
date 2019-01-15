@@ -153,7 +153,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
                         }
                         switch (core_1.getMode(peripheral)) {
                             case abstract_io_1.Mode.INPUT:
-                                return peripheral.read();
+                                return peripheral.value;
                             case abstract_io_1.Mode.OUTPUT:
                                 return peripheral.value;
                             default:
@@ -323,7 +323,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
                     // }
                     break;
                 default:
-                    throw new Error(`Internal Error: valid pin mode ${mode} not accounted for in switch statement`);
+                    throw new Error(core_1.createInternalErrorMessage(`valid pin mode ${mode} not accounted for in switch statement`));
             }
         }
     }

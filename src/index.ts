@@ -35,7 +35,14 @@ import {
   PeripheralType
 } from 'core-io-types';
 import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig } from 'abstract-io';
-import { setBaseModule, normalizePin, getPeripherals, getMode, getPeripheral } from './core';
+import {
+  setBaseModule,
+  normalizePin,
+  getPeripherals,
+  getMode,
+  getPeripheral,
+  createInternalErrorMessage
+} from './core';
 
 import { GPIOManager } from './managers/gpio';
 
@@ -260,7 +267,7 @@ export class CoreIO extends AbstractIO {
             }
             switch (getMode(peripheral)) {
               case Mode.INPUT:
-                return (peripheral as IDigitalInput).read();
+                return (peripheral as IDigitalInput).value;
               case Mode.OUTPUT:
                 return (peripheral as IDigitalOutput).value;
               default:
@@ -419,7 +426,7 @@ export class CoreIO extends AbstractIO {
           // }
           break;
         default:
-          throw new Error(`Internal Error: valid pin mode ${mode} not accounted for in switch statement`);
+          throw new Error(createInternalErrorMessage(`valid pin mode ${mode} not accounted for in switch statement`));
       }
     }
   }
