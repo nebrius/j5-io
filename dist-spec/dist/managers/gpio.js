@@ -29,8 +29,12 @@ const core_1 = require("../core");
 const READ_UPDATE_RATE = 18;
 class GPIOManager {
     constructor(gpioModule, globalEventEmitter) {
+        this.intervals = [];
         this.module = gpioModule;
         this.eventEmitter = globalEventEmitter;
+    }
+    reset() {
+        this.intervals.forEach(clearInterval);
     }
     setInputMode(pin, pullResistor = this.module.PULL_NONE) {
         core_1.setMode(this.module.createDigitalInput({ pin, pullResistor }), abstract_io_1.Mode.INPUT);
@@ -67,7 +71,8 @@ class GPIOManager {
         const interval = setInterval(() => {
             const currentPeripheral = core_1.getPeripheral(pin);
             if (!currentPeripheral) {
-                throw new Error(core_1.createInternalErrorMessage(`peripheral is undefined even after setting the input mode`));
+                clearInterval(interval);
+                return;
             }
             switch (core_1.getMode(currentPeripheral)) {
                 // Note: although we can only initiate this method in INPUT mode, we are supposed to continue
@@ -85,6 +90,7 @@ class GPIOManager {
                     clearInterval(interval);
             }
         }, READ_UPDATE_RATE);
+        this.intervals.push(interval);
     }
 }
 exports.GPIOManager = GPIOManager;

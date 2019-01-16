@@ -41,6 +41,7 @@ export declare class CoreIO extends AbstractIO {
     private [name];
     private [gpioManager];
     constructor(options: IOptions);
+    reset(): void;
     normalize(pin: number | string): number;
     pinMode(pin: string | number, mode: Mode): void;
     digitalRead(pin: string | number, handler: (value: Value) => void): void;

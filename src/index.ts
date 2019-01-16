@@ -379,6 +379,11 @@ export class CoreIO extends AbstractIO {
     });
   }
 
+  public reset() {
+    // TODO: Loop through active peripherals and destroy them
+    this[gpioManager].reset();
+  }
+
   public normalize(pin: number | string): number {
     // LED is a special thing that the underlying platform doesn't know about, and isn't actually a pin.
     // Gotta reroute it here, and we just have it return itself

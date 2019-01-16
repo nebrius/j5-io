@@ -29,8 +29,12 @@ const core_1 = require("../core");
 const READ_UPDATE_RATE = 18;
 class GPIOManager {
     constructor(gpioModule, globalEventEmitter) {
+        this.intervals = [];
         this.module = gpioModule;
         this.eventEmitter = globalEventEmitter;
+    }
+    reset() {
+        this.intervals.forEach(clearInterval);
     }
     setInputMode(pin, pullResistor = this.module.PULL_NONE) {
         core_1.setMode(this.module.createDigitalInput({ pin, pullResistor }), abstract_io_1.Mode.INPUT);
@@ -86,6 +90,7 @@ class GPIOManager {
                     clearInterval(interval);
             }
         }, READ_UPDATE_RATE);
+        this.intervals.push(interval);
     }
 }
 exports.GPIOManager = GPIOManager;

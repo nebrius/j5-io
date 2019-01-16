@@ -18,6 +18,7 @@
     "core-io-types": "^2.1.0"
   },
   "devDependencies": {
+    "@types/jasmine": "^3.3.5",
     "@types/node": "^10.12.12",
     "coveralls": "^3.0.2",
     "cross-env": "^5.2.0",

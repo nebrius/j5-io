@@ -7,6 +7,7 @@ export declare class GPIOManager {
     private eventEmitter;
     private intervals;
     constructor(gpioModule: IGPIOModule, globalEventEmitter: EventEmitter);
+    reset(): void;
     setInputMode(pin: number, pullResistor?: number): void;
     setOutputMode(pin: number): void;
     digitalWrite(pin: number, value: Value): void;

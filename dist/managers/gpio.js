@@ -33,6 +33,9 @@ class GPIOManager {
         this.module = gpioModule;
         this.eventEmitter = globalEventEmitter;
     }
+    reset() {
+        this.intervals.forEach(clearInterval);
+    }
     setInputMode(pin, pullResistor = this.module.PULL_NONE) {
         core_1.setMode(this.module.createDigitalInput({ pin, pullResistor }), abstract_io_1.Mode.INPUT);
     }

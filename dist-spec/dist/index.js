@@ -277,6 +277,9 @@ class CoreIO extends abstract_io_1.AbstractIO {
     get isReady() {
         return this[isReady];
     }
+    reset() {
+        this[gpioManager].reset();
+    }
     normalize(pin) {
         // LED is a special thing that the underlying platform doesn't know about, and isn't actually a pin.
         // Gotta reroute it here, and we just have it return itself
