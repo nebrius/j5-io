@@ -26,7 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 Object.defineProperty(exports, "__esModule", { value: true });
 const abstract_io_1 = require("abstract-io");
 const core_1 = require("../core");
-const MIN_READ_EMIT_PERIOD = 2;
+const READ_UPDATE_RATE = 18;
 class GPIOManager {
     constructor(gpioModule, globalEventEmitter) {
         this.module = gpioModule;
@@ -63,34 +63,28 @@ class GPIOManager {
         if (!peripheral || core_1.getMode(peripheral) !== abstract_io_1.Mode.INPUT) {
             this.setInputMode(pin);
         }
-        // Use an arrow function so we can bind "this" properly
-        const addListener = () => {
+        let previousValue = -1;
+        const interval = setInterval(() => {
             const currentPeripheral = core_1.getPeripheral(pin);
             if (!currentPeripheral) {
-                throw new Error(`Internal Error: peripheral is undefined even after setting the input mode`);
+                throw new Error(core_1.createInternalErrorMessage(`peripheral is undefined even after setting the input mode`));
             }
             switch (core_1.getMode(currentPeripheral)) {
                 // Note: although we can only initiate this method in INPUT mode, we are supposed to continue
                 // reporting values even if it's changed to OUTPUT mode
                 case abstract_io_1.Mode.INPUT:
                 case abstract_io_1.Mode.OUTPUT:
-                    let previousEmitTime = Date.now();
-                    currentPeripheral.on('change', (value) => {
-                        if (Date.now() - previousEmitTime >= MIN_READ_EMIT_PERIOD) {
-                            this.eventEmitter.emit(`digital-read-${pin}`, value);
-                            handler(value);
-                            previousEmitTime = Date.now();
-                        }
-                    });
-                    // Note: the peripheral instance will change if the pull resistor is changed or the mode is set to OUTPUT
-                    // In both of these cases, we still want to emit digital-read-${pin} events
-                    currentPeripheral.on('destroyed', () => setImmediate(addListener));
+                    const value = currentPeripheral.value;
+                    if (value !== previousValue) {
+                        previousValue = value;
+                        this.eventEmitter.emit(`digital-read-${pin}`, value);
+                        handler(value);
+                    }
                     break;
                 default:
-                // Ignore all other modes, as the spec only calls for listening to input and output modes
+                    clearInterval(interval);
             }
-        };
-        addListener();
+        }, READ_UPDATE_RATE);
     }
 }
 exports.GPIOManager = GPIOManager;

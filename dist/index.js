@@ -323,7 +323,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
                     // }
                     break;
                 default:
-                    throw new Error(`Internal Error: valid pin mode ${mode} not accounted for in switch statement`);
+                    throw new Error(core_1.createInternalErrorMessage(`valid pin mode ${mode} not accounted for in switch statement`));
             }
         }
     }

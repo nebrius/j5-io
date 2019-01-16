@@ -26,12 +26,28 @@ OTHER DEALINGS IN THE SOFTWARE.
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
 const index_1 = require("../src/index");
-// We can use the actual raspi and raspi-board modules in test mode here
-const raspi_1 = require("raspi");
-var raspi_2 = require("raspi");
-exports.raspiMock = raspi_2.module;
+// We can use the actual raspi-board modules in test mode here
 const raspi_board_1 = require("raspi-board");
 const OFF = 0;
+let registeredPins = {};
+function setActivePeripheral(pin, peripheral) {
+    if (registeredPins[pin]) {
+        registeredPins[pin].destroy();
+        const peripheralPins = registeredPins[pin].pins;
+        for (const peripheralPin of peripheralPins) {
+            delete registeredPins[peripheralPin];
+        }
+    }
+    registeredPins[pin] = peripheral;
+}
+exports.setActivePeripheral = setActivePeripheral;
+exports.raspiMock = {
+    init: (cb) => process.nextTick(cb),
+    getActivePeripherals: () => registeredPins,
+    getActivePeripheral: (pin) => registeredPins[pin],
+    setActivePeripheral,
+    getPinNumber: raspi_board_1.getPinNumber
+};
 class Peripheral extends events_1.EventEmitter {
     constructor(pins) {
         super();
@@ -46,7 +62,7 @@ class Peripheral extends events_1.EventEmitter {
                 throw new Error(`Invalid pin: ${alias}`);
             }
             this._pins.push(pin);
-            raspi_1.module.setActivePeripheral(pin, this);
+            setActivePeripheral(pin, this);
         }
     }
     get alive() {
@@ -96,9 +112,7 @@ class DigitalInput extends Peripheral {
     setMockedValue(value) {
         if (value !== this.value) {
             this.value = value;
-            setImmediate(() => {
-                this.emit('change', value);
-            });
+            this.emit('change', value);
         }
     }
 }
@@ -444,11 +458,12 @@ function createInstance(options, cb) {
         cb = options;
         options = { enableSerial: false };
     }
+    registeredPins = {};
     const coreOptions = {
         pluginName: 'Raspi IO',
         pinInfo: exports.pinInfo,
         platform: {
-            base: raspi_1.module,
+            base: exports.raspiMock,
             gpio: exports.raspiGpioMock,
             i2c: exports.raspiI2CMock,
             led: exports.raspiLEDMock,

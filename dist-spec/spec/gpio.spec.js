@@ -30,8 +30,42 @@ const { createInstance, raspiMock, pinInfo, raspiPWMMock, raspiGpioMock } = requ
 const NUM_DIGITAL_READS = 10;
 // This is used to control how long to wait in ms to ensure no callbacks are called after a peripheral is destroyed
 const DESTROY_WAIT = 100;
+// List of pin aliases to use that won't collide with I2C or UART
+const pinAliases = [
+    // GPIO Only
+    'GPIO4',
+    'GPIO17',
+    'GPIO27',
+    'GPIO22',
+    'GPIO5',
+    'GPIO6',
+    'GPIO26',
+    'GPIO23',
+    'GPIO24',
+    'GPIO25',
+    'GPIO16',
+    // Shared with SPI
+    'GPIO10',
+    'GPIO9',
+    'GPIO11',
+    'GPIO20',
+    'GPIO21',
+    'GPIO8',
+    'GPIO7',
+    // Shared with hardware PWM, shouldn't matter
+    'GPIO18',
+    'GPIO12',
+    'GPIO13',
+    'GPIO19',
+];
+let pinAliasIndex = 0;
+function getNextPinAlias() {
+    if (pinAliasIndex === pinAliases.length) {
+        throw new Error('out of pin aliases');
+    }
+    return pinAliases[pinAliasIndex];
+}
 describe('GPIO', () => {
-    const pinAlias = 'GPIO10';
     it('throws an error when resolving an invalid pin', (done) => createInstance((raspi) => {
         expect(() => raspi.normalize('GPIO9000')).toThrow(new Error('Unknown pin "GPIO9000"'));
         done();
@@ -65,6 +99,7 @@ describe('GPIO', () => {
     }));
     // Input tests
     it('can set a pin in input mode', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         expect(raspi.pins[pin].mode).toEqual(1);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
@@ -78,6 +113,7 @@ describe('GPIO', () => {
         done();
     }));
     it('can read from a pin using the `value` property', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
         const peripheral = raspi.getInternalPinInstances()[pin];
@@ -88,6 +124,7 @@ describe('GPIO', () => {
         done();
     }));
     it('can read from a pin using the `digitalRead` method', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
         let numReadsRemaining = NUM_DIGITAL_READS;
@@ -104,6 +141,7 @@ describe('GPIO', () => {
         });
     }));
     it('only notifies the callback when the value has changed', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
         const peripheral = raspi.getInternalPinInstances()[pin];
@@ -116,6 +154,7 @@ describe('GPIO', () => {
         setTimeout(done, 100);
     }));
     it('can read from a pin in a different mode using the `digitalRead` method', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.OUTPUT);
         expect(raspi.pins[pin].mode).toEqual(raspi.MODES.OUTPUT);
@@ -125,6 +164,7 @@ describe('GPIO', () => {
         });
     }));
     it('can read from a pin using the `digitalRead` method after being switched to write mode', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         let numReadsRemaining = NUM_DIGITAL_READS;
         let value = 0;
@@ -143,6 +183,7 @@ describe('GPIO', () => {
         raspi.digitalWrite(pinAlias, value);
     }));
     it('can read from a pin using the `digital-read-${pin}` event', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
         let numReadsRemaining = NUM_DIGITAL_READS;
@@ -161,6 +202,7 @@ describe('GPIO', () => {
         });
     }));
     it('can read from a pin using the `digitalRead` method at no more than 200Hz and no less than 50Hz', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
         let numReadsRemaining = NUM_DIGITAL_READS;
@@ -179,6 +221,7 @@ describe('GPIO', () => {
         });
     }));
     it('stops reading from the `digitalRead` method after being destroyed', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
         const peripheral = raspi.getInternalPinInstances()[pin];
@@ -189,6 +232,7 @@ describe('GPIO', () => {
         });
     }));
     it('can enable the internal pull up resistor', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
         const oldPeripheral = raspi.getInternalPinInstances()[pin];
@@ -199,6 +243,7 @@ describe('GPIO', () => {
         done();
     }));
     it('can enable the internal pull down resistor', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
         const oldPeripheral = raspi.getInternalPinInstances()[pin];
@@ -210,6 +255,7 @@ describe('GPIO', () => {
     }));
     // Output tests
     it('can set a pin in output mode after putting it in input mode', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         // Note: OUTPUT mode is default, so we force it to input mode first to make sure we can change it back to OUTPUT mode
         expect(raspi.pins[pin].mode).toEqual(1);
@@ -223,6 +269,7 @@ describe('GPIO', () => {
         done();
     }));
     it('can write a value to a pin using the `digitalWrite` method', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         expect(raspi.pins[pin].mode).toEqual(1);
         const peripheral = raspi.getInternalPinInstances()[pin];
@@ -235,6 +282,7 @@ describe('GPIO', () => {
         done();
     }));
     it('can write a value to a pin using the `value` setter', (done) => createInstance((raspi) => {
+        const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         expect(raspi.pins[pin].mode).toEqual(1);
         const peripheral = raspi.getInternalPinInstances()[pin];

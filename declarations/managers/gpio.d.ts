@@ -5,6 +5,7 @@ import { EventEmitter } from 'events';
 export declare class GPIOManager {
     private module;
     private eventEmitter;
+    private intervals;
     constructor(gpioModule: IGPIOModule, globalEventEmitter: EventEmitter);
     setInputMode(pin: number, pullResistor?: number): void;
     setOutputMode(pin: number): void;

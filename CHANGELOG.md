@@ -13,6 +13,7 @@
 - BREAKING CHANGE: Now, only base, gpio, and pwm platform modules are required. The rest are optional
 - BREAKING CHANGE: Removed support for software PWM here (it should be handled by Raspi IO, not Core IO)
 - POTENTIALLY BREAKING CHANGE: The `name` property of this module now returns `"Raspi IO"` instead of `"RasperryPi-IO"` to conform with naming conventions elsewhere
+- BREAKING CHANGE: `digital-read-${pin}` event names are now normalized to the Wiring Pi number. If, for example, you called `digitalRead("GPIO18", () => {})`, before the event name would be `digital-read-GPIO18`, but now it's `digital-read-1`
 
 ## 2.1.0 (2018-04-02)
 

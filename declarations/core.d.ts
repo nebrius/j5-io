@@ -1,5 +1,6 @@
 import { Mode } from 'abstract-io';
 import { IPeripheral, IBaseModule } from 'core-io-types';
+export declare function createInternalErrorMessage(msg: string): string;
 export declare function setBaseModule(module: IBaseModule): void;
 export declare function getPeripheral(pin: number): IPeripheral | undefined;
 export declare function getPeripherals(): {

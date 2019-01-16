@@ -26,6 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 import { EventEmitter } from 'events';
 import {
   IPeripheral, IPinInfo,
+  IBaseModule,
   IGPIOModule, IDigitalInput, IDigitalOutput,
   I2CWriteCallback, I2CReadBufferCallback, I2CReadNumberCallback, II2CModule, II2C,
   ILED, ILEDModule,
@@ -34,12 +35,31 @@ import {
 } from 'core-io-types';
 import { CoreIO, IOptions } from '../src/index';
 
-// We can use the actual raspi and raspi-board modules in test mode here
-import { module as baseModule } from 'raspi';
-export { module as raspiMock } from 'raspi';
+// We can use the actual raspi-board modules in test mode here
 import { getPinNumber, getPins } from 'raspi-board';
 
 const OFF = 0;
+
+let registeredPins: { [ pinNumber: string ]: IPeripheral } = {};
+
+export function setActivePeripheral(pin: number, peripheral: IPeripheral): void {
+  if (registeredPins[pin]) {
+    registeredPins[pin].destroy();
+    const peripheralPins = registeredPins[pin].pins;
+    for (const peripheralPin of peripheralPins) {
+      delete registeredPins[peripheralPin];
+    }
+  }
+  registeredPins[pin] = peripheral;
+}
+
+export const raspiMock: IBaseModule = {
+  init: (cb: () => void) => process.nextTick(cb),
+  getActivePeripherals: () => registeredPins,
+  getActivePeripheral: (pin: number) => registeredPins[pin],
+  setActivePeripheral,
+  getPinNumber
+};
 
 class Peripheral extends EventEmitter implements IPeripheral {
 
@@ -64,7 +84,7 @@ class Peripheral extends EventEmitter implements IPeripheral {
         throw new Error(`Invalid pin: ${alias}`);
       }
       this._pins.push(pin);
-      baseModule.setActivePeripheral(pin, this);
+      setActivePeripheral(pin, this);
     }
   }
 
@@ -121,9 +141,7 @@ class DigitalInput extends Peripheral implements IDigitalInput {
   public setMockedValue(value: number) {
     if (value !== this.value) {
       this.value = value;
-      setImmediate(() => {
-        this.emit('change', value);
-      });
+      this.emit('change', value);
     }
   }
 }
@@ -533,11 +551,12 @@ export function createInstance(options: CreateCallback | ICreateOptions, cb?: Cr
     cb = options as CreateCallback;
     options = { enableSerial: false };
   }
+  registeredPins = {};
   const coreOptions: IOptions = {
     pluginName: 'Raspi IO',
     pinInfo,
     platform: {
-      base: baseModule,
+      base: raspiMock,
       gpio: raspiGpioMock,
       i2c: raspiI2CMock,
       led: raspiLEDMock,

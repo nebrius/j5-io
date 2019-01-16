@@ -14,11 +14,11 @@
     "robots"
   ],
   "dependencies": {
-    "abstract-io": "^1.3.0"
+    "abstract-io": "^1.3.0",
+    "core-io-types": "^2.1.0"
   },
   "devDependencies": {
     "@types/node": "^10.12.12",
-    "core-io-types": "^2.1.0",
     "coveralls": "^3.0.2",
     "cross-env": "^5.2.0",
     "istanbul": "^0.4.5",
@@ -35,7 +35,7 @@
     "build": "tsc --build ts-src-config.json",
     "build-tests": "tsc --build ts-test-config.json",
     "test": "cross-env RASPI_IO_TEST_MODE=true istanbul cover -x dist-spec/spec/mocks.js ./node_modules/jasmine/bin/jasmine.js --captureExceptions dist-spec/spec/**/*.spec.js && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
-    "test-local": "cross-env RASPI_IO_TEST_MODE=true jasmine dist-spec/spec/**/*.spec.js"
+    "test-local": "cross-env RASPI_IO_TEST_MODE=true jasmine --random=false dist-spec/spec/**/*.spec.js"
   },
   "author": "Bryan Hughes <bryan@nebri.us>",
   "contributors": [
