@@ -86,7 +86,6 @@ export class Peripheral extends EventEmitter implements IPeripheral {
       this._pins.push(pin);
       setActivePeripheral(pin, this);
     }
-    console.log(`Created peripheral on ${this._pins.join(', ')}`);
   }
 
   public destroy() {
@@ -110,7 +109,6 @@ function getPinFromConfig(config: number | { pin: number }): number[] {
 export class DigitalOutput extends Peripheral implements IDigitalOutput {
 
   public get value() {
-    console.log(`Get output value ${this._value} for pin ${this.pins[0]}`);
     return this._value;
   }
   public args: any[];
@@ -129,7 +127,6 @@ export class DigitalOutput extends Peripheral implements IDigitalOutput {
 export class DigitalInput extends Peripheral implements IDigitalInput {
 
   public get value() {
-    console.log(`Get input value ${this._value} for pin ${this.pins[0]}`);
     return this._value;
   }
   public args: any[];
@@ -150,13 +147,8 @@ export class DigitalInput extends Peripheral implements IDigitalInput {
   }
 
   public setMockedValue(value: number) {
-    if (value !== this.value) {
-      console.log(`Set input value ${value} for pin ${this.pins[0]}`);
-      this._value = value;
-      this.emit('change', value);
-    } else {
-      console.log(`Skipping setting input value ${value} for pin ${this.pins[0]}`);
-    }
+    this._value = value;
+    this.emit('change', value);
   }
 }
 
@@ -561,7 +553,6 @@ export interface ICreateOptions {
 }
 
 export function createInstance(options: CreateCallback | ICreateOptions, cb?: CreateCallback): void {
-  console.log('----------------------------------\nCreating instance');
   if (typeof cb === 'undefined') {
     cb = options as CreateCallback;
     options = { enableSerial: false };

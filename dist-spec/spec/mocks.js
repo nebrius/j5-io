@@ -64,7 +64,6 @@ class Peripheral extends events_1.EventEmitter {
             this._pins.push(pin);
             setActivePeripheral(pin, this);
         }
-        console.log(`Created peripheral on ${this._pins.join(', ')}`);
     }
     get alive() {
         return this._alive;
@@ -95,7 +94,6 @@ class DigitalOutput extends Peripheral {
         this.args = args;
     }
     get value() {
-        console.log(`Get output value ${this._value} for pin ${this.pins[0]}`);
         return this._value;
     }
     write(value) {
@@ -114,21 +112,14 @@ class DigitalInput extends Peripheral {
         }
     }
     get value() {
-        console.log(`Get input value ${this._value} for pin ${this.pins[0]}`);
         return this._value;
     }
     read() {
         return this.value;
     }
     setMockedValue(value) {
-        if (value !== this.value) {
-            console.log(`Set input value ${value} for pin ${this.pins[0]}`);
-            this._value = value;
-            this.emit('change', value);
-        }
-        else {
-            console.log(`Skipping setting input value ${value} for pin ${this.pins[0]}`);
-        }
+        this._value = value;
+        this.emit('change', value);
     }
 }
 exports.DigitalInput = DigitalInput;
@@ -470,7 +461,6 @@ exports.raspiSerialMock = {
 };
 exports.pinInfo = raspi_board_1.getPins();
 function createInstance(options, cb) {
-    console.log('----------------------------------\nCreating instance');
     if (typeof cb === 'undefined') {
         cb = options;
         options = { enableSerial: false };

@@ -25,41 +25,49 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 /*global it describe expect*/
 
-const { EventEmitter } = require('events');
-const { CoreIO } = require('../dist/index');
-const {
+import { EventEmitter } from 'events';
+import { CoreIO } from '../src/index';
+import {
   raspiMock,
   raspiGpioMock,
   raspiPWMMock,
   raspiSerialMock,
   pinInfo,
   createInstance,
-  pinInfo: boardPins
-} = require('./mocks');
+  pinInfo as boardPins
+} from './mocks';
+import { IPinConfiguration, Mode } from 'abstract-io';
+import { PeripheralType } from 'core-io-types';
 
 describe('App Instantiation', () => {
 
+  // TODO: test "reset" method
+
   it('requires an options argument', () => {
     expect(() => {
-      new CoreIO();
+      // tslint:disable
+      new (CoreIO as any)();
     }).toThrow(new Error('"options" is required and must be an object'));
   });
 
   it('requires an options argument to be an object', () => {
     expect(() => {
-      new CoreIO(`I'm not an object`);
+      // tslint:disable
+      new (CoreIO as any)(`I'm not an object`);
     }).toThrow(new Error('"options" is required and must be an object'));
   });
 
   it('requires the pluginName argument', () => {
     expect(() => {
-      new CoreIO({});
+      // tslint:disable
+      new (CoreIO as any)({});
     }).toThrow(new Error('"options.pluginName" is required and must be a string'));
   });
 
   it('requires the pluginName argument to be a string', () => {
     expect(() => {
-      new CoreIO({
+      // tslint:disable
+      new (CoreIO as any)({
         pluginName: 10
       });
     }).toThrow(new Error('"options.pluginName" is required and must be a string'));
@@ -67,7 +75,8 @@ describe('App Instantiation', () => {
 
   it('requires the pinInfo argument', () => {
     expect(() => {
-      new CoreIO({
+      // tslint:disable
+      new (CoreIO as any)({
         pluginName: 'Raspi IO'
       });
     }).toThrow(new Error('"options.pinInfo" is required and must be an object'));
@@ -75,7 +84,8 @@ describe('App Instantiation', () => {
 
   it('requires the platform argument', () => {
     expect(() => {
-      new CoreIO({
+      // tslint:disable
+      new (CoreIO as any)({
         pluginName: 'Raspi IO',
         pinInfo: {}
       });
@@ -84,7 +94,8 @@ describe('App Instantiation', () => {
 
   it('requires the platform.base argument', () => {
     expect(() => {
-      new CoreIO({
+      // tslint:disable
+      new (CoreIO as any)({
         pluginName: 'Raspi IO',
         pinInfo,
         platform: {}
@@ -94,7 +105,8 @@ describe('App Instantiation', () => {
 
   it('requires the platform.gpio argument', () => {
     expect(() => {
-      new CoreIO({
+      // tslint:disable
+      new (CoreIO as any)({
         pluginName: 'Raspi IO',
         pinInfo,
         platform: {
@@ -106,7 +118,8 @@ describe('App Instantiation', () => {
 
   it('requires the platform.pwm argument', () => {
     expect(() => {
-      new CoreIO({
+      // tslint:disable
+      new (CoreIO as any)({
         pluginName: 'Raspi IO',
         pinInfo,
         platform: {
@@ -208,7 +221,7 @@ describe('App Initialization', () => {
     });
   });
 
-  function isPropertyFrozenAndReadOnly(obj, property) {
+  function isPropertyFrozenAndReadOnly(obj: any, property: string) {
     expect(property in obj).toBeTruthy();
     expect(Object.isFrozen(obj[property])).toBeTruthy();
 
@@ -223,7 +236,7 @@ describe('App Initialization', () => {
       proto = Object.getPrototypeOf(proto);
     }
     expect(descriptor).not.toBeUndefined();
-    expect(descriptor.writable).toBeFalsy();
+    expect((descriptor as PropertyDescriptor).writable).toBeFalsy();
   }
 
   it('creates the `MODES` property', (done) => createInstance((raspi) => {
@@ -249,28 +262,29 @@ describe('App Initialization', () => {
 
   it('creates the `pins` property', (done) => createInstance((raspi) => {
     isPropertyFrozenAndReadOnly(raspi, 'pins');
-    const pins = [];
+    const pins: IPinConfiguration[] = [];
     pins[-1] = {
-      supportedModes: Object.freeze([ 1 ]),
+      supportedModes: [ Mode.OUTPUT ],
       mode: 1,
       value: 0,
       report: 1,
       analogChannel: 127
     }
     Object.keys(boardPins).forEach((pin) => {
+      const parsedPin = parseInt(pin, 10);
       const supportedModes = [];
-      const pinInfo = boardPins[pin];
-      if (pinInfo.peripherals.indexOf('gpio') != -1) {
+      const pinInfo = boardPins[parsedPin];
+      if (pinInfo.peripherals.indexOf(PeripheralType.GPIO) != -1) {
         supportedModes.push(0, 1);
       }
-      if (pinInfo.peripherals.indexOf('pwm') != -1) {
+      if (pinInfo.peripherals.indexOf(PeripheralType.PWM) != -1) {
         supportedModes.push(3, 4);
       }
       const mode = supportedModes.indexOf(1) == -1 ? 99 : 1;
-      pins[pin] = {
+      pins[parsedPin] = {
         supportedModes,
         mode,
-        value: mode == 1 ? 0 : null,
+        value: 0,
         report: 1,
         analogChannel: 127
       };
@@ -278,7 +292,7 @@ describe('App Initialization', () => {
     for (let i = 0; i < pins.length; i++) {
       if (!pins[i]) {
         pins[i] = {
-          supportedModes: Object.freeze([]),
+          supportedModes: [],
           mode: 99,
           value: 0,
           report: 1,

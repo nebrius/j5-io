@@ -67,39 +67,49 @@ function getNextPinAlias() {
     return pinAliases[pinAliasIndex++];
 }
 describe('GPIO', () => {
-    it('throws an error when resolving an invalid pin', (done) => mocks_1.createInstance((raspi) => {
+    let raspi;
+    beforeEach((done) => {
+        mocks_1.createInstance((newRaspi) => {
+            raspi = newRaspi;
+            done();
+        });
+    });
+    afterEach(() => {
+        raspi.reset();
+    });
+    it('throws an error when resolving an invalid pin', (done) => {
         expect(() => raspi.normalize('GPIO9000')).toThrow(new Error('Unknown pin "GPIO9000"'));
         done();
-    }));
-    it('throws an error when setting a pin to input mode that doesn\'t support it', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('throws an error when setting a pin to input mode that doesn\'t support it', (done) => {
         expect(() => raspi.pinMode(raspi.defaultLed, 0)).toThrow(new Error('Pin "-1" does not support mode "input"'));
         done();
-    }));
-    it('throws an error when setting a pin to analog mode that doesn\'t support it', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('throws an error when setting a pin to analog mode that doesn\'t support it', (done) => {
         expect(() => raspi.pinMode('P1-3', 2)).toThrow(new Error('Pin "P1-3" does not support mode "analog"'));
         done();
-    }));
-    it('throws an error when setting a pin to pwm mode that doesn\'t support it', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('throws an error when setting a pin to pwm mode that doesn\'t support it', (done) => {
         expect(() => raspi.pinMode('P1-3', 3)).toThrow(new Error('Pin "P1-3" does not support mode "pwm"'));
         done();
-    }));
-    it('throws an error when setting a pin to servo mode that doesn\'t support it', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('throws an error when setting a pin to servo mode that doesn\'t support it', (done) => {
         expect(() => raspi.pinMode('P1-3', 4)).toThrow(new Error('Pin "P1-3" does not support mode "servo"'));
         done();
-    }));
-    it('throws an error when setting a pin to other mode that doesn\'t support it', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('throws an error when setting a pin to other mode that doesn\'t support it', (done) => {
         expect(() => raspi.pinMode('P1-3', 98)).toThrow(new Error('Unknown mode 98'));
         done();
-    }));
-    it('ignores changes to the default LED pin mode', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('ignores changes to the default LED pin mode', (done) => {
         const oldPeripheral = raspi.getInternalPinInstances()[raspi.defaultLed];
         raspi.pinMode(raspi.defaultLed, 1);
         const newPeripheral = raspi.getInternalPinInstances()[raspi.defaultLed];
         expect(oldPeripheral).toBe(newPeripheral);
         done();
-    }));
+    });
     // Input tests
-    it('can set a pin in input mode', (done) => mocks_1.createInstance((raspi) => {
+    it('can set a pin in input mode', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         expect(raspi.pins[pin].mode).toEqual(1);
@@ -112,8 +122,8 @@ describe('GPIO', () => {
             pullResistor: 0
         });
         done();
-    }));
-    it('can read from a pin using the `value` property', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('can read from a pin using the `value` property', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
@@ -123,8 +133,8 @@ describe('GPIO', () => {
         peripheral.setMockedValue(1);
         expect(raspi.pins[pin].value).toEqual(1);
         done();
-    }));
-    it('can read from a pin using the `digitalRead` method', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('can read from a pin using the `digitalRead` method', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
@@ -140,21 +150,25 @@ describe('GPIO', () => {
             value = value === 1 ? 0 : 1;
             raspi.getInternalPinInstances()[pin].setMockedValue(value);
         });
-    }));
-    it('only notifies the callback when the value has changed', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('only calls the callback when the value has changed', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
         const peripheral = raspi.getInternalPinInstances()[pin];
-        let previouslyReadValue = NaN;
-        peripheral.setMockedValue(0);
-        raspi.digitalRead(pinAlias, (newValue) => {
-            expect(newValue).not.toEqual(previouslyReadValue);
-            previouslyReadValue = newValue;
+        let numReadCallbacks = 0;
+        raspi.digitalRead(pinAlias, () => {
+            numReadCallbacks++;
         });
-        setTimeout(done, 100);
-    }));
-    it('can read from a pin in a different mode using the `digitalRead` method', (done) => mocks_1.createInstance((raspi) => {
+        setInterval(() => {
+            peripheral.setMockedValue(0);
+        }, 10);
+        setTimeout(() => {
+            expect(numReadCallbacks).toEqual(1); // We always get 1 read, but shouldn't get more after that
+            done();
+        }, 100);
+    });
+    it('can read from a pin in a different mode using the `digitalRead` method', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.OUTPUT);
@@ -163,8 +177,8 @@ describe('GPIO', () => {
             expect(raspi.pins[pin].mode).toEqual(raspi.MODES.INPUT);
             done();
         });
-    }));
-    it('can read from a pin using the `digitalRead` method after being switched to write mode', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('can read from a pin using the `digitalRead` method after being switched to write mode', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         let numReadsRemaining = NUM_DIGITAL_READS;
@@ -182,8 +196,8 @@ describe('GPIO', () => {
         raspi.pinMode(pinAlias, raspi.MODES.OUTPUT);
         expect(raspi.pins[pin].mode).toEqual(raspi.MODES.OUTPUT);
         raspi.digitalWrite(pinAlias, value);
-    }));
-    it('can read from a pin using the `digital-read-${pin}` event', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('can read from a pin using the `digital-read-${pin}` event', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
@@ -201,8 +215,8 @@ describe('GPIO', () => {
             value = value === 1 ? 0 : 1;
             raspi.getInternalPinInstances()[pin].setMockedValue(value);
         });
-    }));
-    it('can read from a pin using the `digitalRead` method at no more than 200Hz and no less than 50Hz', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('can read from a pin using the `digitalRead` method at no more than 200Hz and no less than 50Hz', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
@@ -220,8 +234,8 @@ describe('GPIO', () => {
                 return;
             }
         });
-    }));
-    it('stops reading from the `digitalRead` method after being destroyed', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('stops reading from the `digitalRead` method after being destroyed', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
@@ -231,8 +245,8 @@ describe('GPIO', () => {
             peripheral.destroy();
             setTimeout(done, DESTROY_WAIT);
         });
-    }));
-    it('can enable the internal pull up resistor', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('can enable the internal pull up resistor', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
@@ -242,8 +256,8 @@ describe('GPIO', () => {
         expect(oldPeripheral).not.toBe(newPeripheral);
         expect(newPeripheral.args[0].pullResistor).toEqual(mocks_1.raspiGpioMock.PULL_UP);
         done();
-    }));
-    it('can enable the internal pull down resistor', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('can enable the internal pull down resistor', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         raspi.pinMode(pinAlias, raspi.MODES.INPUT);
@@ -253,9 +267,9 @@ describe('GPIO', () => {
         expect(oldPeripheral).not.toBe(newPeripheral);
         expect(newPeripheral.args[0].pullResistor).toEqual(mocks_1.raspiGpioMock.PULL_DOWN);
         done();
-    }));
+    });
     // Output tests
-    it('can set a pin in output mode after putting it in input mode', (done) => mocks_1.createInstance((raspi) => {
+    it('can set a pin in output mode after putting it in input mode', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         // OUTPUT mode is default, so we force it to input mode first to make sure we can change it back to OUTPUT mode
@@ -268,8 +282,8 @@ describe('GPIO', () => {
         expect(peripheral.args.length).toEqual(1);
         expect(peripheral.args[0]).toEqual(pin);
         done();
-    }));
-    it('can write a value to a pin using the `digitalWrite` method', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('can write a value to a pin using the `digitalWrite` method', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         expect(raspi.pins[pin].mode).toEqual(1);
@@ -281,8 +295,8 @@ describe('GPIO', () => {
         expect(peripheral.value).toEqual(1);
         expect(raspi.pins[pin].value).toEqual(1);
         done();
-    }));
-    it('can write a value to a pin using the `value` setter', (done) => mocks_1.createInstance((raspi) => {
+    });
+    it('can write a value to a pin using the `value` setter', (done) => {
         const pinAlias = getNextPinAlias();
         const pin = raspi.normalize(pinAlias);
         expect(raspi.pins[pin].mode).toEqual(1);
@@ -292,7 +306,7 @@ describe('GPIO', () => {
         raspi.pins[pin].value = 1;
         expect(peripheral.value).toEqual(1);
         done();
-    }));
+    });
     // Query tests (note that all query methods are just pass-through methods)
     it('can query capabilities before the ready event has been fired', (done) => {
         const raspi = new index_1.CoreIO({
@@ -306,9 +320,9 @@ describe('GPIO', () => {
         });
         raspi.queryCapabilities(done);
     });
-    it('can query capabilities after the ready event has been fired', (done) => mocks_1.createInstance((raspi) => {
+    it('can query capabilities after the ready event has been fired', (done) => {
         raspi.queryCapabilities(done);
-    }));
+    });
     it('can query analog mappings before the ready event has been fired', (done) => {
         const raspi = new index_1.CoreIO({
             pluginName: 'Raspi IO',
@@ -321,9 +335,9 @@ describe('GPIO', () => {
         });
         raspi.queryAnalogMapping(done);
     });
-    it('can query analog mappings after the ready event has been fired', (done) => mocks_1.createInstance((raspi) => {
+    it('can query analog mappings after the ready event has been fired', (done) => {
         raspi.queryAnalogMapping(done);
-    }));
+    });
     it('can query pin state before the ready event has been fired', (done) => {
         const raspi = new index_1.CoreIO({
             pluginName: 'Raspi IO',
@@ -336,8 +350,8 @@ describe('GPIO', () => {
         });
         raspi.queryPinState(0, done);
     });
-    it('can query pin state after the ready event has been fired', (done) => mocks_1.createInstance((raspi) => {
+    it('can query pin state after the ready event has been fired', (done) => {
         raspi.queryPinState(0, done);
-    }));
+    });
 });
 //# sourceMappingURL=gpio.spec.js.map

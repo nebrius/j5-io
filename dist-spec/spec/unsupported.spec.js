@@ -23,18 +23,18 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
+Object.defineProperty(exports, "__esModule", { value: true });
 /*global it describe expect*/
-const { createInstance } = require('./mocks');
+const mocks_1 = require("./mocks");
 describe('Unsupported', () => {
     function testUnsupported(method) {
-        it(`throws an exception when trying to call \`${method}\``, (done) => createInstance((raspi) => {
+        it(`throws an exception when trying to call \`${method}\``, (done) => mocks_1.createInstance((raspi) => {
             expect(() => {
                 raspi[method]();
             }).toThrow(new Error(`${method} is not supported by Raspi IO`));
             done();
         }));
     }
-    testUnsupported('reset');
     testUnsupported('analogRead');
     testUnsupported('sendOneWireConfig');
     testUnsupported('sendOneWireSearch');

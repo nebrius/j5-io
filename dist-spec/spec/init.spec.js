@@ -23,43 +23,53 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
+Object.defineProperty(exports, "__esModule", { value: true });
 /*global it describe expect*/
-const { EventEmitter } = require('events');
-const { CoreIO } = require('../dist/index');
-const { raspiMock, raspiGpioMock, raspiPWMMock, raspiSerialMock, pinInfo, createInstance, pinInfo: boardPins } = require('./mocks');
+const events_1 = require("events");
+const index_1 = require("../src/index");
+const mocks_1 = require("./mocks");
+const abstract_io_1 = require("abstract-io");
+const core_io_types_1 = require("core-io-types");
 describe('App Instantiation', () => {
+    // TODO: test "reset" method
     it('requires an options argument', () => {
         expect(() => {
-            new CoreIO();
+            // tslint:disable
+            new index_1.CoreIO();
         }).toThrow(new Error('"options" is required and must be an object'));
     });
     it('requires an options argument to be an object', () => {
         expect(() => {
-            new CoreIO(`I'm not an object`);
+            // tslint:disable
+            new index_1.CoreIO(`I'm not an object`);
         }).toThrow(new Error('"options" is required and must be an object'));
     });
     it('requires the pluginName argument', () => {
         expect(() => {
-            new CoreIO({});
+            // tslint:disable
+            new index_1.CoreIO({});
         }).toThrow(new Error('"options.pluginName" is required and must be a string'));
     });
     it('requires the pluginName argument to be a string', () => {
         expect(() => {
-            new CoreIO({
+            // tslint:disable
+            new index_1.CoreIO({
                 pluginName: 10
             });
         }).toThrow(new Error('"options.pluginName" is required and must be a string'));
     });
     it('requires the pinInfo argument', () => {
         expect(() => {
-            new CoreIO({
+            // tslint:disable
+            new index_1.CoreIO({
                 pluginName: 'Raspi IO'
             });
         }).toThrow(new Error('"options.pinInfo" is required and must be an object'));
     });
     it('requires the platform argument', () => {
         expect(() => {
-            new CoreIO({
+            // tslint:disable
+            new index_1.CoreIO({
                 pluginName: 'Raspi IO',
                 pinInfo: {}
             });
@@ -67,100 +77,103 @@ describe('App Instantiation', () => {
     });
     it('requires the platform.base argument', () => {
         expect(() => {
-            new CoreIO({
+            // tslint:disable
+            new index_1.CoreIO({
                 pluginName: 'Raspi IO',
-                pinInfo,
+                pinInfo: mocks_1.pinInfo,
                 platform: {}
             });
         }).toThrow(new Error('"options.platform.base" is required and must be an object'));
     });
     it('requires the platform.gpio argument', () => {
         expect(() => {
-            new CoreIO({
+            // tslint:disable
+            new index_1.CoreIO({
                 pluginName: 'Raspi IO',
-                pinInfo,
+                pinInfo: mocks_1.pinInfo,
                 platform: {
-                    base: raspiMock
+                    base: mocks_1.raspiMock
                 }
             });
         }).toThrow(new Error('"options.platform.gpio" is required and must be an object'));
     });
     it('requires the platform.pwm argument', () => {
         expect(() => {
-            new CoreIO({
+            // tslint:disable
+            new index_1.CoreIO({
                 pluginName: 'Raspi IO',
-                pinInfo,
+                pinInfo: mocks_1.pinInfo,
                 platform: {
-                    base: raspiMock,
-                    gpio: raspiGpioMock
+                    base: mocks_1.raspiMock,
+                    gpio: mocks_1.raspiGpioMock
                 }
             });
         }).toThrow(new Error('"options.platform.pwm" is required and must be an object'));
     });
     it('does not require the platform.serial argument', () => {
         expect(() => {
-            new CoreIO({
+            new index_1.CoreIO({
                 pluginName: 'Raspi IO',
-                pinInfo,
+                pinInfo: mocks_1.pinInfo,
                 platform: {
-                    base: raspiMock,
-                    gpio: raspiGpioMock,
-                    pwm: raspiPWMMock
+                    base: mocks_1.raspiMock,
+                    gpio: mocks_1.raspiGpioMock,
+                    pwm: mocks_1.raspiPWMMock
                 }
             });
         }).not.toThrow();
     });
     it('requires the serialIds argument when the platform.serial argument is present', () => {
         expect(() => {
-            new CoreIO({
+            new index_1.CoreIO({
                 pluginName: 'Raspi IO',
-                pinInfo,
+                pinInfo: mocks_1.pinInfo,
                 platform: {
-                    base: raspiMock,
-                    gpio: raspiGpioMock,
-                    pwm: raspiPWMMock,
-                    serial: raspiSerialMock
+                    base: mocks_1.raspiMock,
+                    gpio: mocks_1.raspiGpioMock,
+                    pwm: mocks_1.raspiPWMMock,
+                    serial: mocks_1.raspiSerialMock
                 }
             });
         }).toThrow(new Error('"options.serialIds" is required and must be an object when options.platform.serial is also supplied'));
     });
     it('requires the serialIds.DEFAULT argument when the platform.serial argument is present', () => {
         expect(() => {
-            new CoreIO({
+            new index_1.CoreIO({
                 pluginName: 'Raspi IO',
-                pinInfo,
+                pinInfo: mocks_1.pinInfo,
                 platform: {
-                    base: raspiMock,
-                    gpio: raspiGpioMock,
-                    pwm: raspiPWMMock,
-                    serial: raspiSerialMock
+                    base: mocks_1.raspiMock,
+                    gpio: mocks_1.raspiGpioMock,
+                    pwm: mocks_1.raspiPWMMock,
+                    serial: mocks_1.raspiSerialMock
                 },
                 serialIds: {}
             });
         }).toThrow(new Error('"DEFAULT" serial ID is required in options.serialIds'));
     });
     it('is an instance of an Event Emitter', () => {
-        const raspi = new CoreIO({
+        const raspi = new index_1.CoreIO({
             pluginName: 'Raspi IO',
-            pinInfo,
+            pinInfo: mocks_1.pinInfo,
             platform: {
-                base: raspiMock,
-                gpio: raspiGpioMock,
-                pwm: raspiPWMMock
+                base: mocks_1.raspiMock,
+                gpio: mocks_1.raspiGpioMock,
+                pwm: mocks_1.raspiPWMMock
             }
         });
-        expect(raspi instanceof EventEmitter).toBeTruthy();
+        expect(raspi instanceof events_1.EventEmitter).toBeTruthy();
     });
 });
 describe('App Initialization', () => {
     it('emits "ready" and "connect" events on initialization', (done) => {
-        const raspi = new CoreIO({
+        const raspi = new index_1.CoreIO({
             pluginName: 'Raspi IO',
-            pinInfo,
+            pinInfo: mocks_1.pinInfo,
             platform: {
-                base: raspiMock,
-                gpio: raspiGpioMock,
-                pwm: raspiPWMMock
+                base: mocks_1.raspiMock,
+                gpio: mocks_1.raspiGpioMock,
+                pwm: mocks_1.raspiPWMMock
             }
         });
         expect('isReady' in raspi).toBeTruthy();
@@ -198,7 +211,7 @@ describe('App Initialization', () => {
         expect(descriptor).not.toBeUndefined();
         expect(descriptor.writable).toBeFalsy();
     }
-    it('creates the `MODES` property', (done) => createInstance((raspi) => {
+    it('creates the `MODES` property', (done) => mocks_1.createInstance((raspi) => {
         isPropertyFrozenAndReadOnly(raspi, 'MODES');
         expect(raspi.MODES).toEqual(Object.freeze({
             INPUT: 0,
@@ -210,37 +223,38 @@ describe('App Initialization', () => {
         }));
         done();
     }));
-    it('creates the `SERIAL_PORT_IDs` property', (done) => createInstance((raspi) => {
+    it('creates the `SERIAL_PORT_IDs` property', (done) => mocks_1.createInstance((raspi) => {
         isPropertyFrozenAndReadOnly(raspi, 'SERIAL_PORT_IDs');
         expect(raspi.SERIAL_PORT_IDs).toEqual(Object.freeze({
             DEFAULT: '/dev/ttyAMA0'
         }));
         done();
     }));
-    it('creates the `pins` property', (done) => createInstance((raspi) => {
+    it('creates the `pins` property', (done) => mocks_1.createInstance((raspi) => {
         isPropertyFrozenAndReadOnly(raspi, 'pins');
         const pins = [];
         pins[-1] = {
-            supportedModes: Object.freeze([1]),
+            supportedModes: [abstract_io_1.Mode.OUTPUT],
             mode: 1,
             value: 0,
             report: 1,
             analogChannel: 127
         };
-        Object.keys(boardPins).forEach((pin) => {
+        Object.keys(mocks_1.pinInfo).forEach((pin) => {
+            const parsedPin = parseInt(pin, 10);
             const supportedModes = [];
-            const pinInfo = boardPins[pin];
-            if (pinInfo.peripherals.indexOf('gpio') != -1) {
+            const pinInfo = mocks_1.pinInfo[parsedPin];
+            if (pinInfo.peripherals.indexOf(core_io_types_1.PeripheralType.GPIO) != -1) {
                 supportedModes.push(0, 1);
             }
-            if (pinInfo.peripherals.indexOf('pwm') != -1) {
+            if (pinInfo.peripherals.indexOf(core_io_types_1.PeripheralType.PWM) != -1) {
                 supportedModes.push(3, 4);
             }
             const mode = supportedModes.indexOf(1) == -1 ? 99 : 1;
-            pins[pin] = {
+            pins[parsedPin] = {
                 supportedModes,
                 mode,
-                value: mode == 1 ? 0 : null,
+                value: 0,
                 report: 1,
                 analogChannel: 127
             };
@@ -248,7 +262,7 @@ describe('App Initialization', () => {
         for (let i = 0; i < pins.length; i++) {
             if (!pins[i]) {
                 pins[i] = {
-                    supportedModes: Object.freeze([]),
+                    supportedModes: [],
                     mode: 99,
                     value: 0,
                     report: 1,
@@ -259,7 +273,7 @@ describe('App Initialization', () => {
         expect(raspi.pins).toEqual(pins);
         done();
     }));
-    it('creates the `analogPins` property', (done) => createInstance((raspi) => {
+    it('creates the `analogPins` property', (done) => mocks_1.createInstance((raspi) => {
         isPropertyFrozenAndReadOnly(raspi, 'analogPins');
         expect(raspi.analogPins).toEqual([]);
         done();

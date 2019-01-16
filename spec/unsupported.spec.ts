@@ -25,20 +25,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 /*global it describe expect*/
 
-const { createInstance } = require('./mocks');
+import { createInstance } from './mocks';
 
 describe('Unsupported', () => {
 
-  function testUnsupported(method) {
+  function testUnsupported(method: string): void {
     it(`throws an exception when trying to call \`${method}\``, (done) => createInstance((raspi) => {
       expect(() => {
-        raspi[method]();
+        (raspi as any)[method]();
       }).toThrow(new Error(`${method} is not supported by Raspi IO`));
       done();
     }));
   }
 
-  testUnsupported('reset');
   testUnsupported('analogRead');
   testUnsupported('sendOneWireConfig');
   testUnsupported('sendOneWireSearch');
