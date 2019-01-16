@@ -43,6 +43,14 @@ describe('App Instantiation', () => {
 
   // TODO: test "reset" method
 
+  let raspi: CoreIO | undefined;
+  afterEach(() => {
+    if (raspi) {
+      raspi.reset();
+      raspi = undefined;
+    }
+  });
+
   it('requires an options argument', () => {
     expect(() => {
       // tslint:disable
@@ -132,7 +140,7 @@ describe('App Instantiation', () => {
 
   it('does not require the platform.serial argument', () => {
     expect(() => {
-      new CoreIO({
+      raspi = new CoreIO({
         pluginName: 'Raspi IO',
         pinInfo,
         platform: {
@@ -177,7 +185,7 @@ describe('App Instantiation', () => {
   });
 
   it('is an instance of an Event Emitter', () => {
-    const raspi = new CoreIO({
+    raspi = new CoreIO({
       pluginName: 'Raspi IO',
       pinInfo,
       platform: {
@@ -191,8 +199,14 @@ describe('App Instantiation', () => {
 });
 
 describe('App Initialization', () => {
+
+  let raspi: CoreIO;
+  afterEach(() => {
+    raspi.reset();
+  });
+
   it('emits "ready" and "connect" events on initialization', (done) => {
-    const raspi = new CoreIO({
+    raspi = new CoreIO({
       pluginName: 'Raspi IO',
       pinInfo,
       platform: {
@@ -239,7 +253,8 @@ describe('App Initialization', () => {
     expect((descriptor as PropertyDescriptor).writable).toBeFalsy();
   }
 
-  it('creates the `MODES` property', (done) => createInstance((raspi) => {
+  it('creates the `MODES` property', (done) => createInstance((newRaspi) => {
+    raspi = newRaspi;
     isPropertyFrozenAndReadOnly(raspi, 'MODES');
     expect(raspi.MODES).toEqual(Object.freeze({
       INPUT: 0,
@@ -252,7 +267,8 @@ describe('App Initialization', () => {
     done();
   }));
 
-  it('creates the `SERIAL_PORT_IDs` property', (done) => createInstance((raspi) => {
+  it('creates the `SERIAL_PORT_IDs` property', (done) => createInstance((newRaspi) => {
+    raspi = newRaspi;
     isPropertyFrozenAndReadOnly(raspi, 'SERIAL_PORT_IDs');
     expect(raspi.SERIAL_PORT_IDs).toEqual(Object.freeze({
       DEFAULT: '/dev/ttyAMA0'
@@ -260,7 +276,8 @@ describe('App Initialization', () => {
     done();
   }));
 
-  it('creates the `pins` property', (done) => createInstance((raspi) => {
+  it('creates the `pins` property', (done) => createInstance((newRaspi) => {
+    raspi = newRaspi;
     isPropertyFrozenAndReadOnly(raspi, 'pins');
     const pins: IPinConfiguration[] = [];
     pins[-1] = {
@@ -304,7 +321,8 @@ describe('App Initialization', () => {
     done();
   }));
 
-  it('creates the `analogPins` property', (done) => createInstance((raspi) => {
+  it('creates the `analogPins` property', (done) => createInstance((newRaspi) => {
+    raspi = newRaspi;
     isPropertyFrozenAndReadOnly(raspi, 'analogPins');
     expect(raspi.analogPins).toEqual([]);
     done();

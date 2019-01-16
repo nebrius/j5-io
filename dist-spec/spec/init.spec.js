@@ -32,6 +32,13 @@ const abstract_io_1 = require("abstract-io");
 const core_io_types_1 = require("core-io-types");
 describe('App Instantiation', () => {
     // TODO: test "reset" method
+    let raspi;
+    afterEach(() => {
+        if (raspi) {
+            raspi.reset();
+            raspi = undefined;
+        }
+    });
     it('requires an options argument', () => {
         expect(() => {
             // tslint:disable
@@ -112,7 +119,7 @@ describe('App Instantiation', () => {
     });
     it('does not require the platform.serial argument', () => {
         expect(() => {
-            new index_1.CoreIO({
+            raspi = new index_1.CoreIO({
                 pluginName: 'Raspi IO',
                 pinInfo: mocks_1.pinInfo,
                 platform: {
@@ -153,7 +160,7 @@ describe('App Instantiation', () => {
         }).toThrow(new Error('"DEFAULT" serial ID is required in options.serialIds'));
     });
     it('is an instance of an Event Emitter', () => {
-        const raspi = new index_1.CoreIO({
+        raspi = new index_1.CoreIO({
             pluginName: 'Raspi IO',
             pinInfo: mocks_1.pinInfo,
             platform: {
@@ -166,8 +173,12 @@ describe('App Instantiation', () => {
     });
 });
 describe('App Initialization', () => {
+    let raspi;
+    afterEach(() => {
+        raspi.reset();
+    });
     it('emits "ready" and "connect" events on initialization', (done) => {
-        const raspi = new index_1.CoreIO({
+        raspi = new index_1.CoreIO({
             pluginName: 'Raspi IO',
             pinInfo: mocks_1.pinInfo,
             platform: {
@@ -211,7 +222,8 @@ describe('App Initialization', () => {
         expect(descriptor).not.toBeUndefined();
         expect(descriptor.writable).toBeFalsy();
     }
-    it('creates the `MODES` property', (done) => mocks_1.createInstance((raspi) => {
+    it('creates the `MODES` property', (done) => mocks_1.createInstance((newRaspi) => {
+        raspi = newRaspi;
         isPropertyFrozenAndReadOnly(raspi, 'MODES');
         expect(raspi.MODES).toEqual(Object.freeze({
             INPUT: 0,
@@ -223,14 +235,16 @@ describe('App Initialization', () => {
         }));
         done();
     }));
-    it('creates the `SERIAL_PORT_IDs` property', (done) => mocks_1.createInstance((raspi) => {
+    it('creates the `SERIAL_PORT_IDs` property', (done) => mocks_1.createInstance((newRaspi) => {
+        raspi = newRaspi;
         isPropertyFrozenAndReadOnly(raspi, 'SERIAL_PORT_IDs');
         expect(raspi.SERIAL_PORT_IDs).toEqual(Object.freeze({
             DEFAULT: '/dev/ttyAMA0'
         }));
         done();
     }));
-    it('creates the `pins` property', (done) => mocks_1.createInstance((raspi) => {
+    it('creates the `pins` property', (done) => mocks_1.createInstance((newRaspi) => {
+        raspi = newRaspi;
         isPropertyFrozenAndReadOnly(raspi, 'pins');
         const pins = [];
         pins[-1] = {
@@ -273,7 +287,8 @@ describe('App Initialization', () => {
         expect(raspi.pins).toEqual(pins);
         done();
     }));
-    it('creates the `analogPins` property', (done) => mocks_1.createInstance((raspi) => {
+    it('creates the `analogPins` property', (done) => mocks_1.createInstance((newRaspi) => {
+        raspi = newRaspi;
         isPropertyFrozenAndReadOnly(raspi, 'analogPins');
         expect(raspi.analogPins).toEqual([]);
         done();
