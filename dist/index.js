@@ -96,27 +96,6 @@ class CoreIO extends abstract_io_1.AbstractIO {
         // Create the pins object
         this[pins] = [];
         const pinMappings = Object.assign({}, pinInfo);
-        // TODO: Move to raspi-io
-        // if (Array.isArray(includePins)) {
-        //   const newPinMappings = {};
-        //   for (const pin of includePins) {
-        //     const normalizedPin = this[raspiBoardModule].getPinNumber(pin);
-        //     if (normalizedPin === null) {
-        //       throw new Error(`Invalid pin "${pin}" specified in includePins`);
-        //     }
-        //     newPinMappings[normalizedPin] = pinMappings[normalizedPin];
-        //   }
-        //   pinMappings = newPinMappings;
-        // } else if (Array.isArray(excludePins)) {
-        //   pinMappings = Object.assign({}, pinMappings);
-        //   for (const pin of excludePins) {
-        //     const normalizedPin = this[raspiBoardModule].getPinNumber(pin);
-        //     if (normalizedPin === null) {
-        //       throw new Error(`Invalid pin "${pin}" specified in excludePins`);
-        //     }
-        //     delete pinMappings[normalizedPin];
-        //   }
-        // }
         function createPinEntry(pin, pinMapping) {
             const supportedModes = [];
             // TODO: add logic to filter out I2C and Serial so they can't be used for GPIO in raspi-io
@@ -278,6 +257,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
         return this[isReady];
     }
     reset() {
+        // TODO: Loop through active peripherals and destroy them
         this[gpioManager].reset();
     }
     normalize(pin) {

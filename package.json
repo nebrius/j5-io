@@ -1,8 +1,9 @@
 {
-  "name": "raspi-io-core",
-  "version": "2.1.0",
+  "name": "core-io",
+  "version": "3.0.0",
   "description": "The core library for Raspi IO",
   "main": "dist/index.js",
+  "types": "./declarations/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/nebrius/raspi-io-core.git"
