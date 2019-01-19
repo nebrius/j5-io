@@ -1,10 +1,10 @@
-# Raspi IO Core
+# Core IO
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nebrius/raspi-io?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Build Status](https://travis-ci.org/nebrius/raspi-io-core.svg?branch=master)](https://travis-ci.org/nebrius/raspi-io-core)
-[![Coverage Status](https://coveralls.io/repos/github/nebrius/raspi-io-core/badge.svg?branch=master)](https://coveralls.io/github/nebrius/raspi-io-core?branch=master)
+[![Build Status](https://travis-ci.org/nebrius/core-io.svg?branch=master)](https://travis-ci.org/nebrius/core-io)
+[![Coverage Status](https://coveralls.io/repos/github/nebrius/core-io/badge.svg?branch=master)](https://coveralls.io/github/nebrius/core-io?branch=master)
 
-Raspi IO Core is a Firmata API compatible abstract library for creating [Johnny-Five](http://johnny-five.io/) IO plugins targeting the [Raspberry Pi](http://www.raspberrypi.org/). The API docs for this module can be found on the [Johnny-Five Wiki](https://github.com/rwaldron/io-plugins), except for the constructor which is documented below.
+Core IO is a Firmata API compatible abstract library for creating [Johnny-Five](http://johnny-five.io/) IO plugins. The API docs for this module can be found on the [Johnny-Five Wiki](https://github.com/rwaldron/io-plugins), except for the constructor which is documented below.
 
 If you have a bug report, feature request, or wish to contribute code, please be sure to check out the [Raspi IO Contributing Guide](https://github.com/nebrius/raspi-io/blob/master/CONTRIBUTING.md).
 
@@ -13,37 +13,31 @@ If you have a bug report, feature request, or wish to contribute code, please be
 Install with npm:
 
 ```Shell
-npm install raspi-io-core
+npm install core-io
 ```
 
 ## Usage
 
-Using Raspi IO Core to create a Johnny-Five IO plugin should look something like this:
+Using Core IO to create a Johnny-Five IO plugin should look something like this:
 
 ```JavaScript
-import { RaspiIOCore } from 'raspi-io-core';
+import { CoreIO } from 'core-io';
+import { getPins } from 'raspi-board';
 
 export function RaspiIO({ includePins, excludePins, enableSoftPwm = false } = {}) {
 
   // Create the platform options
   const platform = {
-    'raspi': require('raspi'),
-    'raspi-board': require('raspi-board'),
-    'raspi-gpio': require('raspi-gpio'),
-    'raspi-i2c': require('raspi-i2c'),
-    'raspi-led': require('raspi-led'),
-    'raspi-pwm': require('raspi-pwm'),
-    'raspi-serial': require('raspi-serial'),
+    base: require('raspi'),
+    gpio: require('raspi-gpio'),
+    i2c: require('raspi-i2c'),
+    led: require('raspi-led'),
+    pwm: require('raspi-pwm')
   };
 
-  if (enableSoftPwm) {
-    platform['raspi-soft-pwm'] = require('raspi-soft-pwm');
-  }
-
   return new RaspiIOCore({
-    includePins,
-    excludePins,
-    enableSoftPwm,
+    pluginName: 'Raspi IO',
+    pinInfo: getPins(),
     platform
   });
 }
@@ -51,9 +45,9 @@ export function RaspiIO({ includePins, excludePins, enableSoftPwm = false } = {}
 
 ## API
 
-### new raspi(options)
+### new CoreIO(options)
 
-Instantiates a new Raspi IO Core instance with the given options
+Instantiates a new Core IO instance with the given options
 
 _Arguments_:
 
@@ -176,7 +170,7 @@ License
 
 The MIT License (MIT)
 
-Copyright (c) 2013-2016 Bryan Hughes <bryan@nebri.us>
+Copyright (c) Bryan Hughes <bryan@nebri.us>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
