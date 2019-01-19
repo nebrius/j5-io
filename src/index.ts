@@ -45,18 +45,18 @@ import {
 } from './core';
 
 import { GPIOManager } from './managers/gpio';
-
-// Constants
-const LED_PIN = -1;
+import { LEDManager, DEFAULT_LED_PIN } from './managers/led';
 
 // Private symbols for public getters
 const serialPortIds = Symbol('serialPortIds');
 const name = Symbol('name');
 const isReady = Symbol('isReady');
 const pins = Symbol('pins');
+const defaultLed = Symbol('defaultLed');
 
 // Private symbols for internal properties
 const gpioManager = Symbol('gpioManager');
+const ledManager = Symbol('ledManager');
 
 // Old Constants
 // const SOFTWARE_PWM_RANGE = 1000;
@@ -115,7 +115,11 @@ export interface IOptions {
 export class CoreIO extends AbstractIO {
 
   public get defaultLed() {
-    return LED_PIN;
+    if (this[ledManager]) {
+      return this[defaultLed];
+    } else {
+      throw new Error(`${this.name} does not have a default LED`);
+    }
   }
 
   public get name() {
@@ -145,8 +149,10 @@ export class CoreIO extends AbstractIO {
   private [isReady] = false;
   private [pins]: IPinConfiguration[] = [];
   private [name]: string;
+  private [defaultLed]: number | undefined;
 
   private [gpioManager]: GPIOManager;
+  private [ledManager]?: LEDManager;
 
   constructor(options: IOptions) {
     super();
@@ -198,6 +204,10 @@ export class CoreIO extends AbstractIO {
     // Instantiate the peripheral managers
     setBaseModule(platform.base);
     this[gpioManager] = new GPIOManager(platform.gpio, this);
+    if (platform.led) {
+      this[defaultLed] = DEFAULT_LED_PIN;
+      this[ledManager] = new LEDManager(platform.led);
+    }
 
     // Inject the test only methods if we're in test mode
     if (process.env.RASPI_IO_TEST_MODE) {
@@ -212,7 +222,7 @@ export class CoreIO extends AbstractIO {
 
     function createPinEntry(pin: number, pinMapping: IPinInfo): IPinConfiguration {
       const supportedModes = [];
-      if (pin === LED_PIN) {
+      if (platform.led && pin === DEFAULT_LED_PIN) {
         supportedModes.push(Mode.OUTPUT);
       } else if (pinMapping.peripherals.indexOf(PeripheralType.GPIO) !== -1) {
         supportedModes.push(Mode.INPUT, Mode.OUTPUT);
@@ -281,35 +291,40 @@ export class CoreIO extends AbstractIO {
       }
     }
 
-    // Slight hack to get the LED in there, since it's not actually a pin
-    // TODO: make all LED logic and properties conditional on platform.led being passed in
-    this[pins][LED_PIN] = Object.create(null, {
-      supportedModes: {
-        enumerable: true,
-        value: Object.freeze([ Mode.OUTPUT ])
-      },
-      mode: {
-        enumerable: true,
-        get() {
-          return Mode.OUTPUT;
+    // Add the virtual LED pin, since it's not a real pin, but only if a built-in LED is provided
+    if (platform.led) {
+      this[pins][DEFAULT_LED_PIN] = Object.create(null, {
+        supportedModes: {
+          enumerable: true,
+          value: Object.freeze([ Mode.OUTPUT ])
+        },
+        mode: {
+          enumerable: true,
+          get() {
+            return Mode.OUTPUT;
+          }
+        },
+        value: {
+          enumerable: true,
+          get() {
+            const ledManagerInstance = this[ledManager];
+            if (ledManagerInstance) {
+              return ledManagerInstance.getCurrentValue();
+            } else {
+              return Value.LOW;
+            }
+          }
+        },
+        report: {
+          enumerable: true,
+          value: 1
+        },
+        analogChannel: {
+          enumerable: true,
+          value: 127
         }
-      },
-      value: {
-        enumerable: true,
-        get() {
-          // TODO: wire into LED manager or something
-          return 0;
-        }
-      },
-      report: {
-        enumerable: true,
-        value: 1
-      },
-      analogChannel: {
-        enumerable: true,
-        value: 127
-      }
-    });
+      });
+    }
 
     // Fill in the holes, sins pins are sparse on the A+/B+/2
     for (let i = 0; i < this[pins].length; i++) {
@@ -360,13 +375,17 @@ export class CoreIO extends AbstractIO {
   public reset() {
     // TODO: Loop through active peripherals and destroy them
     this[gpioManager].reset();
+    const ledManagerInstance = this[ledManager];
+    if (ledManagerInstance) {
+      ledManagerInstance.reset();
+    }
   }
 
   public normalize(pin: number | string): number {
     // LED is a special thing that the underlying platform doesn't know about, and isn't actually a pin.
-    // Gotta reroute it here, and we just have it return itself
-    if (pin === LED_PIN) {
-      return LED_PIN;
+    // Gotta reroute it here, and we just have it return the pin that's passed in
+    if (this[ledManager] && pin === DEFAULT_LED_PIN) {
+      return DEFAULT_LED_PIN;
     }
     return normalizePin(pin);
   }
@@ -381,12 +400,9 @@ export class CoreIO extends AbstractIO {
       throw new Error(`Pin "${pin}" does not support mode "${Mode[mode].toLowerCase()}"`);
     }
 
-    if (pin === LED_PIN) {
-      // TODO
-      // if (pinInstance.peripheral instanceof this[raspiLedModule].LED) {
-      //   return;
-      // }
-      // pinInstance.peripheral = new this[raspiLedModule].LED();
+    if (this[ledManager] && pin === DEFAULT_LED_PIN) {
+      // Note: the LED module is a dedicated peripheral and can't be any other mode, so we can shortcut here
+      return;
     } else {
       switch (mode) {
         case Mode.INPUT:
@@ -423,11 +439,12 @@ export class CoreIO extends AbstractIO {
   public digitalWrite(pin: string | number, value: number): void {
     // Again, LED is a special thing that the underlying platform doesn't know about.
     // Gotta reroute it here to the appropriate peripheral manager
-    if (pin === LED_PIN) {
-      // TODO
-      return;
+    const ledManagerInstance = this[ledManager];
+    if (ledManagerInstance && pin === DEFAULT_LED_PIN) {
+      ledManagerInstance.digitalWrite(value);
+    } else {
+      this[gpioManager].digitalWrite(this.normalize(pin), value);
     }
-    this[gpioManager].digitalWrite(this.normalize(pin), value);
   }
 
   // PWM methods

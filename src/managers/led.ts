@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2018 Bryan Hughes <bryan@nebri.us>
+Copyright (c) Bryan Hughes <bryan@nebri.us>
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -23,30 +23,31 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*global it xdescribe expect*/
+import { ILEDModule, ILED } from 'core-io-types';
+import { Value } from 'abstract-io';
 
-const { raspiLEDMock, createInstance } = require('./mocks');
+export const DEFAULT_LED_PIN = -1;
 
-describe('LED', () => {
-  it('sets the pin mode properly for the built-in LED', (done) => createInstance((raspi) => {
-    expect(raspi.defaultLed).toEqual(-1);
-    expect(raspi.pins[raspi.defaultLed].supportedModes.indexOf(1)).not.toEqual(-1);
+export class LEDManager {
 
-    const peripheral = raspi.getInternalPinInstances()[-1];
-    expect(peripheral instanceof raspiLEDMock.LED).toBeTruthy();
-    expect(peripheral.args.length).toEqual(0);
+  private led: ILED;
+  private value = Value.LOW;
 
-    done();
-  }));
+  constructor(ledModule: ILEDModule) {
+    this.led = ledModule.createLED();
+    this.digitalWrite(Value.LOW);
+  }
 
-  it('can write to the LED', (done) => createInstance((raspi) => {
-    const peripheral = raspi.getInternalPinInstances()[-1];
-    raspi.digitalWrite(raspi.defaultLed, 0);
-    expect(peripheral.read()).toEqual(0);
-    raspi.digitalWrite(raspi.defaultLed, 1);
-    expect(peripheral.read()).toEqual(1);
-    done();
-  }));
+  public reset() {
+    // Nothing to do
+  }
 
-  // TODO: test logic for when there is no default LED
-});
+  public digitalWrite(value: Value): void {
+    this.value = value;
+    this.led.write(value);
+  }
+
+  public getCurrentValue(): Value {
+    return this.value;
+  }
+}

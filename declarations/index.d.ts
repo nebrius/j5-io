@@ -4,7 +4,9 @@ declare const serialPortIds: unique symbol;
 declare const name: unique symbol;
 declare const isReady: unique symbol;
 declare const pins: unique symbol;
+declare const defaultLed: unique symbol;
 declare const gpioManager: unique symbol;
+declare const ledManager: unique symbol;
 export interface IOptions {
     pluginName: string;
     platform: {
@@ -23,7 +25,7 @@ export interface IOptions {
     };
 }
 export declare class CoreIO extends AbstractIO {
-    readonly defaultLed: number;
+    readonly defaultLed: number | undefined;
     readonly name: string;
     readonly SERIAL_PORT_IDs: {
         [id: string]: any;
@@ -39,7 +41,9 @@ export declare class CoreIO extends AbstractIO {
     private [isReady];
     private [pins];
     private [name];
+    private [defaultLed];
     private [gpioManager];
+    private [ledManager]?;
     constructor(options: IOptions);
     reset(): void;
     normalize(pin: number | string): number;

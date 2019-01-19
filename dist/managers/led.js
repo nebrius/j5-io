@@ -1,5 +1,6 @@
+"use strict";
 /*
-Copyright (c) 2014-2018 Bryan Hughes <bryan@nebri.us>
+Copyright (c) Bryan Hughes <bryan@nebri.us>
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -22,31 +23,25 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
-
-/*global it xdescribe expect*/
-
-const { raspiLEDMock, createInstance } = require('./mocks');
-
-describe('LED', () => {
-  it('sets the pin mode properly for the built-in LED', (done) => createInstance((raspi) => {
-    expect(raspi.defaultLed).toEqual(-1);
-    expect(raspi.pins[raspi.defaultLed].supportedModes.indexOf(1)).not.toEqual(-1);
-
-    const peripheral = raspi.getInternalPinInstances()[-1];
-    expect(peripheral instanceof raspiLEDMock.LED).toBeTruthy();
-    expect(peripheral.args.length).toEqual(0);
-
-    done();
-  }));
-
-  it('can write to the LED', (done) => createInstance((raspi) => {
-    const peripheral = raspi.getInternalPinInstances()[-1];
-    raspi.digitalWrite(raspi.defaultLed, 0);
-    expect(peripheral.read()).toEqual(0);
-    raspi.digitalWrite(raspi.defaultLed, 1);
-    expect(peripheral.read()).toEqual(1);
-    done();
-  }));
-
-  // TODO: test logic for when there is no default LED
-});
+Object.defineProperty(exports, "__esModule", { value: true });
+const abstract_io_1 = require("abstract-io");
+exports.DEFAULT_LED_PIN = -1;
+class LEDManager {
+    constructor(ledModule) {
+        this.value = abstract_io_1.Value.LOW;
+        this.led = ledModule.createLED();
+        this.digitalWrite(abstract_io_1.Value.LOW);
+    }
+    reset() {
+        // Nothing to do
+    }
+    digitalWrite(value) {
+        this.value = value;
+        this.led.write(value);
+    }
+    getCurrentValue() {
+        return this.value;
+    }
+}
+exports.LEDManager = LEDManager;
+//# sourceMappingURL=led.js.map
