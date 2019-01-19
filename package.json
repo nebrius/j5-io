@@ -39,6 +39,9 @@
     "test": "cross-env RASPI_IO_TEST_MODE=true istanbul cover -x dist-spec/spec/mocks.js ./node_modules/jasmine/bin/jasmine.js --captureExceptions dist-spec/spec/**/*.spec.js && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "test-local": "cross-env RASPI_IO_TEST_MODE=true jasmine --random=false dist-spec/spec/**/*.spec.js"
   },
+  "engines": {
+    "node": ">= 6.4.0"
+  },
   "author": "Bryan Hughes <bryan@nebri.us>",
   "contributors": [
     {

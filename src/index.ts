@@ -212,7 +212,6 @@ export class CoreIO extends AbstractIO {
 
     function createPinEntry(pin: number, pinMapping: IPinInfo): IPinConfiguration {
       const supportedModes = [];
-      // TODO: add logic to filter out I2C and Serial so they can't be used for GPIO in raspi-io
       if (pin === LED_PIN) {
         supportedModes.push(Mode.OUTPUT);
       } else if (pinMapping.peripherals.indexOf(PeripheralType.GPIO) !== -1) {
@@ -283,6 +282,7 @@ export class CoreIO extends AbstractIO {
     }
 
     // Slight hack to get the LED in there, since it's not actually a pin
+    // TODO: make all LED logic and properties conditional on platform.led being passed in
     this[pins][LED_PIN] = Object.create(null, {
       supportedModes: {
         enumerable: true,
