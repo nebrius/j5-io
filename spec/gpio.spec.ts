@@ -103,7 +103,8 @@ describe('GPIO', () => {
   });
 
   it('throws an error when setting a pin to input mode that doesn\'t support it', (done) => {
-    expect(() => raspi.pinMode(raspi.defaultLed, 0)).toThrow(new Error('Pin "-1" does not support mode "input"'));
+    expect(() => raspi.pinMode(raspi.defaultLed as number, 0))
+      .toThrow(new Error('Pin "-1" does not support mode "input"'));
     done();
   });
 
@@ -128,9 +129,9 @@ describe('GPIO', () => {
   });
 
   it('ignores changes to the default LED pin mode', (done) => {
-    const oldPeripheral = (raspi.getInternalPinInstances as GetPinInstances)()[raspi.defaultLed];
-    raspi.pinMode(raspi.defaultLed, 1);
-    const newPeripheral = (raspi.getInternalPinInstances as GetPinInstances)()[raspi.defaultLed];
+    const oldPeripheral = (raspi.getInternalPinInstances as GetPinInstances)()[raspi.defaultLed as number];
+    raspi.pinMode(raspi.defaultLed as number, 1);
+    const newPeripheral = (raspi.getInternalPinInstances as GetPinInstances)()[raspi.defaultLed as number];
     expect(oldPeripheral).toBe(newPeripheral);
     done();
   });

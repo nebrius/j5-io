@@ -402,7 +402,7 @@ export const raspiI2CMock: II2CModule = {
   createI2C: () => new I2C()
 };
 
-class LED extends Peripheral implements ILED {
+export class LED extends Peripheral implements ILED {
 
   public args: any[];
   private _value = OFF;
@@ -549,13 +549,20 @@ export const pinInfo: { [ pin: number ]: IPinInfo } = getPins();
 
 export type CreateCallback = (instance: CoreIO) => void;
 export interface ICreateOptions {
-  enableSerial: boolean;
+  enableSerial?: boolean;
+  enableDefaultLED?: boolean;
 }
 
 export function createInstance(options: CreateCallback | ICreateOptions, cb?: CreateCallback): void {
   if (typeof cb === 'undefined') {
     cb = options as CreateCallback;
-    options = { enableSerial: false };
+    options = {};
+  }
+  if (typeof (options as ICreateOptions).enableDefaultLED === 'undefined') {
+    (options as ICreateOptions).enableDefaultLED = true;
+  }
+  if (typeof (options as ICreateOptions).enableSerial === 'undefined') {
+    (options as ICreateOptions).enableSerial = false;
   }
   registeredPins = {};
   const coreOptions: IOptions = {
@@ -565,7 +572,6 @@ export function createInstance(options: CreateCallback | ICreateOptions, cb?: Cr
       base: raspiMock,
       gpio: raspiGpioMock,
       i2c: raspiI2CMock,
-      led: raspiLEDMock,
       pwm: raspiPWMMock,
       serial: raspiSerialMock
     },
@@ -575,6 +581,9 @@ export function createInstance(options: CreateCallback | ICreateOptions, cb?: Cr
   };
   if (options && (options as ICreateOptions).enableSerial) {
     coreOptions.platform.serial = raspiSerialMock;
+  }
+  if (options && (options as ICreateOptions).enableDefaultLED) {
+    coreOptions.platform.led = raspiLEDMock;
   }
   const raspi = new CoreIO(coreOptions);
   raspi.on('ready', () => (cb as CreateCallback)(raspi));

@@ -32,7 +32,9 @@ import {
   II2CModule,
   IPeripheral,
   IPinInfo,
-  PeripheralType
+  PeripheralType,
+  ILED,
+  II2C
 } from 'core-io-types';
 import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig } from 'abstract-io';
 import {
@@ -143,7 +145,8 @@ export class CoreIO extends AbstractIO {
   }
 
   public getInternalPinInstances?: () => { [ pin: number ]: IPeripheral };
-  public getI2CInstance?: () => void;
+  public getI2CInstance?: () => II2C | undefined;
+  public getLEDInstance?: () => ILED | undefined;
 
   private [serialPortIds]: { [ id: string ]: any };
   private [isReady] = false;
@@ -212,6 +215,7 @@ export class CoreIO extends AbstractIO {
     // Inject the test only methods if we're in test mode
     if (process.env.RASPI_IO_TEST_MODE) {
       this.getInternalPinInstances = () => getPeripherals();
+      this.getLEDInstance = () => this[ledManager] && (this[ledManager] as LEDManager).led;
       // TODO:
       // this.getI2CInstance = () => this[i2c];
     }

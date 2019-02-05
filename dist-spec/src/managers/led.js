@@ -1,3 +1,4 @@
+"use strict";
 /*
 Copyright (c) Bryan Hughes <bryan@nebri.us>
 
@@ -22,32 +23,25 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
-
-import { ILEDModule, ILED } from 'core-io-types';
-import { Value } from 'abstract-io';
-
-export const DEFAULT_LED_PIN = -1;
-
-export class LEDManager {
-
-  public led: ILED;
-  private value = Value.LOW;
-
-  constructor(ledModule: ILEDModule) {
-    this.led = ledModule.createLED();
-    this.digitalWrite(Value.LOW);
-  }
-
-  public reset() {
-    // Nothing to do
-  }
-
-  public digitalWrite(value: Value): void {
-    this.value = value;
-    this.led.write(value);
-  }
-
-  public getCurrentValue(): Value {
-    return this.value;
-  }
+Object.defineProperty(exports, "__esModule", { value: true });
+const abstract_io_1 = require("abstract-io");
+exports.DEFAULT_LED_PIN = -1;
+class LEDManager {
+    constructor(ledModule) {
+        this.value = abstract_io_1.Value.LOW;
+        this.led = ledModule.createLED();
+        this.digitalWrite(abstract_io_1.Value.LOW);
+    }
+    reset() {
+        // Nothing to do
+    }
+    digitalWrite(value) {
+        this.value = value;
+        this.led.write(value);
+    }
+    getCurrentValue() {
+        return this.value;
+    }
 }
+exports.LEDManager = LEDManager;
+//# sourceMappingURL=led.js.map

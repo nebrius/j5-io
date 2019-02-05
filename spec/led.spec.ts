@@ -23,30 +23,48 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*global it xdescribe expect*/
+/*global it describe expect*/
 
-const { raspiLEDMock, createInstance } = require('./mocks');
+import { CoreIO } from '../src/index';
+import { createInstance, LED } from './mocks';
+
+type GetLEDInstance = () => LED;
 
 describe('LED', () => {
-  it('sets the pin mode properly for the built-in LED', (done) => createInstance((raspi) => {
-    expect(raspi.defaultLed).toEqual(-1);
-    expect(raspi.pins[raspi.defaultLed].supportedModes.indexOf(1)).not.toEqual(-1);
 
-    const peripheral = raspi.getInternalPinInstances()[-1];
-    expect(peripheral instanceof raspiLEDMock.LED).toBeTruthy();
-    expect(peripheral.args.length).toEqual(0);
+  let raspi: CoreIO;
+  afterEach(() => {
+    raspi.reset();
+  });
+
+  it('sets the pin mode properly for the built-in LED', (done) => createInstance((newRaspi) => {
+    raspi = newRaspi;
+    expect(raspi.defaultLed).toEqual(-1);
+    expect(raspi.pins[raspi.defaultLed as number].supportedModes).toEqual([ 1 ]);
+
+    const peripheral = (raspi.getLEDInstance as GetLEDInstance)();
+    expect(peripheral).not.toBeUndefined();
+    if (peripheral) {
+      expect((peripheral as LED).args.length).toEqual(0);
+    }
 
     done();
   }));
 
-  it('can write to the LED', (done) => createInstance((raspi) => {
-    const peripheral = raspi.getInternalPinInstances()[-1];
-    raspi.digitalWrite(raspi.defaultLed, 0);
+  it('can write to the LED', (done) => createInstance((newRaspi) => {
+    raspi = newRaspi;
+    const peripheral = (raspi.getLEDInstance as GetLEDInstance)();
+    raspi.digitalWrite(raspi.defaultLed as number, 0);
     expect(peripheral.read()).toEqual(0);
-    raspi.digitalWrite(raspi.defaultLed, 1);
+    raspi.digitalWrite(raspi.defaultLed as number, 1);
     expect(peripheral.read()).toEqual(1);
     done();
   }));
 
-  // TODO: test logic for when there is no default LED
+  it(`doesn't create the defaultLed property when there is no default LED`,
+      (done) => createInstance({ enableDefaultLED: false }, (newRaspi) => {
+    raspi = newRaspi;
+    expect(() => raspi.defaultLed).toThrow();
+    done();
+  }));
 });

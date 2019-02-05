@@ -23,23 +23,36 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
-/*global it xdescribe expect*/
-const { raspiLEDMock, createInstance } = require('./mocks');
-xdescribe('LED', () => {
-    it('sets the pin mode properly for the built-in LED', (done) => createInstance((raspi) => {
+Object.defineProperty(exports, "__esModule", { value: true });
+const mocks_1 = require("./mocks");
+describe('LED', () => {
+    let raspi;
+    afterEach(() => {
+        raspi.reset();
+    });
+    it('sets the pin mode properly for the built-in LED', (done) => mocks_1.createInstance((newRaspi) => {
+        raspi = newRaspi;
         expect(raspi.defaultLed).toEqual(-1);
-        expect(raspi.pins[raspi.defaultLed].supportedModes.indexOf(1)).not.toEqual(-1);
-        const peripheral = raspi.getInternalPinInstances()[-1];
-        expect(peripheral instanceof raspiLEDMock.LED).toBeTruthy();
-        expect(peripheral.args.length).toEqual(0);
+        expect(raspi.pins[raspi.defaultLed].supportedModes).toEqual([1]);
+        const peripheral = raspi.getLEDInstance();
+        expect(peripheral).not.toBeUndefined();
+        if (peripheral) {
+            expect(peripheral.args.length).toEqual(0);
+        }
         done();
     }));
-    it('can write to the LED', (done) => createInstance((raspi) => {
-        const peripheral = raspi.getInternalPinInstances()[-1];
+    it('can write to the LED', (done) => mocks_1.createInstance((newRaspi) => {
+        raspi = newRaspi;
+        const peripheral = raspi.getLEDInstance();
         raspi.digitalWrite(raspi.defaultLed, 0);
         expect(peripheral.read()).toEqual(0);
         raspi.digitalWrite(raspi.defaultLed, 1);
         expect(peripheral.read()).toEqual(1);
+        done();
+    }));
+    it(`doesn't create the defaultLed property when there is no default LED`, (done) => mocks_1.createInstance({ enableDefaultLED: false }, (newRaspi) => {
+        raspi = newRaspi;
+        expect(() => raspi.defaultLed).toThrow();
         done();
     }));
 });

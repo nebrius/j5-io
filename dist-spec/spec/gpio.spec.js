@@ -82,7 +82,8 @@ describe('GPIO', () => {
         done();
     });
     it('throws an error when setting a pin to input mode that doesn\'t support it', (done) => {
-        expect(() => raspi.pinMode(raspi.defaultLed, 0)).toThrow(new Error('Pin "-1" does not support mode "input"'));
+        expect(() => raspi.pinMode(raspi.defaultLed, 0))
+            .toThrow(new Error('Pin "-1" does not support mode "input"'));
         done();
     });
     it('throws an error when setting a pin to analog mode that doesn\'t support it', (done) => {

@@ -359,6 +359,7 @@ class LED extends Peripheral {
         this._value = value;
     }
 }
+exports.LED = LED;
 exports.raspiLEDMock = {
     createLED: () => new LED()
 };
@@ -463,7 +464,13 @@ exports.pinInfo = raspi_board_1.getPins();
 function createInstance(options, cb) {
     if (typeof cb === 'undefined') {
         cb = options;
-        options = { enableSerial: false };
+        options = {};
+    }
+    if (typeof options.enableDefaultLED === 'undefined') {
+        options.enableDefaultLED = true;
+    }
+    if (typeof options.enableSerial === 'undefined') {
+        options.enableSerial = false;
     }
     registeredPins = {};
     const coreOptions = {
@@ -473,7 +480,6 @@ function createInstance(options, cb) {
             base: exports.raspiMock,
             gpio: exports.raspiGpioMock,
             i2c: exports.raspiI2CMock,
-            led: exports.raspiLEDMock,
             pwm: exports.raspiPWMMock,
             serial: exports.raspiSerialMock
         },
@@ -483,6 +489,9 @@ function createInstance(options, cb) {
     };
     if (options && options.enableSerial) {
         coreOptions.platform.serial = exports.raspiSerialMock;
+    }
+    if (options && options.enableDefaultLED) {
+        coreOptions.platform.led = exports.raspiLEDMock;
     }
     const raspi = new index_1.CoreIO(coreOptions);
     raspi.on('ready', () => cb(raspi));
