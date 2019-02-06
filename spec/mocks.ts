@@ -426,7 +426,7 @@ export const raspiLEDMock: ILEDModule = {
   createLED: () => new LED()
 };
 
-class PWM extends Peripheral implements IPWM {
+export class PWM extends Peripheral implements IPWM {
   get frequency() {
     return this._frequencyValue;
   }

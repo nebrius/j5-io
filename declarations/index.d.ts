@@ -1,11 +1,12 @@
-import { IBaseModule, IGPIOModule, ILEDModule, IPWMModule, ISerialModule, II2CModule, IPeripheral, IPinInfo } from 'core-io-types';
-import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig } from 'abstract-io';
+import { IBaseModule, IGPIOModule, ILEDModule, IPWMModule, ISerialModule, II2CModule, IPeripheral, IPinInfo, ILED, II2C } from 'core-io-types';
+import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig, IServoConfig } from 'abstract-io';
 declare const serialPortIds: unique symbol;
 declare const name: unique symbol;
 declare const isReady: unique symbol;
 declare const pins: unique symbol;
 declare const defaultLed: unique symbol;
 declare const gpioManager: unique symbol;
+declare const pwmManager: unique symbol;
 declare const ledManager: unique symbol;
 export interface IOptions {
     pluginName: string;
@@ -36,13 +37,15 @@ export declare class CoreIO extends AbstractIO {
     getInternalPinInstances?: () => {
         [pin: number]: IPeripheral;
     };
-    getI2CInstance?: () => void;
+    getI2CInstance?: () => II2C | undefined;
+    getLEDInstance?: () => ILED | undefined;
     private [serialPortIds];
     private [isReady];
     private [pins];
     private [name];
     private [defaultLed];
     private [gpioManager];
+    private [pwmManager];
     private [ledManager]?;
     constructor(options: IOptions);
     reset(): void;
@@ -50,6 +53,10 @@ export declare class CoreIO extends AbstractIO {
     pinMode(pin: string | number, mode: Mode): void;
     digitalRead(pin: string | number, handler: (value: Value) => void): void;
     digitalWrite(pin: string | number, value: number): void;
+    pwmWrite(pin: string | number, value: number): void;
+    servoWrite(pin: string | number, value: number): void;
+    servoConfig(options: IServoConfig): void;
+    servoConfig(pin: number, min: number, max: number): void;
     serialConfig(options: ISerialConfig): void;
 }
 export {};

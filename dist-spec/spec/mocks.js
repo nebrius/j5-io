@@ -398,6 +398,7 @@ class PWM extends Peripheral {
         this._dutyCycleValue = dutyCycle;
     }
 }
+exports.PWM = PWM;
 exports.raspiPWMMock = {
     createPWM: (config) => new PWM(config)
 };

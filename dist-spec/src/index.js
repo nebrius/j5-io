@@ -30,6 +30,7 @@ const core_io_types_1 = require("core-io-types");
 const abstract_io_1 = require("abstract-io");
 const core_1 = require("./core");
 const gpio_1 = require("./managers/gpio");
+const pwm_1 = require("./managers/pwm");
 const led_1 = require("./managers/led");
 // Private symbols for public getters
 const serialPortIds = Symbol('serialPortIds');
@@ -39,6 +40,7 @@ const pins = Symbol('pins');
 const defaultLed = Symbol('defaultLed');
 // Private symbols for internal properties
 const gpioManager = Symbol('gpioManager');
+const pwmManager = Symbol('pwmManager');
 const ledManager = Symbol('ledManager');
 class CoreIO extends abstract_io_1.AbstractIO {
     constructor(options) {
@@ -88,6 +90,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
         // Instantiate the peripheral managers
         core_1.setBaseModule(platform.base);
         this[gpioManager] = new gpio_1.GPIOManager(platform.gpio, this);
+        this[pwmManager] = new pwm_1.PWMManager(platform.pwm);
         if (platform.led) {
             this[defaultLed] = led_1.DEFAULT_LED_PIN;
             this[ledManager] = new led_1.LEDManager(platform.led);
@@ -311,17 +314,10 @@ class CoreIO extends abstract_io_1.AbstractIO {
                     this[gpioManager].setOutputMode(normalizedPin);
                     break;
                 case abstract_io_1.Mode.PWM:
+                    this[pwmManager].setPWMMode(normalizedPin);
+                    break;
                 case abstract_io_1.Mode.SERVO:
-                    // TODO
-                    // if (pinInstance.isHardwarePwm) {
-                    //   pinInstance.peripheral = new this[raspiPwmModule].PWM(normalizedPin);
-                    // } else {
-                    //   pinInstance.peripheral = new this[raspiSoftPwmModule].SoftPWM({
-                    //     pin: normalizedPin,
-                    //     frequency: SOFTWARE_PWM_FREQUENCY,
-                    //     range: SOFTWARE_PWM_RANGE
-                    //   });
-                    // }
+                    this[pwmManager].setServoMode(normalizedPin);
                     break;
                 default:
                     throw new Error(core_1.createInternalErrorMessage(`valid pin mode ${mode} not accounted for in switch statement`));
@@ -344,69 +340,34 @@ class CoreIO extends abstract_io_1.AbstractIO {
         }
     }
     // PWM methods
-    /*
-    public pwmWrite(pin: string | number, value: number): void {
-      throw new Error(`pwmWrite is not supported by ${this.name}`);
+    pwmWrite(pin, value) {
+        this[pwmManager].pwmWrite(this.normalize(pin), value);
     }
-  
-    public servoWrite(pin: string | number, value: number): void {
-      throw new Error(`servoWrite is not supported by ${this.name}`);
+    servoWrite(pin, value) {
+        this[pwmManager].servoWrite(this.normalize(pin), value);
     }
-  
-    public servoConfig(options: IServoConfig): void;
-    public servoConfig(pin: number, min: number, max: number): void;
-    public servoConfig(optionsOrPin: IServoConfig | number, min?: number, max?: number): void {
-      throw new Error(`servoConfig is not supported by ${this.name}`);
+    servoConfig(optionsOrPin, min, max) {
+        if (typeof optionsOrPin === 'number' || typeof optionsOrPin === 'string') {
+            if (typeof min !== 'number') {
+                throw new Error(`"min" must be a number`);
+            }
+            if (typeof max !== 'number') {
+                throw new Error(`"max" must be a number`);
+            }
+        }
+        else if (typeof optionsOrPin === 'object') {
+            min = optionsOrPin.min;
+            max = optionsOrPin.max;
+            optionsOrPin = optionsOrPin.pin;
+        }
+        else {
+            throw new Error('optionsOrPin must be a number, string, or object');
+        }
+        this[pwmManager].servoConfig(this.normalize(optionsOrPin), min, max);
     }
-    */
     // Methods that need converting
     // analogRead() {
     //   throw new Error('analogRead is not supported on the Raspberry Pi');
-    // }
-    // analogWrite(pin, value) {
-    //   this.pwmWrite(pin, value);
-    // }
-    // pwmWrite(pin, value) {
-    //   const pinInstance = this[getPinInstance](this.normalize(pin));
-    //   if (pinInstance.mode != PWM_MODE) {
-    //     this.pinMode(pin, PWM_MODE);
-    //   }
-    //   // TODO: need to constrain value to be between 0 and 255
-    //   pinInstance.peripheral.write(value / 255);
-    // }
-    // servoConfig(pin, min, max) {
-    //   let config = pin;
-    //   if (typeof config !== 'object') {
-    //     config = { pin, min, max };
-    //   }
-    //   if (typeof config.min !== 'number') {
-    //     config.min = DEFAULT_SERVO_MIN;
-    //   }
-    //   if (typeof config.max !== 'number') {
-    //     config.max = DEFAULT_SERVO_MAX;
-    //   }
-    //   const normalizedPin = this.normalize(pin);
-    //   let pinInstance = this[getPinInstance](this.normalize(normalizedPin));
-    //   if (pinInstance.mode != SERVO_MODE) {
-    //     this.pinMode(pin, SERVO_MODE);
-    //     pinInstance = this[getPinInstance](this.normalize(normalizedPin));
-    //   }
-    //   pinInstance.min = config.min;
-    //   pinInstance.max = config.max;
-    // }
-    // servoWrite(pin, value) {
-    //   const pinInstance = this[getPinInstance](this.normalize(pin));
-    //   if (pinInstance.mode != SERVO_MODE) {
-    //     this.pinMode(pin, SERVO_MODE);
-    //   }
-    //   const period = 1000000 / pinInstance.peripheral.frequency; // in us
-    //   var pulseWidth;
-    //   if (value < 544) {
-    //     pulseWidth = pinInstance.min + constrain(value, 0, 180) / 180 * (pinInstance.max - pinInstance.min);
-    //   } else {
-    //     pulseWidth = constrain(value, pinInstance.min, pinInstance.max);
-    //   }
-    //   pinInstance.peripheral.write(pulseWidth / period);
     // }
     // queryCapabilities(cb) {
     //   if (this.isReady) {

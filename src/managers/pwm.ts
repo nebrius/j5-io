@@ -23,18 +23,74 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-// import { IPWMModule } from 'core-io-types';
+import { IPWMModule, IPWM } from 'core-io-types';
+import { Mode } from 'abstract-io';
+import { getMode, setMode, getPeripheral, constrain } from '../core';
 
-// export class PWMManager {
+const DEFAULT_SERVO_MIN = 1000;
+const DEFAULT_SERVO_MAX = 2000;
 
-//   private module: IPWMModule;
+export class PWMManager {
 
-//   constructor(pwmModule: IPWMModule) {
-//     this.module = pwmModule;
-//   }
+  private module: IPWMModule;
+  private ranges: { [ pin: number ]: { min: number, max: number } } = {};
 
-//   public setPWMMode(pin: number): void {
-//     // TODO
-//   }
+  constructor(pwmModule: IPWMModule) {
+    this.module = pwmModule;
+  }
 
-// }
+  public setServoMode(pin: number, frequency?: number, range?: number): void {
+    if (!this.ranges[pin]) {
+      this.ranges[pin] = { min: DEFAULT_SERVO_MIN, max: DEFAULT_SERVO_MAX };
+    }
+    setMode(this.module.createPWM(pin), Mode.SERVO);
+  }
+
+  public setPWMMode(pin: number): void {
+    setMode(this.module.createPWM(pin), Mode.PWM);
+  }
+
+  public pwmWrite(pin: number, dutyCycle: number): void {
+    const peripheral = getPeripheral(pin);
+    if (!peripheral || getMode(peripheral) !== Mode.PWM) {
+      this.setPWMMode(pin);
+    }
+    // Need to refetch the peripheral in case it was reinstantiated in the above logic
+    (getPeripheral(pin) as IPWM).write(constrain(dutyCycle, 0, 255) / 255);
+  }
+
+  public servoConfig(pin: number, min?: number, max?: number): void {
+    if (typeof min !== 'number') {
+      min = DEFAULT_SERVO_MIN;
+    }
+    if (typeof max !== 'number') {
+      max = DEFAULT_SERVO_MAX;
+    }
+    const peripheral = getPeripheral(pin);
+    if (!peripheral || getMode(peripheral) !== Mode.SERVO) {
+      this.setServoMode(pin);
+    }
+    this.ranges[pin] = { min, max };
+  }
+
+  public servoWrite(pin: number, value: number): void {
+    let peripheral = getPeripheral(pin);
+    if (!peripheral || getMode(peripheral) !== Mode.SERVO) {
+      this.setServoMode(pin);
+    }
+
+    // Need to refetch the peripheral in case it was reinstantiated in the above logic
+    peripheral = getPeripheral(pin) as IPWM;
+
+    const period = 1000000 / (peripheral as IPWM).frequency; // in us
+    const { min, max } = this.ranges[pin];
+    let pulseWidth;
+    if (value < 544) {
+      pulseWidth = min + constrain(value, 0, 180) / 180 * (max - min);
+    } else {
+      pulseWidth = constrain(value, min, max);
+    }
+    (peripheral as IPWM).write(pulseWidth / period);
+  }
+
+}
