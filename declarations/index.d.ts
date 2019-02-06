@@ -56,7 +56,7 @@ export declare class CoreIO extends AbstractIO {
     pwmWrite(pin: string | number, value: number): void;
     servoWrite(pin: string | number, value: number): void;
     servoConfig(options: IServoConfig): void;
-    servoConfig(pin: number, min: number, max: number): void;
+    servoConfig(pin: number | string, min: number, max: number): void;
     serialConfig(options: ISerialConfig): void;
 }
 export {};

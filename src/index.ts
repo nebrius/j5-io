@@ -342,7 +342,9 @@ export class CoreIO extends AbstractIO {
 
   public reset() {
     // TODO: Loop through active peripherals and destroy them
+    // TODO: add unit tests for resetting
     this[gpioManager].reset();
+    this[pwmManager].reset();
     const ledManagerInstance = this[ledManager];
     if (ledManagerInstance) {
       ledManagerInstance.reset();

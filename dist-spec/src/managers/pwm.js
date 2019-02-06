@@ -33,6 +33,9 @@ class PWMManager {
         this.ranges = {};
         this.module = pwmModule;
     }
+    reset() {
+        this.ranges = {};
+    }
     setServoMode(pin, frequency, range) {
         if (!this.ranges[pin]) {
             this.ranges[pin] = { min: DEFAULT_SERVO_MIN, max: DEFAULT_SERVO_MAX };

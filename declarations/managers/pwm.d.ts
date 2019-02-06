@@ -3,6 +3,7 @@ export declare class PWMManager {
     private module;
     private ranges;
     constructor(pwmModule: IPWMModule);
+    reset(): void;
     setServoMode(pin: number, frequency?: number, range?: number): void;
     setPWMMode(pin: number): void;
     pwmWrite(pin: number, dutyCycle: number): void;

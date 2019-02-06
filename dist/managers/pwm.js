@@ -33,6 +33,9 @@ class PWMManager {
         this.ranges = {};
         this.module = pwmModule;
     }
+    reset() {
+        this.ranges = {};
+    }
     setServoMode(pin, frequency, range) {
         if (!this.ranges[pin]) {
             this.ranges[pin] = { min: DEFAULT_SERVO_MIN, max: DEFAULT_SERVO_MAX };
@@ -58,15 +61,15 @@ class PWMManager {
             max = DEFAULT_SERVO_MAX;
         }
         const peripheral = core_1.getPeripheral(pin);
-        if (!peripheral || core_1.getMode(peripheral) !== abstract_io_1.Mode.PWM) {
-            this.setPWMMode(pin);
+        if (!peripheral || core_1.getMode(peripheral) !== abstract_io_1.Mode.SERVO) {
+            this.setServoMode(pin);
         }
         this.ranges[pin] = { min, max };
     }
     servoWrite(pin, value) {
         let peripheral = core_1.getPeripheral(pin);
-        if (!peripheral || core_1.getMode(peripheral) !== abstract_io_1.Mode.PWM) {
-            this.setPWMMode(pin);
+        if (!peripheral || core_1.getMode(peripheral) !== abstract_io_1.Mode.SERVO) {
+            this.setServoMode(pin);
         }
         // Need to refetch the peripheral in case it was reinstantiated in the above logic
         peripheral = core_1.getPeripheral(pin);

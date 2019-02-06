@@ -38,6 +38,9 @@ export class PWMManager {
   constructor(pwmModule: IPWMModule) {
     this.module = pwmModule;
   }
+  public reset() {
+    this.ranges = {};
+  }
 
   public setServoMode(pin: number, frequency?: number, range?: number): void {
     if (!this.ranges[pin]) {

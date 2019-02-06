@@ -278,7 +278,9 @@ class CoreIO extends abstract_io_1.AbstractIO {
     }
     reset() {
         // TODO: Loop through active peripherals and destroy them
+        // TODO: add unit tests for resetting
         this[gpioManager].reset();
+        this[pwmManager].reset();
         const ledManagerInstance = this[ledManager];
         if (ledManagerInstance) {
             ledManagerInstance.reset();
@@ -314,8 +316,10 @@ class CoreIO extends abstract_io_1.AbstractIO {
                     this[gpioManager].setOutputMode(normalizedPin);
                     break;
                 case abstract_io_1.Mode.PWM:
-                case abstract_io_1.Mode.SERVO:
                     this[pwmManager].setPWMMode(normalizedPin);
+                    break;
+                case abstract_io_1.Mode.SERVO:
+                    this[pwmManager].setServoMode(normalizedPin);
                     break;
                 default:
                     throw new Error(core_1.createInternalErrorMessage(`valid pin mode ${mode} not accounted for in switch statement`));
@@ -345,7 +349,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
         this[pwmManager].servoWrite(this.normalize(pin), value);
     }
     servoConfig(optionsOrPin, min, max) {
-        if (typeof optionsOrPin === 'number') {
+        if (typeof optionsOrPin === 'number' || typeof optionsOrPin === 'string') {
             if (typeof min !== 'number') {
                 throw new Error(`"min" must be a number`);
             }
@@ -359,7 +363,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
             optionsOrPin = optionsOrPin.pin;
         }
         else {
-            throw new Error('optionsOrPin must be a number or object');
+            throw new Error('optionsOrPin must be a number, string, or object');
         }
         this[pwmManager].servoConfig(this.normalize(optionsOrPin), min, max);
     }
