@@ -15,8 +15,8 @@
     "robots"
   ],
   "dependencies": {
-    "abstract-io": "^1.4.0",
-    "core-io-types": "^2.1.0"
+    "abstract-io": "^1.5.0",
+    "core-io-types": "^2.2.0"
   },
   "devDependencies": {
     "@types/jasmine": "^3.3.5",

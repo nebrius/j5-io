@@ -32,6 +32,7 @@ const core_1 = require("./core");
 const gpio_1 = require("./managers/gpio");
 const pwm_1 = require("./managers/pwm");
 const led_1 = require("./managers/led");
+const serial_1 = require("./managers/serial");
 // Private symbols for public getters
 const serialPortIds = Symbol('serialPortIds');
 const name = Symbol('name');
@@ -42,6 +43,7 @@ const defaultLed = Symbol('defaultLed');
 const gpioManager = Symbol('gpioManager');
 const pwmManager = Symbol('pwmManager');
 const ledManager = Symbol('ledManager');
+const serialManager = Symbol('serialManager');
 class CoreIO extends abstract_io_1.AbstractIO {
     constructor(options) {
         super();
@@ -95,6 +97,9 @@ class CoreIO extends abstract_io_1.AbstractIO {
             this[defaultLed] = led_1.DEFAULT_LED_PIN;
             this[ledManager] = new led_1.LEDManager(platform.led);
         }
+        if (platform.serial && serialIds) {
+            this[serialManager] = new serial_1.SerialManager(platform.serial, serialIds, this);
+        }
         // Inject the test only methods if we're in test mode
         if (process.env.RASPI_IO_TEST_MODE) {
             this.getInternalPinInstances = () => core_1.getPeripherals();
@@ -107,14 +112,23 @@ class CoreIO extends abstract_io_1.AbstractIO {
         const pinMappings = Object.assign({}, pinInfo);
         function createPinEntry(pin, pinMapping) {
             const supportedModes = [];
-            if (platform.led && pin === led_1.DEFAULT_LED_PIN) {
-                supportedModes.push(abstract_io_1.Mode.OUTPUT);
+            // Serial and I2C are dedicated due to how the IO Plugin API works, so ignore all other supported peripheral types
+            if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.UART) !== -1) {
+                supportedModes.push(abstract_io_1.Mode.UNKOWN);
             }
-            else if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.GPIO) !== -1) {
-                supportedModes.push(abstract_io_1.Mode.INPUT, abstract_io_1.Mode.OUTPUT);
+            else if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.I2C) !== -1) {
+                supportedModes.push(abstract_io_1.Mode.UNKOWN);
             }
-            if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.PWM) !== -1) {
-                supportedModes.push(abstract_io_1.Mode.PWM, abstract_io_1.Mode.SERVO);
+            else {
+                if (platform.led && pin === led_1.DEFAULT_LED_PIN) {
+                    supportedModes.push(abstract_io_1.Mode.OUTPUT);
+                }
+                else if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.GPIO) !== -1) {
+                    supportedModes.push(abstract_io_1.Mode.INPUT, abstract_io_1.Mode.OUTPUT);
+                }
+                if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.PWM) !== -1) {
+                    supportedModes.push(abstract_io_1.Mode.PWM, abstract_io_1.Mode.SERVO);
+                }
             }
             return Object.create(null, {
                 supportedModes: {
@@ -285,6 +299,10 @@ class CoreIO extends abstract_io_1.AbstractIO {
         if (ledManagerInstance) {
             ledManagerInstance.reset();
         }
+        const serialManagerInstance = this[serialManager];
+        if (serialManagerInstance) {
+            serialManagerInstance.reset();
+        }
     }
     normalize(pin) {
         // LED is a special thing that the underlying platform doesn't know about, and isn't actually a pin.
@@ -367,130 +385,48 @@ class CoreIO extends abstract_io_1.AbstractIO {
         }
         this[pwmManager].servoConfig(this.normalize(optionsOrPin), min, max);
     }
-    // Methods that need converting
-    // analogRead() {
-    //   throw new Error('analogRead is not supported on the Raspberry Pi');
-    // }
-    // queryCapabilities(cb) {
-    //   if (this.isReady) {
-    //     process.nextTick(cb);
-    //   } else {
-    //     this.on('ready', cb);
-    //   }
-    // }
-    // queryAnalogMapping(cb) {
-    //   if (this.isReady) {
-    //     process.nextTick(cb);
-    //   } else {
-    //     this.on('ready', cb);
-    //   }
-    // }
-    // queryPinState(pin, cb) {
-    //   if (this.isReady) {
-    //     process.nextTick(cb);
-    //   } else {
-    //     this.on('ready', cb);
-    //   }
-    // }
-    // [i2cCheckAlive]() {
-    //   if (!this[i2c].alive) {
-    //     throw new Error('I2C pins not in I2C mode');
-    //   }
-    // }
-    // i2cConfig(options) {
-    //   let delay;
-    //   if (typeof options === 'number') {
-    //     delay = options;
-    //   } else {
-    //     if (typeof options === 'object' && options !== null) {
-    //       delay = options.delay;
-    //     }
-    //   }
-    //   this[i2cCheckAlive]();
-    //   this[i2cDelay] = Math.round((delay || 0) / 1000);
-    //   return this;
-    // }
-    // i2cWrite(address, cmdRegOrData, inBytes) {
-    //   this[i2cCheckAlive]();
-    //   // If i2cWrite was used for an i2cWriteReg call...
-    //   if (arguments.length === 3 &&
-    //       !Array.isArray(cmdRegOrData) &&
-    //       !Array.isArray(inBytes)) {
-    //     return this.i2cWriteReg(address, cmdRegOrData, inBytes);
-    //   }
-    //   // Fix arguments if called with Firmata.js API
-    //   if (arguments.length === 2) {
-    //     if (Array.isArray(cmdRegOrData)) {
-    //       inBytes = cmdRegOrData.slice();
-    //       cmdRegOrData = inBytes.shift();
-    //     } else {
-    //       inBytes = [];
-    //     }
-    //   }
-    //   const buffer = new Buffer([cmdRegOrData].concat(inBytes));
-    //   // Only write if bytes provided
-    //   if (buffer.length) {
-    //     this[i2c].writeSync(address, buffer);
-    //   }
-    //   return this;
-    // }
-    // i2cWriteReg(address, register, value) {
-    //   this[i2cCheckAlive]();
-    //   this[i2c].writeByteSync(address, register, value);
-    //   return this;
-    // }
-    // [i2cRead](continuous, address, register, bytesToRead, callback) {
-    //   this[i2cCheckAlive]();
-    //   // Fix arguments if called with Firmata.js API
-    //   if (arguments.length == 4 &&
-    //     typeof register == 'number' &&
-    //     typeof bytesToRead == 'function'
-    //   ) {
-    //     callback = bytesToRead;
-    //     bytesToRead = register;
-    //     register = null;
-    //   }
-    //   callback = typeof callback === 'function' ? callback : () => {};
-    //   let event = `i2c-reply-${address}-`;
-    //   event += register !== null ? register : 0;
-    //   const read = () => {
-    //     const afterRead = (err, buffer) => {
-    //       if (err) {
-    //         return this.emit('error', err);
-    //       }
-    //       // Convert buffer to Array before emit
-    //       this.emit(event, Array.prototype.slice.call(buffer));
-    //       if (continuous && this[i2c].alive) {
-    //         setTimeout(read, this[i2cDelay]);
-    //       }
-    //     };
-    //     this.once(event, callback);
-    //     if (register !== null) {
-    //       this[i2c].read(address, register, bytesToRead, afterRead);
-    //     } else {
-    //       this[i2c].read(address, bytesToRead, afterRead);
-    //     }
-    //   };
-    //   setTimeout(read, this[i2cDelay]);
-    //   return this;
-    // }
-    // i2cRead(...rest) {
-    //   return this[i2cRead](true, ...rest);
-    // }
-    // i2cReadOnce(...rest) {
-    //   return this[i2cRead](false, ...rest);
-    // }
-    // sendI2CConfig(...rest) {
-    //   return this.i2cConfig(...rest);
-    // }
-    // sendI2CWriteRequest(...rest) {
-    //   return this.i2cWrite(...rest);
-    // }
-    // sendI2CReadRequest(...rest) {
-    //   return this.i2cReadOnce(...rest);
-    // }
+    // Serial Methods
     serialConfig(options) {
-        // TODO
+        const serialManagerInstance = this[serialManager];
+        if (!serialManagerInstance) {
+            throw new Error('Serial support is disabled');
+        }
+        serialManagerInstance.serialConfig(options);
+    }
+    serialWrite(portId, inBytes) {
+        const serialManagerInstance = this[serialManager];
+        if (!serialManagerInstance) {
+            throw new Error('Serial support is disabled');
+        }
+        serialManagerInstance.serialWrite(portId, inBytes);
+    }
+    serialRead(portId, maxBytesToReadOrHandler, handler) {
+        const serialManagerInstance = this[serialManager];
+        if (!serialManagerInstance) {
+            throw new Error('Serial support is disabled');
+        }
+        serialManagerInstance.serialRead(portId, maxBytesToReadOrHandler, handler);
+    }
+    serialStop(portId) {
+        const serialManagerInstance = this[serialManager];
+        if (!serialManagerInstance) {
+            throw new Error('Serial support is disabled');
+        }
+        serialManagerInstance.serialStop(portId);
+    }
+    serialClose(portId) {
+        const serialManagerInstance = this[serialManager];
+        if (!serialManagerInstance) {
+            throw new Error('Serial support is disabled');
+        }
+        serialManagerInstance.serialClose(portId);
+    }
+    serialFlush(portId) {
+        const serialManagerInstance = this[serialManager];
+        if (!serialManagerInstance) {
+            throw new Error('Serial support is disabled');
+        }
+        serialManagerInstance.serialFlush(portId);
     }
 }
 _a = isReady, _b = pins;

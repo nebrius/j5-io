@@ -23,21 +23,21 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*global it xdescribe expect*/
+/*global it describe expect*/
 
-const { createInstance } = require('./mocks');
+import { createInstance } from './mocks';
 
-xdescribe('Serial', () => {
+describe('Serial', () => {
   it('rejects on a missing options object', (done) => createInstance((raspi) => {
     expect(() => {
-      raspi.serialConfig();
+      (raspi.serialConfig as any)();
     }).toThrow();
     done();
   }));
 
   it('rejects on a missing `portId` parameter in the options object', (done) => createInstance((raspi) => {
     expect(() => {
-      raspi.serialConfig({});
+      (raspi.serialConfig as any)({});
     }).toThrow(new Error('"portId" parameter missing in options'));
     done();
   }));
@@ -51,8 +51,9 @@ xdescribe('Serial', () => {
     done();
   }));
 
-  it('throws when configuring the port but serial is disabled', (done) => createInstance({ enableSerial: false }, (raspi) => {
-    expect(() => raspi.serialConfig({})).toThrow(new Error('Serial support is disabled'));
+  it('throws when configuring the port but serial is disabled',
+  (done) => createInstance({ enableSerial: false }, (raspi) => {
+    expect(() => (raspi.serialConfig as any)({})).toThrow(new Error('Serial support is disabled'));
     done();
   }));
 
@@ -94,8 +95,8 @@ xdescribe('Serial', () => {
   it('can write data to the port', (done) => createInstance((raspi) => {
     raspi.on('$TEST_MODE-serial-instance-created', (peripheral) => {
       const inBytes = [ 0, 1, 2, 3, 4 ];
-      peripheral.on('write', (data) => {
-        expect(data).toEqual(inBytes);
+      peripheral.on('write', (data: Buffer) => {
+        expect(data).toEqual(Buffer.from(inBytes));
         done();
       });
       raspi.serialWrite(raspi.SERIAL_PORT_IDs.DEFAULT, inBytes);
@@ -103,12 +104,12 @@ xdescribe('Serial', () => {
   }));
 
   it('throws when writing data to the port without a port ID', (done) => createInstance((raspi) => {
-    expect(() => raspi.serialWrite()).toThrow(new Error('"portId" argument missing'));
+    expect(() => (raspi.serialWrite as any)()).toThrow(new Error('"portId" argument missing'));
     done();
   }));
 
   it('throws when writing data but serial is disabled', (done) => createInstance({ enableSerial: false }, (raspi) => {
-    expect(() => raspi.serialWrite()).toThrow(new Error('Serial support is disabled'));
+    expect(() => (raspi.serialWrite as any)()).toThrow(new Error('Serial support is disabled'));
     done();
   }));
 
@@ -139,12 +140,12 @@ xdescribe('Serial', () => {
   }));
 
   it('throws when reading data from the port without a port ID', (done) => createInstance((raspi) => {
-    expect(() => raspi.serialRead()).toThrow(new Error('"portId" argument missing'));
+    expect(() => (raspi.serialRead as any)()).toThrow(new Error('"portId" argument missing'));
     done();
   }));
 
   it('throws when reading data but serial is disabled', (done) => createInstance({ enableSerial: false }, (raspi) => {
-    expect(() => raspi.serialRead()).toThrow(new Error('Serial support is disabled'));
+    expect(() => (raspi.serialRead as any)()).toThrow(new Error('Serial support is disabled'));
     done();
   }));
 
@@ -165,12 +166,13 @@ xdescribe('Serial', () => {
   }));
 
   it('throws when stopping the port without a port ID', (done) => createInstance((raspi) => {
-    expect(() => raspi.serialStop()).toThrow(new Error('"portId" argument missing'));
+    expect(() => (raspi.serialStop as any)()).toThrow(new Error('"portId" argument missing'));
     done();
   }));
 
-  it('throws when stopping the port but serial is disabled', (done) => createInstance({ enableSerial: false }, (raspi) => {
-    expect(() => raspi.serialStop()).toThrow(new Error('Serial support is disabled'));
+  it('throws when stopping the port but serial is disabled',
+  (done) => createInstance({ enableSerial: false }, (raspi) => {
+    expect(() => (raspi.serialStop as any)()).toThrow(new Error('Serial support is disabled'));
     done();
   }));
 
@@ -196,12 +198,13 @@ xdescribe('Serial', () => {
   }));
 
   it('throws when closing the port without a port ID', (done) => createInstance((raspi) => {
-    expect(() => raspi.serialClose()).toThrow(new Error('"portId" argument missing'));
+    expect(() => (raspi.serialClose as any)()).toThrow(new Error('"portId" argument missing'));
     done();
   }));
 
-  it('throws when closing the port but serial is disabled', (done) => createInstance({ enableSerial: false }, (raspi) => {
-    expect(() => raspi.serialClose()).toThrow(new Error('Serial support is disabled'));
+  it('throws when closing the port but serial is disabled',
+  (done) => createInstance({ enableSerial: false }, (raspi) => {
+    expect(() => (raspi.serialClose as any)()).toThrow(new Error('Serial support is disabled'));
     done();
   }));
 
@@ -215,12 +218,13 @@ xdescribe('Serial', () => {
   }));
 
   it('throws when flishing data from the port without a port ID', (done) => createInstance((raspi) => {
-    expect(() => raspi.serialFlush()).toThrow(new Error('"portId" argument missing'));
+    expect(() => (raspi.serialFlush as any)()).toThrow(new Error('"portId" argument missing'));
     done();
   }));
 
-  it('throws when flushing the port but serial is disabled', (done) => createInstance({ enableSerial: false }, (raspi) => {
-    expect(() => raspi.serialFlush()).toThrow(new Error('Serial support is disabled'));
+  it('throws when flushing the port but serial is disabled',
+  (done) => createInstance({ enableSerial: false }, (raspi) => {
+    expect(() => (raspi.serialFlush as any)()).toThrow(new Error('Serial support is disabled'));
     done();
   }));
 

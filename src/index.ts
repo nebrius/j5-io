@@ -36,7 +36,7 @@ import {
   ILED,
   II2C
 } from 'core-io-types';
-import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig, IServoConfig } from 'abstract-io';
+import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig, IServoConfig, Handler } from 'abstract-io';
 import {
   setBaseModule,
   normalizePin,
@@ -49,6 +49,7 @@ import {
 import { GPIOManager } from './managers/gpio';
 import { PWMManager } from './managers/pwm';
 import { LEDManager, DEFAULT_LED_PIN } from './managers/led';
+import { SerialManager } from './managers/serial';
 
 // Private symbols for public getters
 const serialPortIds = Symbol('serialPortIds');
@@ -61,6 +62,7 @@ const defaultLed = Symbol('defaultLed');
 const gpioManager = Symbol('gpioManager');
 const pwmManager = Symbol('pwmManager');
 const ledManager = Symbol('ledManager');
+const serialManager = Symbol('serialManager');
 
 export interface IOptions {
   pluginName: string;
@@ -119,6 +121,7 @@ export class CoreIO extends AbstractIO {
   private [gpioManager]: GPIOManager;
   private [pwmManager]: PWMManager;
   private [ledManager]?: LEDManager;
+  private [serialManager]?: SerialManager;
 
   constructor(options: IOptions) {
     super();
@@ -175,6 +178,9 @@ export class CoreIO extends AbstractIO {
       this[defaultLed] = DEFAULT_LED_PIN;
       this[ledManager] = new LEDManager(platform.led);
     }
+    if (platform.serial && serialIds) {
+      this[serialManager] = new SerialManager(platform.serial, serialIds, this);
+    }
 
     // Inject the test only methods if we're in test mode
     if (process.env.RASPI_IO_TEST_MODE) {
@@ -190,13 +196,22 @@ export class CoreIO extends AbstractIO {
 
     function createPinEntry(pin: number, pinMapping: IPinInfo): IPinConfiguration {
       const supportedModes = [];
-      if (platform.led && pin === DEFAULT_LED_PIN) {
-        supportedModes.push(Mode.OUTPUT);
-      } else if (pinMapping.peripherals.indexOf(PeripheralType.GPIO) !== -1) {
-        supportedModes.push(Mode.INPUT, Mode.OUTPUT);
-      }
-      if (pinMapping.peripherals.indexOf(PeripheralType.PWM) !== -1) {
-        supportedModes.push(Mode.PWM, Mode.SERVO);
+
+
+      // Serial and I2C are dedicated due to how the IO Plugin API works, so ignore all other supported peripheral types
+      if (pinMapping.peripherals.indexOf(PeripheralType.UART) !== -1) {
+        supportedModes.push(Mode.UNKOWN);
+      } else if (pinMapping.peripherals.indexOf(PeripheralType.I2C) !== -1) {
+        supportedModes.push(Mode.UNKOWN);
+      } else {
+        if (platform.led && pin === DEFAULT_LED_PIN) {
+          supportedModes.push(Mode.OUTPUT);
+        } else if (pinMapping.peripherals.indexOf(PeripheralType.GPIO) !== -1) {
+          supportedModes.push(Mode.INPUT, Mode.OUTPUT);
+        }
+        if (pinMapping.peripherals.indexOf(PeripheralType.PWM) !== -1) {
+          supportedModes.push(Mode.PWM, Mode.SERVO);
+        }
       }
       return Object.create(null, {
         supportedModes: {
@@ -349,6 +364,10 @@ export class CoreIO extends AbstractIO {
     if (ledManagerInstance) {
       ledManagerInstance.reset();
     }
+    const serialManagerInstance = this[serialManager];
+    if (serialManagerInstance) {
+      serialManagerInstance.reset();
+    }
   }
 
   public normalize(pin: number | string): number {
@@ -438,6 +457,69 @@ export class CoreIO extends AbstractIO {
       throw new Error('optionsOrPin must be a number, string, or object');
     }
     this[pwmManager].servoConfig(this.normalize(optionsOrPin), min, max);
+  }
+
+  // Serial Methods
+
+  public serialConfig(options: ISerialConfig): void {
+    const serialManagerInstance = this[serialManager];
+    if (!serialManagerInstance) {
+      throw new Error('Serial support is disabled');
+    }
+    serialManagerInstance.serialConfig(options);
+  }
+
+  public serialWrite(portId: string | number, inBytes: number[]): void {
+    const serialManagerInstance = this[serialManager];
+    if (!serialManagerInstance) {
+      throw new Error('Serial support is disabled');
+    }
+    serialManagerInstance.serialWrite(portId, inBytes);
+  }
+
+  public serialRead(
+    portId: number | string,
+    handler: Handler<number[]>
+  ): void;
+  public serialRead(
+    portId: number | string,
+    maxBytesToRead: number,
+    handler: Handler<number[]>
+  ): void;
+  public serialRead(
+    portId: number | string,
+    maxBytesToReadOrHandler: Handler<number[]> | number,
+    handler?: Handler<number[]>
+  ): void {
+    const serialManagerInstance = this[serialManager];
+    if (!serialManagerInstance) {
+      throw new Error('Serial support is disabled');
+    }
+    serialManagerInstance.serialRead(portId, maxBytesToReadOrHandler, handler);
+  }
+
+  public serialStop(portId: number | string): void {
+    const serialManagerInstance = this[serialManager];
+    if (!serialManagerInstance) {
+      throw new Error('Serial support is disabled');
+    }
+    serialManagerInstance.serialStop(portId);
+  }
+
+  public serialClose(portId: number | string): void {
+    const serialManagerInstance = this[serialManager];
+    if (!serialManagerInstance) {
+      throw new Error('Serial support is disabled');
+    }
+    serialManagerInstance.serialClose(portId);
+  }
+
+  public serialFlush(portId: number | string): void {
+    const serialManagerInstance = this[serialManager];
+    if (!serialManagerInstance) {
+      throw new Error('Serial support is disabled');
+    }
+    serialManagerInstance.serialFlush(portId);
   }
 
   // Methods that need converting
@@ -596,180 +678,5 @@ export class CoreIO extends AbstractIO {
 
   // sendI2CReadRequest(...rest) {
   //   return this.i2cReadOnce(...rest);
-  // }
-
-  public serialConfig(options: ISerialConfig): void {
-    // TODO
-  }
-
-  // // TODO: print a warning or throw an error (?) when rxPin or txPin are specified
-  // serialConfig({ portId, baud }) {
-  //   if (!this[raspiSerialModule]) {
-  //     throw new Error('Serial support is disabled');
-  //   }
-  //   if (!portId) {
-  //     throw new Error('"portId" parameter missing in options');
-  //   }
-  //   if (!this[isSerialOpen] || (baud && baud !== this[serial].baudRate)) {
-  //     this[addToSerialQueue]({
-  //       type: SERIAL_ACTION_CONFIG,
-  //       portId,
-  //       baud
-  //     });
-  //   }
-  // }
-
-  // serialWrite(portId, inBytes) {
-  //   if (!this[raspiSerialModule]) {
-  //     throw new Error('Serial support is disabled');
-  //   }
-  //   if (!portId) {
-  //     throw new Error('"portId" argument missing');
-  //   }
-  //   this[addToSerialQueue]({
-  //     type: SERIAL_ACTION_WRITE,
-  //     portId,
-  //     inBytes
-  //   });
-  // }
-
-  // serialRead(portId, maxBytesToRead, handler) {
-  //   if (!this[raspiSerialModule]) {
-  //     throw new Error('Serial support is disabled');
-  //   }
-  //   if (!portId) {
-  //     throw new Error('"portId" argument missing');
-  //   }
-  //   if (typeof maxBytesToRead === 'function') {
-  //     handler = maxBytesToRead;
-  //     maxBytesToRead = undefined;
-  //   }
-  //   this[addToSerialQueue]({
-  //     type: SERIAL_ACTION_READ,
-  //     portId,
-  //     maxBytesToRead,
-  //     handler
-  //   });
-  // }
-
-  // serialStop(portId) {
-  //   if (!this[raspiSerialModule]) {
-  //     throw new Error('Serial support is disabled');
-  //   }
-  //   if (!portId) {
-  //     throw new Error('"portId" argument missing');
-  //   }
-  //   this[addToSerialQueue]({
-  //     type: SERIAL_ACTION_STOP,
-  //     portId
-  //   });
-  // }
-
-  // serialClose(portId) {
-  //   if (!this[raspiSerialModule]) {
-  //     throw new Error('Serial support is disabled');
-  //   }
-  //   if (!portId) {
-  //     throw new Error('"portId" argument missing');
-  //   }
-  //   this[addToSerialQueue]({
-  //     type: SERIAL_ACTION_CLOSE,
-  //     portId
-  //   });
-  // }
-
-  // serialFlush(portId) {
-  //   if (!this[raspiSerialModule]) {
-  //     throw new Error('Serial support is disabled');
-  //   }
-  //   if (!portId) {
-  //     throw new Error('"portId" argument missing');
-  //   }
-  //   this[addToSerialQueue]({
-  //     type: SERIAL_ACTION_FLUSH,
-  //     portId
-  //   });
-  // }
-
-  // [addToSerialQueue](action) {
-  //   if (action.portId !== this[raspiSerialModule].DEFAULT_PORT) {
-  //     throw new Error(`Invalid serial port "${action.portId}"`);
-  //   }
-  //   this[serialQueue].push(action);
-  //   this[serialPump]();
-  // }
-
-  // [serialPump]() {
-  //   if (this[isSerialProcessing] || !this[serialQueue].length) {
-  //     return;
-  //   }
-  //   this[isSerialProcessing] = true;
-  //   const action = this[serialQueue].shift();
-  //   const finalize = () => {
-  //     this[isSerialProcessing] = false;
-  //     this[serialPump]();
-  //   };
-  //   switch (action.type) {
-  //     case SERIAL_ACTION_WRITE:
-  //       if (!this[isSerialOpen]) {
-  //         throw new Error('Cannot write to closed serial port');
-  //       }
-  //       this[serial].write(action.inBytes, finalize);
-  //       break;
-
-  //     case SERIAL_ACTION_READ:
-  //       if (!this[isSerialOpen]) {
-  //         throw new Error('Cannot read from closed serial port');
-  //       }
-  //       // TODO: add support for action.maxBytesToRead
-  //       this[serial].on('data', (data) => {
-  //         action.handler(bufferToArray(data));
-  //       });
-  //       process.nextTick(finalize);
-  //       break;
-
-  //     case SERIAL_ACTION_STOP:
-  //       if (!this[isSerialOpen]) {
-  //         throw new Error('Cannot stop closed serial port');
-  //       }
-  //       this[serial].removeAllListeners();
-  //       process.nextTick(finalize);
-  //       break;
-
-  //     case SERIAL_ACTION_CONFIG:
-  //       this[serial].close(() => {
-  //         this[serial] = new this[raspiSerialModule].Serial({
-  //           baudRate: action.baud
-  //         });
-  //         if (process.env['RASPI_IO_TEST_MODE']) {
-  //           this.emit('$TEST_MODE-serial-instance-created', this[serial]);
-  //         }
-  //         this[serial].open(() => {
-  //           this[serial].on('data', (data) => {
-  //             this.emit(`serial-data-${action.portId}`, bufferToArray(data));
-  //           });
-  //           this[isSerialOpen] = true;
-  //           finalize();
-  //         });
-  //       });
-  //       break;
-
-  //     case SERIAL_ACTION_CLOSE:
-  //       this[serial].close(() => {
-  //         this[isSerialOpen] = false;
-  //         finalize();
-  //       });
-  //       break;
-
-  //     case SERIAL_ACTION_FLUSH:
-  //       if (!this[isSerialOpen]) {
-  //         throw new Error('Cannot flush closed serial port');
-  //       }
-  //       this[serial].flush(finalize);
-  //       break;
-
-  //     default:
-  //       throw new Error('Internal error: unknown serial action type');
-  //   }
   // }
 }

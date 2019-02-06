@@ -258,17 +258,25 @@ describe('App Initialization', () => {
             const parsedPin = parseInt(pin, 10);
             const supportedModes = [];
             const pinInfo = mocks_1.pinInfo[parsedPin];
-            if (pinInfo.peripherals.indexOf(core_io_types_1.PeripheralType.GPIO) != -1) {
-                supportedModes.push(0, 1);
+            if (pinInfo.peripherals.indexOf(core_io_types_1.PeripheralType.UART) !== -1) {
+                supportedModes.push(99);
             }
-            if (pinInfo.peripherals.indexOf(core_io_types_1.PeripheralType.PWM) != -1) {
-                supportedModes.push(3, 4);
+            else if (pinInfo.peripherals.indexOf(core_io_types_1.PeripheralType.I2C) !== -1) {
+                supportedModes.push(99);
+            }
+            else {
+                if (pinInfo.peripherals.indexOf(core_io_types_1.PeripheralType.GPIO) != -1) {
+                    supportedModes.push(0, 1);
+                }
+                if (pinInfo.peripherals.indexOf(core_io_types_1.PeripheralType.PWM) != -1) {
+                    supportedModes.push(3, 4);
+                }
             }
             const mode = supportedModes.indexOf(1) == -1 ? 99 : 1;
             pins[parsedPin] = {
                 supportedModes,
                 mode,
-                value: 0,
+                value: supportedModes.indexOf(1) !== -1 ? 0 : null,
                 report: 1,
                 analogChannel: 127
             };

@@ -291,17 +291,23 @@ describe('App Initialization', () => {
       const parsedPin = parseInt(pin, 10);
       const supportedModes = [];
       const pinInfo = boardPins[parsedPin];
-      if (pinInfo.peripherals.indexOf(PeripheralType.GPIO) != -1) {
-        supportedModes.push(0, 1);
-      }
-      if (pinInfo.peripherals.indexOf(PeripheralType.PWM) != -1) {
-        supportedModes.push(3, 4);
+      if (pinInfo.peripherals.indexOf(PeripheralType.UART) !== -1) {
+        supportedModes.push(99);
+      } else if (pinInfo.peripherals.indexOf(PeripheralType.I2C) !== -1) {
+        supportedModes.push(99);
+      } else {
+        if (pinInfo.peripherals.indexOf(PeripheralType.GPIO) != -1) {
+          supportedModes.push(0, 1);
+        }
+        if (pinInfo.peripherals.indexOf(PeripheralType.PWM) != -1) {
+          supportedModes.push(3, 4);
+        }
       }
       const mode = supportedModes.indexOf(1) == -1 ? 99 : 1;
       pins[parsedPin] = {
         supportedModes,
         mode,
-        value: 0,
+        value: supportedModes.indexOf(1) !== -1 ? 0 : null,
         report: 1,
         analogChannel: 127
       };

@@ -512,21 +512,27 @@ class Serial extends Peripheral implements ISerial {
       parity
     };
   }
-  public open(cb: () => void) {
+  public open(cb?: () => void) {
     setImmediate(() => {
-      cb();
+      if (cb) {
+        cb();
+      }
       this.emit('open');
     });
   }
-  public close(cb: () => void) {
+  public close(cb?: (err?: string | Error) => void) {
     setImmediate(() => {
-      cb();
+      if (cb) {
+        cb();
+      }
       this.emit('close');
     });
   }
-  public write(data: Buffer | string, cb: () => void) {
+  public write(data: Buffer | string, cb?: () => void) {
     setImmediate(() => {
-      cb();
+      if (cb) {
+        cb();
+      }
       this.emit('write', data);
     });
   }
@@ -562,7 +568,7 @@ export function createInstance(options: CreateCallback | ICreateOptions, cb?: Cr
     (options as ICreateOptions).enableDefaultLED = true;
   }
   if (typeof (options as ICreateOptions).enableSerial === 'undefined') {
-    (options as ICreateOptions).enableSerial = false;
+    (options as ICreateOptions).enableSerial = true;
   }
   registeredPins = {};
   const coreOptions: IOptions = {
@@ -572,8 +578,7 @@ export function createInstance(options: CreateCallback | ICreateOptions, cb?: Cr
       base: raspiMock,
       gpio: raspiGpioMock,
       i2c: raspiI2CMock,
-      pwm: raspiPWMMock,
-      serial: raspiSerialMock
+      pwm: raspiPWMMock
     },
     serialIds: {
       DEFAULT: '/dev/ttyAMA0'

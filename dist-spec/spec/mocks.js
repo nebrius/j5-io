@@ -432,19 +432,25 @@ class Serial extends Peripheral {
     }
     open(cb) {
         setImmediate(() => {
-            cb();
+            if (cb) {
+                cb();
+            }
             this.emit('open');
         });
     }
     close(cb) {
         setImmediate(() => {
-            cb();
+            if (cb) {
+                cb();
+            }
             this.emit('close');
         });
     }
     write(data, cb) {
         setImmediate(() => {
-            cb();
+            if (cb) {
+                cb();
+            }
             this.emit('write', data);
         });
     }
@@ -471,7 +477,7 @@ function createInstance(options, cb) {
         options.enableDefaultLED = true;
     }
     if (typeof options.enableSerial === 'undefined') {
-        options.enableSerial = false;
+        options.enableSerial = true;
     }
     registeredPins = {};
     const coreOptions = {
@@ -481,8 +487,7 @@ function createInstance(options, cb) {
             base: exports.raspiMock,
             gpio: exports.raspiGpioMock,
             i2c: exports.raspiI2CMock,
-            pwm: exports.raspiPWMMock,
-            serial: exports.raspiSerialMock
+            pwm: exports.raspiPWMMock
         },
         serialIds: {
             DEFAULT: '/dev/ttyAMA0'

@@ -1,5 +1,5 @@
 import { IBaseModule, IGPIOModule, ILEDModule, IPWMModule, ISerialModule, II2CModule, IPeripheral, IPinInfo, ILED, II2C } from 'core-io-types';
-import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig, IServoConfig } from 'abstract-io';
+import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig, IServoConfig, Handler } from 'abstract-io';
 declare const serialPortIds: unique symbol;
 declare const name: unique symbol;
 declare const isReady: unique symbol;
@@ -8,6 +8,7 @@ declare const defaultLed: unique symbol;
 declare const gpioManager: unique symbol;
 declare const pwmManager: unique symbol;
 declare const ledManager: unique symbol;
+declare const serialManager: unique symbol;
 export interface IOptions {
     pluginName: string;
     platform: {
@@ -47,6 +48,7 @@ export declare class CoreIO extends AbstractIO {
     private [gpioManager];
     private [pwmManager];
     private [ledManager]?;
+    private [serialManager]?;
     constructor(options: IOptions);
     reset(): void;
     normalize(pin: number | string): number;
@@ -58,5 +60,11 @@ export declare class CoreIO extends AbstractIO {
     servoConfig(options: IServoConfig): void;
     servoConfig(pin: number | string, min: number, max: number): void;
     serialConfig(options: ISerialConfig): void;
+    serialWrite(portId: string | number, inBytes: number[]): void;
+    serialRead(portId: number | string, handler: Handler<number[]>): void;
+    serialRead(portId: number | string, maxBytesToRead: number, handler: Handler<number[]>): void;
+    serialStop(portId: number | string): void;
+    serialClose(portId: number | string): void;
+    serialFlush(portId: number | string): void;
 }
 export {};
