@@ -290,7 +290,7 @@ class I2C extends Peripheral implements II2C {
       if (cb) {
         cb(null);
       }
-      this.emit('write', { address, register, buffer });
+      this.emit('write', { address, register, buffer: Array.from(buffer.values()) });
     });
   }
 
@@ -580,12 +580,15 @@ export function createInstance(options: CreateCallback | ICreateOptions, cb?: Cr
       i2c: raspiI2CMock,
       pwm: raspiPWMMock
     },
-    serialIds: {
-      DEFAULT: '/dev/ttyAMA0'
+    i2cIds: {
+      DEFAULT: 1
     }
   };
   if (options && (options as ICreateOptions).enableSerial) {
     coreOptions.platform.serial = raspiSerialMock;
+    coreOptions.serialIds = {
+      DEFAULT: '/dev/ttyAMA0'
+    };
   }
   if (options && (options as ICreateOptions).enableDefaultLED) {
     coreOptions.platform.led = raspiLEDMock;

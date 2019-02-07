@@ -150,6 +150,8 @@ describe('App Instantiation', () => {
     }).not.toThrow();
   });
 
+  // TODO: test when i2cIds is missing
+
   it('requires the serialIds argument when the platform.serial argument is present', () => {
     expect(() => {
       new CoreIO({

@@ -33,8 +33,10 @@ const gpio_1 = require("./managers/gpio");
 const pwm_1 = require("./managers/pwm");
 const led_1 = require("./managers/led");
 const serial_1 = require("./managers/serial");
+const i2c_1 = require("./managers/i2c");
 // Private symbols for public getters
 const serialPortIds = Symbol('serialPortIds');
+const i2cPortIds = Symbol('i2cPortIds');
 const name = Symbol('name');
 const isReady = Symbol('isReady');
 const pins = Symbol('pins');
@@ -44,6 +46,8 @@ const gpioManager = Symbol('gpioManager');
 const pwmManager = Symbol('pwmManager');
 const ledManager = Symbol('ledManager');
 const serialManager = Symbol('serialManager');
+const i2cManager = Symbol('i2cManager');
+const swizzleI2CReadArguments = Symbol('swizzleI2CReadArguments');
 class CoreIO extends abstract_io_1.AbstractIO {
     constructor(options) {
         super();
@@ -79,15 +83,30 @@ class CoreIO extends abstract_io_1.AbstractIO {
                 throw new Error('"DEFAULT" serial ID is required in options.serialIds');
             }
         }
+        if (typeof options.platform.i2c === 'object') {
+            if (typeof options.i2cIds !== 'object') {
+                throw new Error('"options.i2cIds" is required and must be an object when options.platform.i2c is also supplied');
+            }
+            if (typeof options.i2cIds.DEFAULT === 'undefined') {
+                throw new Error('"DEFAULT" I2C ID is required in options.i2cIds');
+            }
+        }
         // Create the plugin name
         this[name] = options.pluginName;
-        const { pinInfo, serialIds, platform } = options;
+        const { pinInfo, serialIds, i2cIds, platform } = options;
         // Create the serial port IDs if serial is supported
         if (serialIds) {
             this[serialPortIds] = Object.freeze(serialIds);
         }
         else {
             this[serialPortIds] = Object.freeze({});
+        }
+        // Create the I2C port IDs if I2C is supported
+        if (i2cIds) {
+            this[i2cPortIds] = Object.freeze(i2cIds);
+        }
+        else {
+            this[i2cPortIds] = Object.freeze({});
         }
         // Instantiate the peripheral managers
         core_1.setBaseModule(platform.base);
@@ -100,12 +119,14 @@ class CoreIO extends abstract_io_1.AbstractIO {
         if (platform.serial && serialIds) {
             this[serialManager] = new serial_1.SerialManager(platform.serial, serialIds, this);
         }
+        if (platform.i2c && i2cIds) {
+            this[i2cManager] = new i2c_1.I2CManager(platform.i2c, i2cIds, this);
+        }
         // Inject the test only methods if we're in test mode
         if (process.env.RASPI_IO_TEST_MODE) {
             this.getInternalPinInstances = () => core_1.getPeripherals();
             this.getLEDInstance = () => this[ledManager] && this[ledManager].led;
-            // TODO:
-            // this.getI2CInstance = () => this[i2c];
+            this.getI2CInstance = (portId) => this[i2cManager] && this[i2cManager].getI2CInstance(portId);
         }
         // Create the pins object
         this[pins] = [];
@@ -184,7 +205,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
             }
             const pin = parseInt(pinKey, 10);
             this[pins][pin] = createPinEntry(pin, pinMappings[pin]);
-            if (this[pins][pin].supportedModes.indexOf(abstract_io_1.Mode.OUTPUT) !== -1) {
+            if (this.supportsMode(pin, abstract_io_1.Mode.OUTPUT)) {
                 this.pinMode(pin, abstract_io_1.Mode.OUTPUT);
                 this.digitalWrite(pin, abstract_io_1.Value.LOW);
             }
@@ -281,6 +302,9 @@ class CoreIO extends abstract_io_1.AbstractIO {
     get SERIAL_PORT_IDs() {
         return this[serialPortIds];
     }
+    get I2C_PORT_IDS() {
+        return this[i2cPortIds];
+    }
     get pins() {
         return Object.freeze(this[pins]);
     }
@@ -318,9 +342,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
         if (!abstract_io_1.Mode.hasOwnProperty(mode)) {
             throw new Error(`Unknown mode ${mode}`);
         }
-        else if (this[pins][normalizedPin].supportedModes.indexOf(mode) === -1) {
-            throw new Error(`Pin "${pin}" does not support mode "${abstract_io_1.Mode[mode].toLowerCase()}"`);
-        }
+        this.validateSupportedMode(pin, mode);
         if (this[ledManager] && pin === led_1.DEFAULT_LED_PIN) {
             // Note: the LED module is a dedicated peripheral and can't be any other mode, so we can shortcut here
             return;
@@ -346,6 +368,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
     }
     // GPIO methods
     digitalRead(pin, handler) {
+        this.validateSupportedMode(pin, abstract_io_1.Mode.INPUT);
         this[gpioManager].digitalRead(this.normalize(pin), handler);
     }
     digitalWrite(pin, value) {
@@ -356,6 +379,9 @@ class CoreIO extends abstract_io_1.AbstractIO {
             ledManagerInstance.digitalWrite(value);
         }
         else {
+            // Gotta double check output support here, because this method can change the pin
+            // mode but doesn't have full access to everything this file does
+            this.validateSupportedMode(pin, abstract_io_1.Mode.OUTPUT);
             this[gpioManager].digitalWrite(this.normalize(pin), value);
         }
     }
@@ -428,7 +454,86 @@ class CoreIO extends abstract_io_1.AbstractIO {
         }
         serialManagerInstance.serialFlush(portId);
     }
+    // I2C Methods
+    i2cConfig(options) {
+        // Do nothing because we don't currently support delay
+    }
+    i2cWrite(address, registerOrInBytes, inBytes) {
+        const i2cManagerInstance = this[i2cManager];
+        if (!i2cManagerInstance) {
+            throw new Error('I2C support is disabled');
+        }
+        let value;
+        let register;
+        if (typeof registerOrInBytes === 'number' && Array.isArray(inBytes)) {
+            register = registerOrInBytes;
+            value = inBytes;
+        }
+        else if (Array.isArray(registerOrInBytes)) {
+            register = undefined;
+            value = registerOrInBytes;
+        }
+        else {
+            throw new Error('Invalid arguments');
+        }
+        // Skip the write if the buffer is empty
+        if (value.length) {
+            i2cManagerInstance.i2cWrite(this[i2cPortIds].DEFAULT, address, register, value);
+        }
+    }
+    i2cWriteReg(address, register, value) {
+        const i2cManagerInstance = this[i2cManager];
+        if (!i2cManagerInstance) {
+            throw new Error('I2C support is disabled');
+        }
+        i2cManagerInstance.i2cWrite(this[i2cPortIds].DEFAULT, address, register, value);
+    }
+    i2cRead(inAddress, registerOrBytesToRead, bytesToReadOrHandler, inHandler) {
+        const i2cManagerInstance = this[i2cManager];
+        if (!i2cManagerInstance) {
+            throw new Error('I2C support is disabled');
+        }
+        const { address, register, bytesToRead, handler } = this[swizzleI2CReadArguments](inAddress, registerOrBytesToRead, bytesToReadOrHandler, inHandler);
+        i2cManagerInstance.i2cRead(this[i2cPortIds].DEFAULT, true, address, register, bytesToRead, handler);
+    }
+    i2cReadOnce(inAddress, registerOrBytesToRead, bytesToReadOrHandler, inHandler) {
+        const i2cManagerInstance = this[i2cManager];
+        if (!i2cManagerInstance) {
+            throw new Error('I2C support is disabled');
+        }
+        const { address, register, bytesToRead, handler } = this[swizzleI2CReadArguments](inAddress, registerOrBytesToRead, bytesToReadOrHandler, inHandler);
+        i2cManagerInstance.i2cRead(this[i2cPortIds].DEFAULT, false, address, register, bytesToRead, handler);
+    }
+    [(_a = isReady, _b = pins, swizzleI2CReadArguments)](address, registerOrBytesToRead, bytesToReadOrHandler, handler) {
+        let register;
+        let bytesToRead;
+        if (typeof handler === 'function' && typeof bytesToReadOrHandler === 'number') {
+            register = registerOrBytesToRead;
+            bytesToRead = bytesToReadOrHandler;
+        }
+        else if (typeof bytesToReadOrHandler === 'function' && typeof handler === 'undefined') {
+            bytesToRead = registerOrBytesToRead;
+            handler = bytesToReadOrHandler;
+        }
+        else {
+            throw new Error('Invalid arguments');
+        }
+        if (typeof handler !== 'function') {
+            handler = () => {
+                // Do nothing
+            };
+        }
+        return { address, register, bytesToRead, handler };
+    }
+    supportsMode(normalizedPin, mode) {
+        return this[pins][normalizedPin].supportedModes.indexOf(mode) !== -1;
+    }
+    validateSupportedMode(pin, mode) {
+        const normalizedPin = this.normalize(pin);
+        if (!this.supportsMode(normalizedPin, mode)) {
+            throw new Error(`Pin "${pin}" does not support mode "${abstract_io_1.Mode[mode].toLowerCase()}"`);
+        }
+    }
 }
-_a = isReady, _b = pins;
 exports.CoreIO = CoreIO;
 //# sourceMappingURL=index.js.map

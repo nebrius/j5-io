@@ -12,8 +12,11 @@
 - BREAKING CHANGE: Removed `includePins` and `excludePins`, which is replaced with `pinInfo`
 - BREAKING CHANGE: Now, only base, gpio, and pwm platform modules are required. The rest are optional
 - BREAKING CHANGE: Removed support for software PWM here (it should be handled by Raspi IO, not Core IO)
-- POTENTIALLY BREAKING CHANGE: The `name` property of this module now returns `"Raspi IO"` instead of `"RasperryPi-IO"` to conform with naming conventions elsewhere
 - BREAKING CHANGE: `digital-read-${pin}` event names are now normalized to the Wiring Pi number. If, for example, you called `digitalRead("GPIO18", () => {})`, before the event name would be `digital-read-GPIO18`, but now it's `digital-read-1`
+- Rewrote the I2C infrastructure to use serial's architecture. This new architecture both gaurantees order of operations while using asynchronous method calls, increasing performance.
+- Added a lot of internal infrastructure to support multiple I2C ports, even if it's mostly not supported in the IO Plugin spec (for now?)
+- BREAKING CHANGE: Removed the ability to pass a number to `i2cConfig` as its only argument. This was not documented and is not part of the IO Plugin spec
+- BREAKING CHANGE: Added new `i2cIds` property which is required when including I2C support
 
 ## 2.1.0 (2018-04-02)
 

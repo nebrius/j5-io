@@ -41,6 +41,7 @@ describe('I2C', () => {
   const inRegister = 0x20;
 
   // TODO: test i2cConfig and sendI2CConfig once https://github.com/nebrius/raspi-io-core/issues/8 has been resolved
+  // TODO: test when I2C is disabled
 
   it('prevents GPIO from using I2C pins', (done) => createInstance((raspi) => {
     expect(() => {
@@ -50,7 +51,7 @@ describe('I2C', () => {
   }));
 
   it('can write a buffer to an address', (done) => createInstance((raspi) => {
-    const i2c = raspi.getI2CInstance();
+    const i2c = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
     i2c.on('write', ({ address, register, buffer }) => {
       expect(address).toEqual(inAddress);
       expect(register).toBeUndefined();
@@ -61,7 +62,7 @@ describe('I2C', () => {
   }));
 
   it('can write a buffer to an address using sendI2CWriteRequest', (done) => createInstance((raspi) => {
-    const i2c = raspi.getI2CInstance();
+    const i2c = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
     i2c.on('write', ({ address, register, buffer }) => {
       expect(address).toEqual(inAddress);
       expect(register).toBeUndefined();
@@ -72,7 +73,7 @@ describe('I2C', () => {
   }));
 
   it('can write a buffer to a register at address', (done) => createInstance((raspi) => {
-    const i2c = raspi.getI2CInstance();
+    const i2c = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
     i2c.on('write', ({ address, register, buffer }) => {
       expect(address).toEqual(inAddress);
       expect(register).toEqual(inRegister);
@@ -83,7 +84,7 @@ describe('I2C', () => {
   }));
 
   it('can write a byte to a register at address', (done) => createInstance((raspi) => {
-    const i2c = raspi.getI2CInstance();
+    const i2c = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
     i2c.on('writeByteSync', ({ address, register, byte }) => {
       expect(address).toEqual(inAddress);
       expect(register).toEqual(inRegister);
@@ -95,7 +96,7 @@ describe('I2C', () => {
 
   it('can read continuously', (done) => createInstance((raspi) => {
     let numReadsRemaining = NUM_READS;
-    const peripheral = raspi.getI2CInstance();
+    const peripheral = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
     const testData = [];
     let testDataWindow = [ ...inBytes ];
     for (let i = 0; i < numReadsRemaining + 1; i++) {
@@ -120,7 +121,7 @@ describe('I2C', () => {
 
   it('can read from a register continuously', (done) => createInstance((raspi) => {
     let numReadsRemaining = NUM_READS;
-    const peripheral = raspi.getI2CInstance();
+    const peripheral = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
     const testData = [];
     let testDataWindow = [ ...inBytes ];
     for (let i = 0; i < numReadsRemaining + 1; i++) {
@@ -144,7 +145,7 @@ describe('I2C', () => {
   }));
 
   it('can read once', (done) => createInstance((raspi) => {
-    const peripheral = raspi.getI2CInstance();
+    const peripheral = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
     const testData = [ ...inBytes ];
     peripheral.setReadBuffer(inAddress, undefined, testData);
     raspi.i2cReadOnce(inAddress, inBytes.length, (data) => {
@@ -166,7 +167,7 @@ describe('I2C', () => {
   }));
 
   it('can read once using sendI2CReadRequest', (done) => createInstance((raspi) => {
-    const peripheral = raspi.getI2CInstance();
+    const peripheral = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
     const testData = [ ...inBytes ];
     peripheral.setReadBuffer(inAddress, undefined, testData);
     raspi.sendI2CReadRequest(inAddress, inBytes.length, (data) => {
@@ -188,7 +189,7 @@ describe('I2C', () => {
   }));
 
   it('can read once from a register', (done) => createInstance((raspi) => {
-    const peripheral = raspi.getI2CInstance();
+    const peripheral = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
     const testData = [ ...inBytes ];
     peripheral.setReadBuffer(inAddress, inRegister, testData);
     raspi.i2cReadOnce(inAddress, inRegister, inBytes.length, (data) => {

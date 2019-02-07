@@ -36,7 +36,16 @@ import {
   ILED,
   II2C
 } from 'core-io-types';
-import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig, IServoConfig, Handler } from 'abstract-io';
+import {
+  AbstractIO,
+  Value,
+  Mode,
+  IPinConfiguration,
+  ISerialConfig,
+  IServoConfig,
+  II2CConfig,
+  Handler
+} from 'abstract-io';
 import {
   setBaseModule,
   normalizePin,
@@ -50,9 +59,11 @@ import { GPIOManager } from './managers/gpio';
 import { PWMManager } from './managers/pwm';
 import { LEDManager, DEFAULT_LED_PIN } from './managers/led';
 import { SerialManager } from './managers/serial';
+import { I2CManager } from './managers/i2c';
 
 // Private symbols for public getters
 const serialPortIds = Symbol('serialPortIds');
+const i2cPortIds = Symbol('i2cPortIds');
 const name = Symbol('name');
 const isReady = Symbol('isReady');
 const pins = Symbol('pins');
@@ -63,6 +74,8 @@ const gpioManager = Symbol('gpioManager');
 const pwmManager = Symbol('pwmManager');
 const ledManager = Symbol('ledManager');
 const serialManager = Symbol('serialManager');
+const i2cManager = Symbol('i2cManager');
+const swizzleI2CReadArguments = Symbol('swizzleI2CReadArguments');
 
 export interface IOptions {
   pluginName: string;
@@ -75,6 +88,7 @@ export interface IOptions {
     i2c?: II2CModule
   };
   serialIds?: { [ id: string ]: any };
+  i2cIds?: { [ id: string ]: any };
   pinInfo: { [ pin: number ]: IPinInfo };
 }
 
@@ -96,6 +110,10 @@ export class CoreIO extends AbstractIO {
     return this[serialPortIds];
   }
 
+  public get I2C_PORT_IDS() {
+    return this[i2cPortIds];
+  }
+
   public get pins(): ReadonlyArray<IPinConfiguration> {
     return Object.freeze(this[pins]);
   }
@@ -109,10 +127,11 @@ export class CoreIO extends AbstractIO {
   }
 
   public getInternalPinInstances?: () => { [ pin: number ]: IPeripheral };
-  public getI2CInstance?: () => II2C | undefined;
+  public getI2CInstance?: (portId: string | number) => II2C | undefined;
   public getLEDInstance?: () => ILED | undefined;
 
   private [serialPortIds]: { [ id: string ]: any };
+  private [i2cPortIds]: { [ id: string ]: any };
   private [isReady] = false;
   private [pins]: IPinConfiguration[] = [];
   private [name]: string;
@@ -122,6 +141,7 @@ export class CoreIO extends AbstractIO {
   private [pwmManager]: PWMManager;
   private [ledManager]?: LEDManager;
   private [serialManager]?: SerialManager;
+  private [i2cManager]?: I2CManager;
 
   constructor(options: IOptions) {
     super();
@@ -157,17 +177,33 @@ export class CoreIO extends AbstractIO {
         throw new Error('"DEFAULT" serial ID is required in options.serialIds');
       }
     }
+    if (typeof options.platform.i2c === 'object') {
+      if (typeof options.i2cIds !== 'object') {
+        throw new Error(
+          '"options.i2cIds" is required and must be an object when options.platform.i2c is also supplied');
+      }
+      if (typeof options.i2cIds.DEFAULT === 'undefined') {
+        throw new Error('"DEFAULT" I2C ID is required in options.i2cIds');
+      }
+    }
 
     // Create the plugin name
     this[name] = options.pluginName;
 
-    const { pinInfo, serialIds, platform } = options;
+    const { pinInfo, serialIds, i2cIds, platform } = options;
 
     // Create the serial port IDs if serial is supported
     if (serialIds) {
       this[serialPortIds] = Object.freeze(serialIds);
     } else {
       this[serialPortIds] = Object.freeze({});
+    }
+
+    // Create the I2C port IDs if I2C is supported
+    if (i2cIds) {
+      this[i2cPortIds] = Object.freeze(i2cIds);
+    } else {
+      this[i2cPortIds] = Object.freeze({});
     }
 
     // Instantiate the peripheral managers
@@ -181,13 +217,15 @@ export class CoreIO extends AbstractIO {
     if (platform.serial && serialIds) {
       this[serialManager] = new SerialManager(platform.serial, serialIds, this);
     }
+    if (platform.i2c && i2cIds) {
+      this[i2cManager] = new I2CManager(platform.i2c, i2cIds, this);
+    }
 
     // Inject the test only methods if we're in test mode
     if (process.env.RASPI_IO_TEST_MODE) {
       this.getInternalPinInstances = () => getPeripherals();
       this.getLEDInstance = () => this[ledManager] && (this[ledManager] as LEDManager).led;
-      // TODO:
-      // this.getI2CInstance = () => this[i2c];
+      this.getI2CInstance = (portId) => this[i2cManager] && (this[i2cManager] as I2CManager).getI2CInstance(portId);
     }
 
     // Create the pins object
@@ -267,7 +305,7 @@ export class CoreIO extends AbstractIO {
       }
       const pin = parseInt(pinKey, 10);
       this[pins][pin] = createPinEntry(pin, pinMappings[pin]);
-      if (this[pins][pin].supportedModes.indexOf(Mode.OUTPUT) !== -1) {
+      if (this.supportsMode(pin, Mode.OUTPUT)) {
         this.pinMode(pin, Mode.OUTPUT);
         this.digitalWrite(pin, Value.LOW);
       }
@@ -384,9 +422,8 @@ export class CoreIO extends AbstractIO {
     // Make sure that the requested pin mode is valid and supported by the pin in question
     if (!Mode.hasOwnProperty(mode)) {
       throw new Error(`Unknown mode ${mode}`);
-    } else if (this[pins][normalizedPin].supportedModes.indexOf(mode) === -1) {
-      throw new Error(`Pin "${pin}" does not support mode "${Mode[mode].toLowerCase()}"`);
     }
+    this.validateSupportedMode(pin, mode);
 
     if (this[ledManager] && pin === DEFAULT_LED_PIN) {
       // Note: the LED module is a dedicated peripheral and can't be any other mode, so we can shortcut here
@@ -414,6 +451,7 @@ export class CoreIO extends AbstractIO {
   // GPIO methods
 
   public digitalRead(pin: string | number, handler: (value: Value) => void): void {
+    this.validateSupportedMode(pin, Mode.INPUT);
     this[gpioManager].digitalRead(this.normalize(pin), handler);
   }
 
@@ -424,6 +462,9 @@ export class CoreIO extends AbstractIO {
     if (ledManagerInstance && pin === DEFAULT_LED_PIN) {
       ledManagerInstance.digitalWrite(value);
     } else {
+      // Gotta double check output support here, because this method can change the pin
+      // mode but doesn't have full access to everything this file does
+      this.validateSupportedMode(pin, Mode.OUTPUT);
       this[gpioManager].digitalWrite(this.normalize(pin), value);
     }
   }
@@ -521,161 +562,130 @@ export class CoreIO extends AbstractIO {
     serialManagerInstance.serialFlush(portId);
   }
 
-  // Methods that need converting
+  // I2C Methods
 
-  // analogRead() {
-  //   throw new Error('analogRead is not supported on the Raspberry Pi');
-  // }
+  public i2cConfig(options: II2CConfig): void {
+    // Do nothing because we don't currently support delay
+  }
 
-  // queryCapabilities(cb) {
-  //   if (this.isReady) {
-  //     process.nextTick(cb);
-  //   } else {
-  //     this.on('ready', cb);
-  //   }
-  // }
+  public i2cWrite(address: number, inBytes: number[]): void;
+  public i2cWrite(address: number, register: number, inBytes: number[]): void;
+  public i2cWrite(address: number, registerOrInBytes: number | number[], inBytes?: number[]): void {
+    const i2cManagerInstance = this[i2cManager];
+    if (!i2cManagerInstance) {
+      throw new Error('I2C support is disabled');
+    }
+    let value: number[];
+    let register: number | undefined;
+    if (typeof registerOrInBytes === 'number' && Array.isArray(inBytes)) {
+      register = registerOrInBytes;
+      value = inBytes;
+    } else if (Array.isArray(registerOrInBytes)) {
+      register = undefined;
+      value = registerOrInBytes;
+    } else {
+      throw new Error('Invalid arguments');
+    }
 
-  // queryAnalogMapping(cb) {
-  //   if (this.isReady) {
-  //     process.nextTick(cb);
-  //   } else {
-  //     this.on('ready', cb);
-  //   }
-  // }
+    // Skip the write if the buffer is empty
+    if (value.length) {
+      i2cManagerInstance.i2cWrite(this[i2cPortIds].DEFAULT, address, register, value);
+    }
+  }
 
-  // queryPinState(pin, cb) {
-  //   if (this.isReady) {
-  //     process.nextTick(cb);
-  //   } else {
-  //     this.on('ready', cb);
-  //   }
-  // }
+  public i2cWriteReg(address: number, register: number, value: number): void {
+    const i2cManagerInstance = this[i2cManager];
+    if (!i2cManagerInstance) {
+      throw new Error('I2C support is disabled');
+    }
+    i2cManagerInstance.i2cWrite(this[i2cPortIds].DEFAULT, address, register, value);
+  }
 
-  // [i2cCheckAlive]() {
-  //   if (!this[i2c].alive) {
-  //     throw new Error('I2C pins not in I2C mode');
-  //   }
-  // }
+  public i2cRead(
+    address: number,
+    bytesToRead: number,
+    handler: Handler<number[]>
+  ): void;
+  public i2cRead(
+    address: number,
+    register: number,
+    bytesToRead: number,
+    handler: Handler<number[]>
+  ): void;
+  public i2cRead(
+    inAddress: number,
+    registerOrBytesToRead: number,
+    bytesToReadOrHandler: Handler<number[]> | number,
+    inHandler?: Handler<number[]>
+): void {
+  const i2cManagerInstance = this[i2cManager];
+  if (!i2cManagerInstance) {
+    throw new Error('I2C support is disabled');
+  }
+  const { address, register, bytesToRead, handler } =
+    this[swizzleI2CReadArguments](inAddress, registerOrBytesToRead, bytesToReadOrHandler, inHandler);
+  i2cManagerInstance.i2cRead(this[i2cPortIds].DEFAULT, true, address, register, bytesToRead, handler);
+  }
 
-  // i2cConfig(options) {
-  //   let delay;
+  public i2cReadOnce(
+    address: number,
+    bytesToRead: number,
+    handler: Handler<number[]>
+  ): void;
+  public i2cReadOnce(
+    address: number,
+    register: number,
+    bytesToRead: number,
+    handler: Handler<number[]>
+  ): void;
+  public i2cReadOnce(
+    inAddress: number,
+    registerOrBytesToRead: number,
+    bytesToReadOrHandler: Handler<number[]> | number,
+    inHandler?: Handler<number[]>
+  ): void {
+    const i2cManagerInstance = this[i2cManager];
+    if (!i2cManagerInstance) {
+      throw new Error('I2C support is disabled');
+    }
+    const { address, register, bytesToRead, handler } =
+      this[swizzleI2CReadArguments](inAddress, registerOrBytesToRead, bytesToReadOrHandler, inHandler);
+    i2cManagerInstance.i2cRead(this[i2cPortIds].DEFAULT, false, address, register, bytesToRead, handler);
+  }
 
-  //   if (typeof options === 'number') {
-  //     delay = options;
-  //   } else {
-  //     if (typeof options === 'object' && options !== null) {
-  //       delay = options.delay;
-  //     }
-  //   }
+  private [swizzleI2CReadArguments](
+    address: number,
+    registerOrBytesToRead: number,
+    bytesToReadOrHandler: Handler<number[]> | number,
+    handler?: Handler<number[]>
+  ): { address: number, register: number | undefined, bytesToRead: number, handler: Handler<number[]> } {
+    let register: number | undefined;
+    let bytesToRead: number;
+    if (typeof handler === 'function' && typeof bytesToReadOrHandler === 'number') {
+      register = registerOrBytesToRead;
+      bytesToRead = bytesToReadOrHandler;
+    } else if (typeof bytesToReadOrHandler === 'function' && typeof handler === 'undefined') {
+      bytesToRead = registerOrBytesToRead;
+      handler = bytesToReadOrHandler;
+    } else {
+      throw new Error('Invalid arguments');
+    }
+    if (typeof handler !== 'function') {
+      handler = () => {
+        // Do nothing
+      };
+    }
+    return { address, register, bytesToRead, handler };
+  }
 
-  //   this[i2cCheckAlive]();
+  private supportsMode(normalizedPin: number, mode: Mode): boolean {
+    return this[pins][normalizedPin].supportedModes.indexOf(mode) !== -1;
+  }
 
-  //   this[i2cDelay] = Math.round((delay || 0) / 1000);
-
-  //   return this;
-  // }
-
-  // i2cWrite(address, cmdRegOrData, inBytes) {
-  //   this[i2cCheckAlive]();
-
-  //   // If i2cWrite was used for an i2cWriteReg call...
-  //   if (arguments.length === 3 &&
-  //       !Array.isArray(cmdRegOrData) &&
-  //       !Array.isArray(inBytes)) {
-  //     return this.i2cWriteReg(address, cmdRegOrData, inBytes);
-  //   }
-
-  //   // Fix arguments if called with Firmata.js API
-  //   if (arguments.length === 2) {
-  //     if (Array.isArray(cmdRegOrData)) {
-  //       inBytes = cmdRegOrData.slice();
-  //       cmdRegOrData = inBytes.shift();
-  //     } else {
-  //       inBytes = [];
-  //     }
-  //   }
-
-  //   const buffer = new Buffer([cmdRegOrData].concat(inBytes));
-
-  //   // Only write if bytes provided
-  //   if (buffer.length) {
-  //     this[i2c].writeSync(address, buffer);
-  //   }
-
-  //   return this;
-  // }
-
-  // i2cWriteReg(address, register, value) {
-  //   this[i2cCheckAlive]();
-
-  //   this[i2c].writeByteSync(address, register, value);
-
-  //   return this;
-  // }
-
-  // [i2cRead](continuous, address, register, bytesToRead, callback) {
-  //   this[i2cCheckAlive]();
-
-  //   // Fix arguments if called with Firmata.js API
-  //   if (arguments.length == 4 &&
-  //     typeof register == 'number' &&
-  //     typeof bytesToRead == 'function'
-  //   ) {
-  //     callback = bytesToRead;
-  //     bytesToRead = register;
-  //     register = null;
-  //   }
-
-  //   callback = typeof callback === 'function' ? callback : () => {};
-
-  //   let event = `i2c-reply-${address}-`;
-  //   event += register !== null ? register : 0;
-
-  //   const read = () => {
-  //     const afterRead = (err, buffer) => {
-  //       if (err) {
-  //         return this.emit('error', err);
-  //       }
-
-  //       // Convert buffer to Array before emit
-  //       this.emit(event, Array.prototype.slice.call(buffer));
-
-  //       if (continuous && this[i2c].alive) {
-  //         setTimeout(read, this[i2cDelay]);
-  //       }
-  //     };
-
-  //     this.once(event, callback);
-
-  //     if (register !== null) {
-  //       this[i2c].read(address, register, bytesToRead, afterRead);
-  //     } else {
-  //       this[i2c].read(address, bytesToRead, afterRead);
-  //     }
-  //   };
-
-  //   setTimeout(read, this[i2cDelay]);
-
-  //   return this;
-  // }
-
-  // i2cRead(...rest) {
-  //   return this[i2cRead](true, ...rest);
-  // }
-
-  // i2cReadOnce(...rest) {
-  //   return this[i2cRead](false, ...rest);
-  // }
-
-  // sendI2CConfig(...rest) {
-  //   return this.i2cConfig(...rest);
-  // }
-
-  // sendI2CWriteRequest(...rest) {
-  //   return this.i2cWrite(...rest);
-  // }
-
-  // sendI2CReadRequest(...rest) {
-  //   return this.i2cReadOnce(...rest);
-  // }
+  private validateSupportedMode(pin: string | number, mode: Mode): void {
+    const normalizedPin = this.normalize(pin);
+    if (!this.supportsMode(normalizedPin, mode)) {
+      throw new Error(`Pin "${pin}" does not support mode "${Mode[mode].toLowerCase()}"`);
+    }
+  }
 }

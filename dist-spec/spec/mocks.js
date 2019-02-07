@@ -243,7 +243,7 @@ class I2C extends Peripheral {
             if (cb) {
                 cb(null);
             }
-            this.emit('write', { address, register, buffer });
+            this.emit('write', { address, register, buffer: Array.from(buffer.values()) });
         });
     }
     writeSync(address, registerOrBuffer, buffer) {
@@ -489,12 +489,15 @@ function createInstance(options, cb) {
             i2c: exports.raspiI2CMock,
             pwm: exports.raspiPWMMock
         },
-        serialIds: {
-            DEFAULT: '/dev/ttyAMA0'
+        i2cIds: {
+            DEFAULT: 1
         }
     };
     if (options && options.enableSerial) {
         coreOptions.platform.serial = exports.raspiSerialMock;
+        coreOptions.serialIds = {
+            DEFAULT: '/dev/ttyAMA0'
+        };
     }
     if (options && options.enableDefaultLED) {
         coreOptions.platform.led = exports.raspiLEDMock;

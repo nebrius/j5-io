@@ -54,6 +54,8 @@ class SerialPortManager {
     reset() {
         this.serial.removeAllListeners();
         this.serial.close();
+        this.actionQueue = [];
+        this.isSerialProcessing = false;
     }
     addToSerialQueue(action) {
         this.actionQueue.push(action);

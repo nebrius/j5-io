@@ -1,6 +1,7 @@
 import { IBaseModule, IGPIOModule, ILEDModule, IPWMModule, ISerialModule, II2CModule, IPeripheral, IPinInfo, ILED, II2C } from 'core-io-types';
-import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig, IServoConfig, Handler } from 'abstract-io';
+import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig, IServoConfig, II2CConfig, Handler } from 'abstract-io';
 declare const serialPortIds: unique symbol;
+declare const i2cPortIds: unique symbol;
 declare const name: unique symbol;
 declare const isReady: unique symbol;
 declare const pins: unique symbol;
@@ -9,6 +10,7 @@ declare const gpioManager: unique symbol;
 declare const pwmManager: unique symbol;
 declare const ledManager: unique symbol;
 declare const serialManager: unique symbol;
+declare const i2cManager: unique symbol;
 export interface IOptions {
     pluginName: string;
     platform: {
@@ -22,6 +24,9 @@ export interface IOptions {
     serialIds?: {
         [id: string]: any;
     };
+    i2cIds?: {
+        [id: string]: any;
+    };
     pinInfo: {
         [pin: number]: IPinInfo;
     };
@@ -32,15 +37,19 @@ export declare class CoreIO extends AbstractIO {
     readonly SERIAL_PORT_IDs: {
         [id: string]: any;
     };
+    readonly I2C_PORT_IDS: {
+        [id: string]: any;
+    };
     readonly pins: ReadonlyArray<IPinConfiguration>;
     readonly analogPins: ReadonlyArray<number>;
     readonly isReady: boolean;
     getInternalPinInstances?: () => {
         [pin: number]: IPeripheral;
     };
-    getI2CInstance?: () => II2C | undefined;
+    getI2CInstance?: (portId: string | number) => II2C | undefined;
     getLEDInstance?: () => ILED | undefined;
     private [serialPortIds];
+    private [i2cPortIds];
     private [isReady];
     private [pins];
     private [name];
@@ -49,6 +58,7 @@ export declare class CoreIO extends AbstractIO {
     private [pwmManager];
     private [ledManager]?;
     private [serialManager]?;
+    private [i2cManager]?;
     constructor(options: IOptions);
     reset(): void;
     normalize(pin: number | string): number;
@@ -66,5 +76,16 @@ export declare class CoreIO extends AbstractIO {
     serialStop(portId: number | string): void;
     serialClose(portId: number | string): void;
     serialFlush(portId: number | string): void;
+    i2cConfig(options: II2CConfig): void;
+    i2cWrite(address: number, inBytes: number[]): void;
+    i2cWrite(address: number, register: number, inBytes: number[]): void;
+    i2cWriteReg(address: number, register: number, value: number): void;
+    i2cRead(address: number, bytesToRead: number, handler: Handler<number[]>): void;
+    i2cRead(address: number, register: number, bytesToRead: number, handler: Handler<number[]>): void;
+    i2cReadOnce(address: number, bytesToRead: number, handler: Handler<number[]>): void;
+    i2cReadOnce(address: number, register: number, bytesToRead: number, handler: Handler<number[]>): void;
+    private [swizzleI2CReadArguments];
+    private supportsMode;
+    private validateSupportedMode;
 }
 export {};
