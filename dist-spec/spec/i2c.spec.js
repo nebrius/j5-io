@@ -23,13 +23,13 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
-/*global it xdescribe expect*/
+/*global it describe expect*/
 const { createInstance } = require('./mocks');
 // This is used to control how many times we want to successively read using the `i2cRead` method
 const NUM_READS = 10;
 // This is used to control how long to wait in ms to ensure a second read wasn't initiated
 const READ_WAIT = 100;
-xdescribe('I2C', () => {
+describe('I2C', () => {
     const inBytes = [0, 1, 2, 3, 4];
     const inByte = 6;
     const inAddress = 0x10;

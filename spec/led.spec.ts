@@ -23,8 +23,6 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*global it describe expect*/
-
 import { CoreIO } from '../src/index';
 import { createInstance, LED } from './mocks';
 

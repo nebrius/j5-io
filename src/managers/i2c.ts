@@ -23,31 +23,6 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import { ILEDModule, ILED } from 'core-io-types';
-import { Value } from 'abstract-io';
+export class I2CManager {
 
-export const DEFAULT_LED_PIN = -1;
-
-export class LEDManager {
-
-  public led: ILED;
-  private value = Value.LOW;
-
-  constructor(ledModule: ILEDModule) {
-    this.led = ledModule.createLED();
-    this.digitalWrite(Value.LOW);
-  }
-
-  public reset() {
-    // Nothing to do
-  }
-
-  public digitalWrite(value: Value): void {
-    this.value = value;
-    this.led.write(value);
-  }
-
-  public getCurrentValue(): Value {
-    return this.value;
-  }
 }

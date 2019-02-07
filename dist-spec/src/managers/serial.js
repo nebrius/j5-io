@@ -131,7 +131,6 @@ class SerialPortManager {
         }
     }
 }
-exports.SerialPortManager = SerialPortManager;
 class SerialManager {
     constructor(serialModule, serialIds, globalEventEmitter) {
         this.serialPortManagers = {};

@@ -197,7 +197,6 @@ export class CoreIO extends AbstractIO {
     function createPinEntry(pin: number, pinMapping: IPinInfo): IPinConfiguration {
       const supportedModes = [];
 
-
       // Serial and I2C are dedicated due to how the IO Plugin API works, so ignore all other supported peripheral types
       if (pinMapping.peripherals.indexOf(PeripheralType.UART) !== -1) {
         supportedModes.push(Mode.UNKOWN);

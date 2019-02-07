@@ -97,8 +97,8 @@ class CoreIO extends abstract_io_1.AbstractIO {
             this[defaultLed] = led_1.DEFAULT_LED_PIN;
             this[ledManager] = new led_1.LEDManager(platform.led);
         }
-        if (platform.serial) {
-            this[serialManager] = new serial_1.SerialManager(platform.serial, this);
+        if (platform.serial && serialIds) {
+            this[serialManager] = new serial_1.SerialManager(platform.serial, serialIds, this);
         }
         // Inject the test only methods if we're in test mode
         if (process.env.RASPI_IO_TEST_MODE) {
@@ -112,14 +112,23 @@ class CoreIO extends abstract_io_1.AbstractIO {
         const pinMappings = Object.assign({}, pinInfo);
         function createPinEntry(pin, pinMapping) {
             const supportedModes = [];
-            if (platform.led && pin === led_1.DEFAULT_LED_PIN) {
-                supportedModes.push(abstract_io_1.Mode.OUTPUT);
+            // Serial and I2C are dedicated due to how the IO Plugin API works, so ignore all other supported peripheral types
+            if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.UART) !== -1) {
+                supportedModes.push(abstract_io_1.Mode.UNKOWN);
             }
-            else if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.GPIO) !== -1) {
-                supportedModes.push(abstract_io_1.Mode.INPUT, abstract_io_1.Mode.OUTPUT);
+            else if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.I2C) !== -1) {
+                supportedModes.push(abstract_io_1.Mode.UNKOWN);
             }
-            if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.PWM) !== -1) {
-                supportedModes.push(abstract_io_1.Mode.PWM, abstract_io_1.Mode.SERVO);
+            else {
+                if (platform.led && pin === led_1.DEFAULT_LED_PIN) {
+                    supportedModes.push(abstract_io_1.Mode.OUTPUT);
+                }
+                else if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.GPIO) !== -1) {
+                    supportedModes.push(abstract_io_1.Mode.INPUT, abstract_io_1.Mode.OUTPUT);
+                }
+                if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.PWM) !== -1) {
+                    supportedModes.push(abstract_io_1.Mode.PWM, abstract_io_1.Mode.SERVO);
+                }
             }
             return Object.create(null, {
                 supportedModes: {

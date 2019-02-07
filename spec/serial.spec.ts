@@ -23,8 +23,6 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*global it describe expect*/
-
 import { createInstance } from './mocks';
 
 describe('Serial', () => {

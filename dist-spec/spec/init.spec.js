@@ -24,7 +24,6 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
-/*global it describe expect*/
 const events_1 = require("events");
 const index_1 = require("../src/index");
 const mocks_1 = require("./mocks");

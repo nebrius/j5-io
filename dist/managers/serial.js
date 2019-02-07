@@ -24,7 +24,9 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
+const abstract_io_1 = require("abstract-io");
 const core_1 = require("../core");
+// TODO: add unit tests for multiple simultaneous serial ports
 const DEFAULT_BAUD_RATE = 9600;
 var Action;
 (function (Action) {
@@ -43,7 +45,8 @@ class SerialPortManager {
         this.portId = portId;
         this.module = serialModule;
         this.eventEmitter = globalEventEmitter;
-        this.serial = serialModule.createSerial({ portId: this.portId.toString() }); // TODO: Is this right?
+        this.serial = serialModule.createSerial({ portId: this.portId.toString() });
+        core_1.setMode(this.serial, abstract_io_1.Mode.UNKOWN);
     }
     get baudrate() {
         return this.serial.baudRate;
@@ -98,6 +101,7 @@ class SerialPortManager {
                     this.serial = this.module.createSerial({
                         baudRate: action.baud
                     });
+                    core_1.setMode(this.serial, abstract_io_1.Mode.UNKOWN);
                     if (process.env.RASPI_IO_TEST_MODE) {
                         this.eventEmitter.emit('$TEST_MODE-serial-instance-created', this.serial);
                     }
@@ -127,12 +131,12 @@ class SerialPortManager {
         }
     }
 }
-exports.SerialPortManager = SerialPortManager;
 class SerialManager {
-    constructor(serialModule, globalEventEmitter) {
+    constructor(serialModule, serialIds, globalEventEmitter) {
         this.serialPortManagers = {};
         this.module = serialModule;
         this.eventEmitter = globalEventEmitter;
+        this.serialIds = serialIds;
     }
     reset() {
         for (const portId in this.serialPortManagers) {
@@ -226,6 +230,16 @@ class SerialManager {
         this.serialPortManagers[portId].addToSerialQueue(action);
     }
     ensureManager(portId) {
+        let portIdIsValid = false;
+        for (const serialId in this.serialIds) {
+            if (portId === this.serialIds[serialId]) {
+                portIdIsValid = true;
+                break;
+            }
+        }
+        if (!portIdIsValid) {
+            throw new Error(`Invalid serial port "${portId}"`);
+        }
         if (!this.serialPortManagers[portId]) {
             this.serialPortManagers[portId] = new SerialPortManager(portId, this.module, this.eventEmitter);
         }

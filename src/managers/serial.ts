@@ -58,7 +58,7 @@ interface IQueueConfigItem extends IQueueItem {
   baud: number;
 }
 
-export class SerialPortManager {
+class SerialPortManager {
 
   public isOpen: boolean = false;
 
