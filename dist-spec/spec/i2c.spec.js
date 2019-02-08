@@ -23,8 +23,9 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
+Object.defineProperty(exports, "__esModule", { value: true });
 /*global it describe expect*/
-const { createInstance } = require('./mocks');
+const mocks_1 = require("./mocks");
 // This is used to control how many times we want to successively read using the `i2cRead` method
 const NUM_READS = 10;
 // This is used to control how long to wait in ms to ensure a second read wasn't initiated
@@ -36,13 +37,13 @@ describe('I2C', () => {
     const inRegister = 0x20;
     // TODO: test i2cConfig and sendI2CConfig once https://github.com/nebrius/raspi-io-core/issues/8 has been resolved
     // TODO: test when I2C is disabled
-    it('prevents GPIO from using I2C pins', (done) => createInstance((raspi) => {
+    it('prevents GPIO from using I2C pins', (done) => mocks_1.createInstance((raspi) => {
         expect(() => {
             raspi.digitalWrite('SDA0', 1);
         }).toThrow(new Error('Pin "SDA0" does not support mode "output"'));
         done();
     }));
-    it('can write a buffer to an address', (done) => createInstance((raspi) => {
+    it('can write a buffer to an address', (done) => mocks_1.createInstance((raspi) => {
         const i2c = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
         i2c.on('write', ({ address, register, buffer }) => {
             expect(address).toEqual(inAddress);
@@ -52,7 +53,7 @@ describe('I2C', () => {
         raspi.i2cWrite(inAddress, inBytes);
         done();
     }));
-    it('can write a buffer to an address using sendI2CWriteRequest', (done) => createInstance((raspi) => {
+    it('can write a buffer to an address using sendI2CWriteRequest', (done) => mocks_1.createInstance((raspi) => {
         const i2c = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
         i2c.on('write', ({ address, register, buffer }) => {
             expect(address).toEqual(inAddress);
@@ -62,7 +63,7 @@ describe('I2C', () => {
         raspi.sendI2CWriteRequest(inAddress, inBytes);
         done();
     }));
-    it('can write a buffer to a register at address', (done) => createInstance((raspi) => {
+    it('can write a buffer to a register at address', (done) => mocks_1.createInstance((raspi) => {
         const i2c = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
         i2c.on('write', ({ address, register, buffer }) => {
             expect(address).toEqual(inAddress);
@@ -72,7 +73,7 @@ describe('I2C', () => {
         raspi.i2cWrite(inAddress, inRegister, inBytes);
         done();
     }));
-    it('can write a byte to a register at address', (done) => createInstance((raspi) => {
+    it('can write a byte to a register at address', (done) => mocks_1.createInstance((raspi) => {
         const i2c = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
         i2c.on('writeByteSync', ({ address, register, byte }) => {
             expect(address).toEqual(inAddress);
@@ -82,11 +83,11 @@ describe('I2C', () => {
         raspi.i2cWriteReg(inAddress, inRegister, inByte);
         done();
     }));
-    it('can read continuously', (done) => createInstance((raspi) => {
+    it('can read continuously', (done) => mocks_1.createInstance((raspi) => {
         let numReadsRemaining = NUM_READS;
         const peripheral = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
         const testData = [];
-        let testDataWindow = [...inBytes];
+        const testDataWindow = [...inBytes];
         for (let i = 0; i < numReadsRemaining + 1; i++) {
             testData.push(...testDataWindow);
         }
@@ -106,7 +107,7 @@ describe('I2C', () => {
             }
         });
     }));
-    it('can read from a register continuously', (done) => createInstance((raspi) => {
+    it('can read from a register continuously', (done) => mocks_1.createInstance((raspi) => {
         let numReadsRemaining = NUM_READS;
         const peripheral = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
         const testData = [];
@@ -130,7 +131,7 @@ describe('I2C', () => {
             }
         });
     }));
-    it('can read once', (done) => createInstance((raspi) => {
+    it('can read once', (done) => mocks_1.createInstance((raspi) => {
         const peripheral = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
         const testData = [...inBytes];
         peripheral.setReadBuffer(inAddress, undefined, testData);
@@ -151,7 +152,7 @@ describe('I2C', () => {
             }, READ_WAIT);
         });
     }));
-    it('can read once using sendI2CReadRequest', (done) => createInstance((raspi) => {
+    it('can read once using sendI2CReadRequest', (done) => mocks_1.createInstance((raspi) => {
         const peripheral = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
         const testData = [...inBytes];
         peripheral.setReadBuffer(inAddress, undefined, testData);
@@ -172,7 +173,7 @@ describe('I2C', () => {
             }, READ_WAIT);
         });
     }));
-    it('can read once from a register', (done) => createInstance((raspi) => {
+    it('can read once from a register', (done) => mocks_1.createInstance((raspi) => {
         const peripheral = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
         const testData = [...inBytes];
         peripheral.setReadBuffer(inAddress, inRegister, testData);

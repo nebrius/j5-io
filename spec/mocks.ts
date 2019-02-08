@@ -160,7 +160,7 @@ export const raspiGpioMock: IGPIOModule = {
   createDigitalOutput: (config) => new DigitalOutput(config)
 };
 
-class I2C extends Peripheral implements II2C {
+export class I2C extends Peripheral implements II2C {
 
   public args: any[];
 
@@ -171,14 +171,14 @@ class I2C extends Peripheral implements II2C {
     this.args = args;
   }
 
-  public setReadBuffer(address: number, register: number, data: Buffer) {
+  public setReadBuffer(address: number, register: number | undefined, data: number[]) {
     if (!this._readBuffers[address]) {
       this._readBuffers[address] = {};
     }
     if (!register) {
       register = -1;
     }
-    this._readBuffers[address][register] = data;
+    this._readBuffers[address][register] = Buffer.from(data);
   }
 
   public read(
@@ -202,7 +202,7 @@ class I2C extends Peripheral implements II2C {
       if (cb) {
         cb(null, data);
       }
-      this.emit('read', { address, length, register, data });
+      this.emit('read', { address, length, register, data: Array.from(data.values()) });
     });
   }
 

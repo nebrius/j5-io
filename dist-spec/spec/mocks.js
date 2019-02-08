@@ -143,7 +143,7 @@ class I2C extends Peripheral {
         if (!register) {
             register = -1;
         }
-        this._readBuffers[address][register] = data;
+        this._readBuffers[address][register] = Buffer.from(data);
     }
     read(address, registerOrLength, lengthOrCb, cb) {
         let length;
@@ -162,7 +162,7 @@ class I2C extends Peripheral {
             if (cb) {
                 cb(null, data);
             }
-            this.emit('read', { address, length, register, data });
+            this.emit('read', { address, length, register, data: Array.from(data.values()) });
         });
     }
     readSync(address, registerOrLength, length) {
@@ -340,6 +340,7 @@ class I2C extends Peripheral {
         return readBuffer;
     }
 }
+exports.I2C = I2C;
 exports.raspiI2CMock = {
     createI2C: () => new I2C()
 };
