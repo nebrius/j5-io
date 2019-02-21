@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { II2CModule, II2C } from 'core-io-types';
+import { II2CModule, II2C } from 'j5-io-types';
 import { Handler } from 'abstract-io';
 import { EventEmitter } from 'events';
 export declare class I2CManager {

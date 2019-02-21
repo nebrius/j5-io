@@ -310,7 +310,7 @@ describe('GPIO', () => {
     });
     // Query tests (note that all query methods are just pass-through methods)
     it('can query capabilities before the ready event has been fired', (done) => {
-        const raspi = new index_1.CoreIO({
+        raspi = new index_1.J5IO({
             pluginName: 'Raspi IO',
             pinInfo: mocks_1.pinInfo,
             platform: {
@@ -325,7 +325,7 @@ describe('GPIO', () => {
         raspi.queryCapabilities(done);
     });
     it('can query analog mappings before the ready event has been fired', (done) => {
-        const raspi = new index_1.CoreIO({
+        raspi = new index_1.J5IO({
             pluginName: 'Raspi IO',
             pinInfo: mocks_1.pinInfo,
             platform: {
@@ -340,7 +340,7 @@ describe('GPIO', () => {
         raspi.queryAnalogMapping(done);
     });
     it('can query pin state before the ready event has been fired', (done) => {
-        const raspi = new index_1.CoreIO({
+        raspi = new index_1.J5IO({
             pluginName: 'Raspi IO',
             pinInfo: mocks_1.pinInfo,
             platform: {

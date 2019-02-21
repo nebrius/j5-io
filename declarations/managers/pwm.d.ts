@@ -1,4 +1,4 @@
-import { IPWMModule } from 'core-io-types';
+import { IPWMModule } from 'j5-io-types';
 export declare class PWMManager {
     private module;
     private ranges;

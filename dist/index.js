@@ -26,7 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 Object.defineProperty(exports, "__esModule", { value: true });
 var _a, _b;
 "use strict";
-const core_io_types_1 = require("core-io-types");
+const j5_io_types_1 = require("j5-io-types");
 const abstract_io_1 = require("abstract-io");
 const core_1 = require("./core");
 const gpio_1 = require("./managers/gpio");
@@ -48,7 +48,7 @@ const ledManager = Symbol('ledManager');
 const serialManager = Symbol('serialManager');
 const i2cManager = Symbol('i2cManager');
 const swizzleI2CReadArguments = Symbol('swizzleI2CReadArguments');
-class CoreIO extends abstract_io_1.AbstractIO {
+class J5IO extends abstract_io_1.AbstractIO {
     constructor(options) {
         super();
         this[_a] = false;
@@ -134,20 +134,20 @@ class CoreIO extends abstract_io_1.AbstractIO {
         function createPinEntry(pin, pinMapping) {
             const supportedModes = [];
             // Serial and I2C are dedicated due to how the IO Plugin API works, so ignore all other supported peripheral types
-            if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.UART) !== -1) {
-                supportedModes.push(abstract_io_1.Mode.UNKOWN);
+            if (pinMapping.peripherals.indexOf(j5_io_types_1.PeripheralType.UART) !== -1) {
+                supportedModes.push(abstract_io_1.Mode.UNKNOWN);
             }
-            else if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.I2C) !== -1) {
-                supportedModes.push(abstract_io_1.Mode.UNKOWN);
+            else if (pinMapping.peripherals.indexOf(j5_io_types_1.PeripheralType.I2C) !== -1) {
+                supportedModes.push(abstract_io_1.Mode.UNKNOWN);
             }
             else {
                 if (platform.led && pin === led_1.DEFAULT_LED_PIN) {
                     supportedModes.push(abstract_io_1.Mode.OUTPUT);
                 }
-                else if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.GPIO) !== -1) {
+                else if (pinMapping.peripherals.indexOf(j5_io_types_1.PeripheralType.GPIO) !== -1) {
                     supportedModes.push(abstract_io_1.Mode.INPUT, abstract_io_1.Mode.OUTPUT);
                 }
-                if (pinMapping.peripherals.indexOf(core_io_types_1.PeripheralType.PWM) !== -1) {
+                if (pinMapping.peripherals.indexOf(j5_io_types_1.PeripheralType.PWM) !== -1) {
                     supportedModes.push(abstract_io_1.Mode.PWM, abstract_io_1.Mode.SERVO);
                 }
             }
@@ -161,7 +161,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
                     get() {
                         const peripheral = core_1.getPeripheral(pin);
                         if (!peripheral) {
-                            return abstract_io_1.Mode.UNKOWN;
+                            return abstract_io_1.Mode.UNKNOWN;
                         }
                         return core_1.getMode(peripheral);
                     }
@@ -256,7 +256,7 @@ class CoreIO extends abstract_io_1.AbstractIO {
                     mode: {
                         enumerable: true,
                         get() {
-                            return abstract_io_1.Mode.UNKOWN;
+                            return abstract_io_1.Mode.UNKNOWN;
                         }
                     },
                     value: {
@@ -535,5 +535,5 @@ class CoreIO extends abstract_io_1.AbstractIO {
         }
     }
 }
-exports.CoreIO = CoreIO;
+exports.J5IO = J5IO;
 //# sourceMappingURL=index.js.map

@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import { IGPIOModule, IDigitalInput, IDigitalOutput } from 'core-io-types';
+import { IGPIOModule, IDigitalInput, IDigitalOutput } from 'j5-io-types';
 import { Value, Mode } from 'abstract-io';
 import { getMode, setMode, getPeripheral } from '../core';
 import { EventEmitter } from 'events';

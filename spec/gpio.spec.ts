@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import { CoreIO } from '../src/index';
+import { J5IO } from '../src/index';
 import {
   createInstance,
   raspiMock,
@@ -86,7 +86,7 @@ type GetPinInstances = () => { [pin: number]: Peripheral };
 
 describe('GPIO', () => {
 
-  let raspi: CoreIO;
+  let raspi: J5IO;
   beforeEach((done) => {
     createInstance((newRaspi) => {
       raspi = newRaspi;
@@ -367,7 +367,7 @@ describe('GPIO', () => {
   // Query tests (note that all query methods are just pass-through methods)
 
   it('can query capabilities before the ready event has been fired', (done) => {
-    const raspi = new CoreIO({
+    raspi = new J5IO({
       pluginName: 'Raspi IO',
       pinInfo,
       platform: {
@@ -384,7 +384,7 @@ describe('GPIO', () => {
   });
 
   it('can query analog mappings before the ready event has been fired', (done) => {
-    const raspi = new CoreIO({
+    raspi = new J5IO({
       pluginName: 'Raspi IO',
       pinInfo,
       platform: {
@@ -401,7 +401,7 @@ describe('GPIO', () => {
   });
 
   it('can query pin state before the ready event has been fired', (done) => {
-    const raspi = new CoreIO({
+    raspi = new J5IO({
       pluginName: 'Raspi IO',
       pinInfo,
       platform: {

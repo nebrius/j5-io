@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 import { EventEmitter } from 'events';
-import { CoreIO } from '../src/index';
+import { J5IO } from '../src/index';
 import {
   raspiMock,
   raspiGpioMock,
@@ -41,7 +41,7 @@ describe('App Instantiation', () => {
 
   // TODO: test "reset" method
 
-  let raspi: CoreIO | undefined;
+  let raspi: J5IO | undefined;
   afterEach(() => {
     if (raspi) {
       raspi.reset();
@@ -52,28 +52,28 @@ describe('App Instantiation', () => {
   it('requires an options argument', () => {
     expect(() => {
       // tslint:disable
-      new (CoreIO as any)();
+      new (J5IO as any)();
     }).toThrow(new Error('"options" is required and must be an object'));
   });
 
   it('requires an options argument to be an object', () => {
     expect(() => {
       // tslint:disable
-      new (CoreIO as any)(`I'm not an object`);
+      new (J5IO as any)(`I'm not an object`);
     }).toThrow(new Error('"options" is required and must be an object'));
   });
 
   it('requires the pluginName argument', () => {
     expect(() => {
       // tslint:disable
-      new (CoreIO as any)({});
+      new (J5IO as any)({});
     }).toThrow(new Error('"options.pluginName" is required and must be a string'));
   });
 
   it('requires the pluginName argument to be a string', () => {
     expect(() => {
       // tslint:disable
-      new (CoreIO as any)({
+      new (J5IO as any)({
         pluginName: 10
       });
     }).toThrow(new Error('"options.pluginName" is required and must be a string'));
@@ -82,7 +82,7 @@ describe('App Instantiation', () => {
   it('requires the pinInfo argument', () => {
     expect(() => {
       // tslint:disable
-      new (CoreIO as any)({
+      new (J5IO as any)({
         pluginName: 'Raspi IO'
       });
     }).toThrow(new Error('"options.pinInfo" is required and must be an object'));
@@ -91,7 +91,7 @@ describe('App Instantiation', () => {
   it('requires the platform argument', () => {
     expect(() => {
       // tslint:disable
-      new (CoreIO as any)({
+      new (J5IO as any)({
         pluginName: 'Raspi IO',
         pinInfo: {}
       });
@@ -101,7 +101,7 @@ describe('App Instantiation', () => {
   it('requires the platform.base argument', () => {
     expect(() => {
       // tslint:disable
-      new (CoreIO as any)({
+      new (J5IO as any)({
         pluginName: 'Raspi IO',
         pinInfo,
         platform: {}
@@ -112,7 +112,7 @@ describe('App Instantiation', () => {
   it('requires the platform.gpio argument', () => {
     expect(() => {
       // tslint:disable
-      new (CoreIO as any)({
+      new (J5IO as any)({
         pluginName: 'Raspi IO',
         pinInfo,
         platform: {
@@ -125,7 +125,7 @@ describe('App Instantiation', () => {
   it('requires the platform.pwm argument', () => {
     expect(() => {
       // tslint:disable
-      new (CoreIO as any)({
+      new (J5IO as any)({
         pluginName: 'Raspi IO',
         pinInfo,
         platform: {
@@ -138,7 +138,7 @@ describe('App Instantiation', () => {
 
   it('does not require the platform.serial argument', () => {
     expect(() => {
-      raspi = new CoreIO({
+      raspi = new J5IO({
         pluginName: 'Raspi IO',
         pinInfo,
         platform: {
@@ -154,7 +154,7 @@ describe('App Instantiation', () => {
 
   it('requires the serialIds argument when the platform.serial argument is present', () => {
     expect(() => {
-      new CoreIO({
+      new J5IO({
         pluginName: 'Raspi IO',
         pinInfo,
         platform: {
@@ -170,7 +170,7 @@ describe('App Instantiation', () => {
 
   it('requires the serialIds.DEFAULT argument when the platform.serial argument is present', () => {
     expect(() => {
-      new CoreIO({
+      new J5IO({
         pluginName: 'Raspi IO',
         pinInfo,
         platform: {
@@ -185,7 +185,7 @@ describe('App Instantiation', () => {
   });
 
   it('is an instance of an Event Emitter', () => {
-    raspi = new CoreIO({
+    raspi = new J5IO({
       pluginName: 'Raspi IO',
       pinInfo,
       platform: {
@@ -200,13 +200,13 @@ describe('App Instantiation', () => {
 
 describe('App Initialization', () => {
 
-  let raspi: CoreIO;
+  let raspi: J5IO;
   afterEach(() => {
     raspi.reset();
   });
 
   it('emits "ready" and "connect" events on initialization', (done) => {
-    raspi = new CoreIO({
+    raspi = new J5IO({
       pluginName: 'Raspi IO',
       pinInfo,
       platform: {

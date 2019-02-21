@@ -36,7 +36,7 @@ class I2CPortManager {
         this.actionQueue = [];
         this.isI2CProcessing = false;
         this.i2c = i2cModule.createI2C(portId);
-        core_1.setMode(this.i2c, abstract_io_1.Mode.UNKOWN);
+        core_1.setMode(this.i2c, abstract_io_1.Mode.UNKNOWN);
         this.eventEmitter = globalEventEmitter;
     }
     reset() {
@@ -48,7 +48,7 @@ class I2CPortManager {
         this.i2cPump();
     }
     i2cPump() {
-        if (this.isI2CProcessing) {
+        if (this.isI2CProcessing || !this.i2c.alive) {
             return;
         }
         const action = this.actionQueue.shift();
@@ -62,9 +62,6 @@ class I2CPortManager {
         };
         switch (action.type) {
             case Action.Write:
-                if (!this.i2c.alive) {
-                    throw new Error('I2C pins not in I2C mode');
-                }
                 const { address: writeAddress, register: writeRegister, payload } = action;
                 if (Array.isArray(payload)) {
                     if (typeof writeRegister === 'number') {
@@ -84,9 +81,6 @@ class I2CPortManager {
                 }
                 break;
             case Action.Read:
-                if (!this.i2c.alive) {
-                    throw new Error('I2C pins not in I2C mode');
-                }
                 const { continuous, address: readAddress, register: readRegister, bytesToRead, handler } = action;
                 const readCB = (err, buffer) => {
                     if (err || !buffer) {

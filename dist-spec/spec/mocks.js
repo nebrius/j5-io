@@ -503,7 +503,7 @@ function createInstance(options, cb) {
     if (options && options.enableDefaultLED) {
         coreOptions.platform.led = exports.raspiLEDMock;
     }
-    const raspi = new index_1.CoreIO(coreOptions);
+    const raspi = new index_1.J5IO(coreOptions);
     raspi.on('ready', () => cb(raspi));
 }
 exports.createInstance = createInstance;

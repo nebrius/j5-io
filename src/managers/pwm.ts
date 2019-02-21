@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import { IPWMModule, IPWM } from 'core-io-types';
+import { IPWMModule, IPWM } from 'j5-io-types';
 import { Mode } from 'abstract-io';
 import { getMode, setMode, getPeripheral, constrain } from '../core';
 

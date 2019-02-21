@@ -33,7 +33,7 @@ import {
   IPWMModule, IPWM,
   ISerial, ISerialOptions, ISerialModule
 } from 'core-io-types';
-import { CoreIO, IOptions } from '../src/index';
+import { J5IO, IOptions } from '../src/index';
 
 // We can use the actual raspi-board modules in test mode here
 import { getPinNumber, getPins } from 'raspi-board';
@@ -553,7 +553,7 @@ export const raspiSerialMock: ISerialModule = {
 
 export const pinInfo: { [ pin: number ]: IPinInfo } = getPins();
 
-export type CreateCallback = (instance: CoreIO) => void;
+export type CreateCallback = (instance: J5IO) => void;
 export interface ICreateOptions {
   enableSerial?: boolean;
   enableDefaultLED?: boolean;
@@ -593,6 +593,6 @@ export function createInstance(options: CreateCallback | ICreateOptions, cb?: Cr
   if (options && (options as ICreateOptions).enableDefaultLED) {
     coreOptions.platform.led = raspiLEDMock;
   }
-  const raspi = new CoreIO(coreOptions);
+  const raspi = new J5IO(coreOptions);
   raspi.on('ready', () => (cb as CreateCallback)(raspi));
 }

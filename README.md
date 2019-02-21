@@ -1,10 +1,10 @@
-# Core IO
+# J5 IO
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nebrius/raspi-io?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/nebrius/core-io.svg?branch=master)](https://travis-ci.org/nebrius/core-io)
 [![Coverage Status](https://coveralls.io/repos/github/nebrius/core-io/badge.svg?branch=master)](https://coveralls.io/github/nebrius/core-io?branch=master)
 
-Core IO is a Firmata API compatible abstract library for creating [Johnny-Five](http://johnny-five.io/) IO plugins. The API docs for this module can be found on the [Johnny-Five Wiki](https://github.com/rwaldron/io-plugins), except for the constructor which is documented below.
+J5 IO is a Firmata API compatible abstract library for creating [Johnny-Five](http://johnny-five.io/) IO plugins. The API docs for this module can be found on the [Johnny-Five Wiki](https://github.com/rwaldron/io-plugins), except for the constructor which is documented below.
 
 If you have a bug report, feature request, or wish to contribute code, please be sure to check out the [Raspi IO Contributing Guide](https://github.com/nebrius/raspi-io/blob/master/CONTRIBUTING.md).
 
@@ -18,10 +18,10 @@ npm install core-io
 
 ## Usage
 
-Using Core IO to create a Johnny-Five IO plugin should look something like this:
+Using J5 IO to create a Johnny-Five IO plugin should look something like this:
 
 ```JavaScript
-import { CoreIO } from 'core-io';
+import { CoreIO } from 'j5-io';
 import { getPins } from 'raspi-board';
 
 export function RaspiIO({ includePins, excludePins, enableSoftPwm = false } = {}) {

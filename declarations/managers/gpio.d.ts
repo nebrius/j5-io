@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { IGPIOModule } from 'core-io-types';
+import { IGPIOModule } from 'j5-io-types';
 import { Value } from 'abstract-io';
 import { EventEmitter } from 'events';
 export declare class GPIOManager {

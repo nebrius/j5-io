@@ -1,32 +1,32 @@
 {
-  "name": "core-io",
+  "name": "j5-io",
   "version": "3.0.0",
-  "description": "The core library for Raspi IO",
+  "description": "A helper library/base class for creating Johnny-Five IO Plugins",
   "main": "dist/index.js",
   "types": "./declarations/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nebrius/raspi-io-core.git"
+    "url": "https://github.com/nebrius/j5-io.git"
   },
-  "homepage": "https://github.com/nebrius/raspi-io-core",
+  "homepage": "https://github.com/nebrius/j5-io",
   "keywords": [
     "raspberrypi",
     "nodebots",
     "robots"
   ],
   "dependencies": {
-    "abstract-io": "^1.5.0",
-    "core-io-types": "^2.3.0"
+    "abstract-io": "^1.5.1",
+    "j5-io-types": "^2.4.0"
   },
   "devDependencies": {
-    "@types/jasmine": "^3.3.8",
-    "@types/node": "^10.12.21",
+    "@types/jasmine": "^3.3.9",
+    "@types/node": "^10.12.26",
     "coveralls": "^3.0.2",
     "cross-env": "^5.2.0",
     "istanbul": "^0.4.5",
     "jasmine": "^3.3.0",
-    "raspi": "^6.0.0",
-    "raspi-board": "^7.1.1",
+    "raspi": "^6.0.1",
+    "raspi-board": "^7.1.2",
     "tslint": "^5.12.1",
     "typescript": "^3.3.3",
     "typescript-tslint-plugin": "^0.3.1"
@@ -55,6 +55,6 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/nebrius/raspi-io-core/issues"
+    "url": "https://github.com/nebrius/j5-io/issues"
   }
 }

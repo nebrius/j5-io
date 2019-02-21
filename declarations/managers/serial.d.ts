@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { ISerialModule } from 'core-io-types';
+import { ISerialModule } from 'j5-io-types';
 import { ISerialConfig, Handler } from 'abstract-io';
 import { EventEmitter } from 'events';
 export declare class SerialManager {

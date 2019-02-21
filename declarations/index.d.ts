@@ -1,4 +1,4 @@
-import { IBaseModule, IGPIOModule, ILEDModule, IPWMModule, ISerialModule, II2CModule, IPeripheral, IPinInfo, ILED, II2C } from 'core-io-types';
+import { IBaseModule, IGPIOModule, ILEDModule, IPWMModule, ISerialModule, II2CModule, IPeripheral, IPinInfo, ILED, II2C } from 'j5-io-types';
 import { AbstractIO, Value, Mode, IPinConfiguration, ISerialConfig, IServoConfig, II2CConfig, Handler } from 'abstract-io';
 declare const serialPortIds: unique symbol;
 declare const i2cPortIds: unique symbol;
@@ -31,7 +31,7 @@ export interface IOptions {
         [pin: number]: IPinInfo;
     };
 }
-export declare class CoreIO extends AbstractIO {
+export declare class J5IO extends AbstractIO {
     readonly defaultLed: number | undefined;
     readonly name: string;
     readonly SERIAL_PORT_IDs: {

@@ -35,7 +35,7 @@ import {
   PeripheralType,
   ILED,
   II2C
-} from 'core-io-types';
+} from 'j5-io-types';
 import {
   AbstractIO,
   Value,
@@ -92,7 +92,7 @@ export interface IOptions {
   pinInfo: { [ pin: number ]: IPinInfo };
 }
 
-export class CoreIO extends AbstractIO {
+export class J5IO extends AbstractIO {
 
   public get defaultLed() {
     if (this[ledManager]) {
@@ -237,9 +237,9 @@ export class CoreIO extends AbstractIO {
 
       // Serial and I2C are dedicated due to how the IO Plugin API works, so ignore all other supported peripheral types
       if (pinMapping.peripherals.indexOf(PeripheralType.UART) !== -1) {
-        supportedModes.push(Mode.UNKOWN);
+        supportedModes.push(Mode.UNKNOWN);
       } else if (pinMapping.peripherals.indexOf(PeripheralType.I2C) !== -1) {
-        supportedModes.push(Mode.UNKOWN);
+        supportedModes.push(Mode.UNKNOWN);
       } else {
         if (platform.led && pin === DEFAULT_LED_PIN) {
           supportedModes.push(Mode.OUTPUT);
@@ -260,7 +260,7 @@ export class CoreIO extends AbstractIO {
           get() {
             const peripheral = getPeripheral(pin);
             if (!peripheral) {
-              return Mode.UNKOWN;
+              return Mode.UNKNOWN;
             }
             return getMode(peripheral);
           }
@@ -357,7 +357,7 @@ export class CoreIO extends AbstractIO {
           mode: {
             enumerable: true,
             get() {
-              return Mode.UNKOWN;
+              return Mode.UNKNOWN;
             }
           },
           value: {

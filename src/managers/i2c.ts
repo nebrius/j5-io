@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import { II2CModule, II2C } from 'core-io-types';
+import { II2CModule, II2C } from 'j5-io-types';
 import { Handler, Mode } from 'abstract-io';
 import { EventEmitter } from 'events';
 import { setMode } from '../core';
@@ -61,7 +61,7 @@ class I2CPortManager {
 
   constructor(portId: string | number, i2cModule: II2CModule, globalEventEmitter: EventEmitter) {
     this.i2c = i2cModule.createI2C(portId);
-    setMode(this.i2c, Mode.UNKOWN);
+    setMode(this.i2c, Mode.UNKNOWN);
     this.eventEmitter = globalEventEmitter;
   }
 

@@ -41,25 +41,25 @@ describe('App Instantiation', () => {
     it('requires an options argument', () => {
         expect(() => {
             // tslint:disable
-            new index_1.CoreIO();
+            new index_1.J5IO();
         }).toThrow(new Error('"options" is required and must be an object'));
     });
     it('requires an options argument to be an object', () => {
         expect(() => {
             // tslint:disable
-            new index_1.CoreIO(`I'm not an object`);
+            new index_1.J5IO(`I'm not an object`);
         }).toThrow(new Error('"options" is required and must be an object'));
     });
     it('requires the pluginName argument', () => {
         expect(() => {
             // tslint:disable
-            new index_1.CoreIO({});
+            new index_1.J5IO({});
         }).toThrow(new Error('"options.pluginName" is required and must be a string'));
     });
     it('requires the pluginName argument to be a string', () => {
         expect(() => {
             // tslint:disable
-            new index_1.CoreIO({
+            new index_1.J5IO({
                 pluginName: 10
             });
         }).toThrow(new Error('"options.pluginName" is required and must be a string'));
@@ -67,7 +67,7 @@ describe('App Instantiation', () => {
     it('requires the pinInfo argument', () => {
         expect(() => {
             // tslint:disable
-            new index_1.CoreIO({
+            new index_1.J5IO({
                 pluginName: 'Raspi IO'
             });
         }).toThrow(new Error('"options.pinInfo" is required and must be an object'));
@@ -75,7 +75,7 @@ describe('App Instantiation', () => {
     it('requires the platform argument', () => {
         expect(() => {
             // tslint:disable
-            new index_1.CoreIO({
+            new index_1.J5IO({
                 pluginName: 'Raspi IO',
                 pinInfo: {}
             });
@@ -84,7 +84,7 @@ describe('App Instantiation', () => {
     it('requires the platform.base argument', () => {
         expect(() => {
             // tslint:disable
-            new index_1.CoreIO({
+            new index_1.J5IO({
                 pluginName: 'Raspi IO',
                 pinInfo: mocks_1.pinInfo,
                 platform: {}
@@ -94,7 +94,7 @@ describe('App Instantiation', () => {
     it('requires the platform.gpio argument', () => {
         expect(() => {
             // tslint:disable
-            new index_1.CoreIO({
+            new index_1.J5IO({
                 pluginName: 'Raspi IO',
                 pinInfo: mocks_1.pinInfo,
                 platform: {
@@ -106,7 +106,7 @@ describe('App Instantiation', () => {
     it('requires the platform.pwm argument', () => {
         expect(() => {
             // tslint:disable
-            new index_1.CoreIO({
+            new index_1.J5IO({
                 pluginName: 'Raspi IO',
                 pinInfo: mocks_1.pinInfo,
                 platform: {
@@ -118,7 +118,7 @@ describe('App Instantiation', () => {
     });
     it('does not require the platform.serial argument', () => {
         expect(() => {
-            raspi = new index_1.CoreIO({
+            raspi = new index_1.J5IO({
                 pluginName: 'Raspi IO',
                 pinInfo: mocks_1.pinInfo,
                 platform: {
@@ -132,7 +132,7 @@ describe('App Instantiation', () => {
     // TODO: test when i2cIds is missing
     it('requires the serialIds argument when the platform.serial argument is present', () => {
         expect(() => {
-            new index_1.CoreIO({
+            new index_1.J5IO({
                 pluginName: 'Raspi IO',
                 pinInfo: mocks_1.pinInfo,
                 platform: {
@@ -146,7 +146,7 @@ describe('App Instantiation', () => {
     });
     it('requires the serialIds.DEFAULT argument when the platform.serial argument is present', () => {
         expect(() => {
-            new index_1.CoreIO({
+            new index_1.J5IO({
                 pluginName: 'Raspi IO',
                 pinInfo: mocks_1.pinInfo,
                 platform: {
@@ -160,7 +160,7 @@ describe('App Instantiation', () => {
         }).toThrow(new Error('"DEFAULT" serial ID is required in options.serialIds'));
     });
     it('is an instance of an Event Emitter', () => {
-        raspi = new index_1.CoreIO({
+        raspi = new index_1.J5IO({
             pluginName: 'Raspi IO',
             pinInfo: mocks_1.pinInfo,
             platform: {
@@ -178,7 +178,7 @@ describe('App Initialization', () => {
         raspi.reset();
     });
     it('emits "ready" and "connect" events on initialization', (done) => {
-        raspi = new index_1.CoreIO({
+        raspi = new index_1.J5IO({
             pluginName: 'Raspi IO',
             pinInfo: mocks_1.pinInfo,
             platform: {

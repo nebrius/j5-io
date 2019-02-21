@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import { ILEDModule, ILED } from 'core-io-types';
+import { ILEDModule, ILED } from 'j5-io-types';
 import { Value } from 'abstract-io';
 
 export const DEFAULT_LED_PIN = -1;

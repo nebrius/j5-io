@@ -36,7 +36,7 @@ class I2CPortManager {
         this.actionQueue = [];
         this.isI2CProcessing = false;
         this.i2c = i2cModule.createI2C(portId);
-        core_1.setMode(this.i2c, abstract_io_1.Mode.UNKOWN);
+        core_1.setMode(this.i2c, abstract_io_1.Mode.UNKNOWN);
         this.eventEmitter = globalEventEmitter;
     }
     reset() {

@@ -23,14 +23,14 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import { CoreIO } from '../src/index';
+import { J5IO } from '../src/index';
 import { createInstance, LED } from './mocks';
 
 type GetLEDInstance = () => LED;
 
 describe('LED', () => {
 
-  let raspi: CoreIO;
+  let raspi: J5IO;
   afterEach(() => {
     raspi.reset();
   });

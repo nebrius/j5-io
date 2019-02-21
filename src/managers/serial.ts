@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import { ISerialModule, ISerial } from 'core-io-types';
+import { ISerialModule, ISerial } from 'j5-io-types';
 import { ISerialConfig, Handler, Mode } from 'abstract-io';
 import { createInternalErrorMessage, setMode } from '../core';
 import { EventEmitter } from 'events';
@@ -78,7 +78,7 @@ class SerialPortManager {
     this.module = serialModule;
     this.eventEmitter = globalEventEmitter;
     this.serial = serialModule.createSerial({ portId: this.portId.toString() });
-    setMode(this.serial, Mode.UNKOWN);
+    setMode(this.serial, Mode.UNKNOWN);
   }
 
   public reset() {
@@ -138,7 +138,7 @@ class SerialPortManager {
           this.serial = this.module.createSerial({
             baudRate: (action as IQueueConfigItem).baud
           });
-          setMode(this.serial, Mode.UNKOWN);
+          setMode(this.serial, Mode.UNKNOWN);
           if (process.env.RASPI_IO_TEST_MODE) {
             this.eventEmitter.emit('$TEST_MODE-serial-instance-created', this.serial);
           }

@@ -46,7 +46,7 @@ class SerialPortManager {
         this.module = serialModule;
         this.eventEmitter = globalEventEmitter;
         this.serial = serialModule.createSerial({ portId: this.portId.toString() });
-        core_1.setMode(this.serial, abstract_io_1.Mode.UNKOWN);
+        core_1.setMode(this.serial, abstract_io_1.Mode.UNKNOWN);
     }
     get baudrate() {
         return this.serial.baudRate;
@@ -103,7 +103,7 @@ class SerialPortManager {
                     this.serial = this.module.createSerial({
                         baudRate: action.baud
                     });
-                    core_1.setMode(this.serial, abstract_io_1.Mode.UNKOWN);
+                    core_1.setMode(this.serial, abstract_io_1.Mode.UNKNOWN);
                     if (process.env.RASPI_IO_TEST_MODE) {
                         this.eventEmitter.emit('$TEST_MODE-serial-instance-created', this.serial);
                     }
