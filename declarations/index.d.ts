@@ -84,7 +84,6 @@ export declare class J5IO extends AbstractIO {
     i2cRead(address: number, register: number, bytesToRead: number, handler: Handler<number[]>): void;
     i2cReadOnce(address: number, bytesToRead: number, handler: Handler<number[]>): void;
     i2cReadOnce(address: number, register: number, bytesToRead: number, handler: Handler<number[]>): void;
-    private [swizzleI2CReadArguments];
     private supportsMode;
     private validateSupportedMode;
 }

@@ -1,4 +1,8 @@
-## 3.0.0 ()
+## 3.0.1 (2018-2-20)
+
+- Fixed an odd bug by hand (possibly a bug in tsc itself) where the declaration emitted by tsc didn't compile in Raspi IO.
+
+## 3.0.0 (2018-2-20)
 
 - POTENTIALLY BREAKING CHANGE: Rewrote this module from the ground up in TypeScript
 - Removed any Raspberry Pi specific code and renamed this module from raspi-io-core to j5-io

@@ -1,6 +1,6 @@
 {
   "name": "j5-io",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "A helper library/base class for creating Johnny-Five IO Plugins",
   "main": "dist/index.js",
   "types": "./declarations/index.d.ts",
