@@ -1,13 +1,24 @@
 ## 3.0.0 ()
 
+- POTENTIALLY BREAKING CHANGE: Rewrote this module from the ground up in TypeScript
+- Removed any Raspberry Pi specific code and renamed this module from raspi-io-core to j5-io
 - Added unit tests, yay!
 - Changed the `digitalRead` update interval to be every 18ms instead of every 19ms to get it spec compliant in practice, not just in theory (must be at least 50Hz/20ms in practice)
 - Removed some dead code (no change to behavior)
 - Changed error handling in the constructor to throw a more intelligible error if a primitive is passed for options
 - Changed `servoConfig` so that it only changes pin mode if it's not already in Servo mode.
-- Added better error checking so that all serial* calls throw a readable error when `portId` is not included
+- Added better error checking so that all serial* calls
+    - Now throws a readable error when `portId` is not included
 - Fixed a theoretical bug where i2cRead continues to read after the peripheral is destroyed, which never happens in practice except in unit tests.
-- POTENTIALLY BREAKING: Specifying both `includePins` and `excludePins` at the same time now throws synchronously from the constructor
+- BREAKING CHANGE: Removed `includePins` and `excludePins`, which is replaced with `pinInfo`
+- BREAKING CHANGE: Now, only base, gpio, and pwm platform modules are required. The rest are optional
+- BREAKING CHANGE: Removed support for software PWM here (it should be handled by Raspi IO, not J5 IO)
+- BREAKING CHANGE: `digital-read-${pin}` event names are now normalized. If, for example, you called `digitalRead("GPIO18", () => {})` on the Raspberry Pi, before the event name would be `digital-read-GPIO18`, but now it's `digital-read-1`
+- Rewrote the I2C infrastructure to use serial's architecture. This new architecture both gaurantees order of operations while using asynchronous method calls, increasing performance.
+- Added a lot of internal infrastructure to support multiple I2C ports, even if it's mostly not supported in the IO Plugin spec (for now?)
+- BREAKING CHANGE: Removed the ability to pass a number to `i2cConfig` as its only argument. This was not documented and is not part of the IO Plugin spec.
+- BREAKING CHANGE: Added new `i2cIds` property which is required when including I2C support
+- BREAKING CHANGE: The expected values in `options.platform` were renamed to be platform independent, and `raspi-board` and `raspo-soft-pwm` were removed entirely
 
 ## 2.1.0 (2018-04-02)
 

@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig",
+  "compilerOptions": {
+    "outDir": "dist-spec",
+    "rootDir": ".",
+    "allowJs": true
+  },
+  "include": [
+      "src/**/*.*",
+      "spec/**/*.*"
+  ]
+}
