@@ -1,8 +1,8 @@
 # J5 IO
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nebrius/raspi-io?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Build Status](https://travis-ci.org/nebrius/core-io.svg?branch=master)](https://travis-ci.org/nebrius/core-io)
-[![Coverage Status](https://coveralls.io/repos/github/nebrius/core-io/badge.svg?branch=master)](https://coveralls.io/github/nebrius/core-io?branch=master)
+[![Build Status](https://travis-ci.org/nebrius/j5-io.svg?branch=master)](https://travis-ci.org/nebrius/j5-io)
+[![Coverage Status](https://coveralls.io/repos/github/nebrius/j5-io/badge.svg?branch=master)](https://coveralls.io/github/nebrius/j5-io?branch=master)
 
 J5 IO is a Firmata API compatible abstract library for creating [Johnny-Five](http://johnny-five.io/) IO plugins. The API docs for this module can be found on the [Johnny-Five Wiki](https://github.com/rwaldron/io-plugins), except for the constructor which is documented below.
 
@@ -13,7 +13,7 @@ If you have a bug report, feature request, or wish to contribute code, please be
 Install with npm:
 
 ```Shell
-npm install core-io
+npm install j5-io
 ```
 
 ## Usage
@@ -21,21 +21,19 @@ npm install core-io
 Using J5 IO to create a Johnny-Five IO plugin should look something like this:
 
 ```JavaScript
-import { CoreIO } from 'j5-io';
+import { J5IO } from 'j5-io';
 import { getPins } from 'raspi-board';
 
-export function RaspiIO({ includePins, excludePins, enableSoftPwm = false } = {}) {
+export function RaspiIO() {
 
   // Create the platform options
   const platform = {
     base: require('raspi'),
     gpio: require('raspi-gpio'),
-    i2c: require('raspi-i2c'),
-    led: require('raspi-led'),
-    pwm: require('raspi-pwm')
+    pwm: require('raspi-soft-pwm')
   };
 
-  return new RaspiIOCore({
+  return new J5IO({
     pluginName: 'Raspi IO',
     pinInfo: getPins(),
     platform
@@ -43,11 +41,13 @@ export function RaspiIO({ includePins, excludePins, enableSoftPwm = false } = {}
 }
 ```
 
+For a complete example, take a look at [Raspi IO](https://github.com/nebrius/raspi-io) which is based on this module.
+
 ## API
 
-### new CoreIO(options)
+### new J5IO(options)
 
-Instantiates a new Core IO instance with the given options
+Instantiates a new J5 IO instance with the given options
 
 _Arguments_:
 
@@ -76,30 +76,48 @@ _Arguments_:
           </tr>
         </thead>
         <tr>
-          <td>enableSerial (optional)</td>
-          <td>boolean</td>
-          <td>Enables the use of the serial port by Johnny-Five. The default value is <code>false</code></td>
+          <td>pluginName</td>
+          <td>String</td>
+          <td>A display name for this IO Plugin, e.g. <code>"Raspi IO"</code></td>
         </tr>
         <tr>
-          <td>enableSoftPwm (optional)</td>
-          <td>boolean</td>
-          <td>Use a software-based approach to PWM on GPIO pins that do not support hardware PWM. The <a href="https://github.com/tralves/raspi-soft-pwm"><code>raspi-soft-pwm</code> library</a> is used to enable this.
-          <br/><br/>
-          The default value is <code>false</code>.
-          <br/><br/>
-          <strong>Note:</strong> the timing of software PWM may not be as accurate as hardware PWM.
+          <td>serialIds (optional)</td>
+          <td>Object</td>
+          <td>A dictionary of available serial ports. Each key is a friendly name for the port, and the value is a black box value used by the serial platform module. This object is <em>required if</em> <code>platform.serial</code> is specified. There must be one entry with a key of <code>DEFAULT</code></td>
+        </tr>
+        <tr>
+          <td>i2cIds (optional)</td>
+          <td>Object</td>
+          <td>A dictionary of available I2C ports. Each key is a friendly name for the port, and the value is a black box value used by the I2C platform module. This object is <em>required if</em> <code>platform.i2c</code> is specified. There must be one entry with a key of <code>DEFAULT</code></td>
+        </tr>
+        <tr>
+          <td>pinInfo</td>
+          <td>Object</td>
+          <td>Pin information about all available pins. Each key is the <em>normalized</em> value for each pin in the system. Each value is itself an object, as documented below. Note that this object is used to construct the <code>pins</code> array on the IO Plugin instance.</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td colspan="2">
+            <table>
+              <thead>
+                <tr>
+                  <th>Property</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tr>
+                <td>pins</td>
+                <td>Array&lt;Number|String&gt;</td>
+                <td>All of the aliases for this pin, <em>excluding</em> the normalized pin value.</td>
+              </tr>
+              <tr>
+                <td>peripherals</td>
+                <td>Array&lt;PeripheralType&gt;</td>
+                <td>All of the supported peripherals for this pin. If writing in TypeScript, use the <code>PeripheralType</code> enum from the j5-io-types package. If writing in vanilla JavaScript, is one of "gpio", "pwm", "i2c", "spi", "uart". Note that these values are used to determine the available modes for each pin</td>
+              </tr>
+            </table>
           </td>
-        </tr>
-        <tr>
-          <td>includePins (optional)</td>
-          <td>Array&lt;Number|String&gt;</td>
-          <td>A list of pins to include in initialization. Any pins not listed here will not be initialized or available for use by Raspi IO</td>
-        </tr>
-        <tr>
-          <td>excludePins (optional)</td>
-          <td>Array&lt;Number|String&gt;</td>
-          <td>A list of pins to exclude from initialization. Any pins listed here will not be initialized or available for use by Raspi IO</td>
-        </tr>
         <tr>
           <td>platform</td>
           <td>Object</td>
@@ -117,44 +135,34 @@ _Arguments_:
                 </tr>
               </thead>
               <tr>
-                <td>raspi</td>
+                <td>base</td>
                 <td>Object</td>
-                <td>The "raspi" module to use, e.g. https://github.com/nebrius/raspi</td>
+                <td>The "base" module to use, e.g. https://github.com/nebrius/raspi</td>
               </tr>
               <tr>
-                <td>raspi-board</td>
+                <td>gpio</td>
                 <td>Object</td>
-                <td>The "raspi-board" module to use, e.g. https://github.com/nebrius/raspi-board</td>
+                <td>The "gpio" module to use, e.g. https://github.com/nebrius/raspi-gpio</td>
               </tr>
               <tr>
-                <td>raspi-gpio</td>
+                <td>pwm</td>
                 <td>Object</td>
-                <td>The "raspi-gpio" module to use, e.g. https://github.com/nebrius/raspi-gpio</td>
+                <td>The "pwm" module to use, e.g. https://github.com/nebrius/raspi-soft-pwm</td>
               </tr>
               <tr>
-                <td>raspi-i2c</td>
+                <td>i2c (optional)</td>
                 <td>Object</td>
-                <td>The "raspi-i2c" module to use, e.g. https://github.com/nebrius/raspi-i2c</td>
+                <td>The "i2c" module to use, e.g. https://github.com/nebrius/raspi-i2c</td>
               </tr>
               <tr>
-                <td>raspi-led</td>
+                <td>led (optional)</td>
                 <td>Object</td>
-                <td>The "raspi-led" module to use, e.g. https://github.com/nebrius/raspi-led</td>
+                <td>The "led" module to use for the on-board LED not associated with pins, e.g. https://github.com/nebrius/raspi-led</td>
               </tr>
               <tr>
-                <td>raspi-pwm</td>
+                <td>serial (optional)</td>
                 <td>Object</td>
-                <td>The "raspi-pwm" module to use, e.g. https://github.com/nebrius/raspi-pwm</td>
-              </tr>
-              <tr>
-                <td>raspi-serial</td>
-                <td>Object</td>
-                <td>The "raspi-serial" module to use, e.g. https://github.com/nebrius/raspi-serial</td>
-              </tr>
-              <tr>
-                <td>raspi-soft-pwm (optional)</td>
-                <td>Object</td>
-                <td>The "raspi-soft-pwm" module to use, e.g. https://github.com/nebrius/raspi-soft-pwm. This only needs to be supplied if the <code>enableSoftPwm</code> flag is set to <code>true</code></td>
+                <td>The "serial" module to use, e.g. https://github.com/nebrius/raspi-serial</td>
               </tr>
             </table>
           </td>

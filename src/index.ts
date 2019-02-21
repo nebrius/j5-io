@@ -346,7 +346,7 @@ export class J5IO extends AbstractIO {
       });
     }
 
-    // Fill in the holes, sins pins are sparse on the A+/B+/2
+    // Fill in the holes, sins pins are sparse on some platforms, e.g. on most Raspberry Pis
     for (let i = 0; i < this[pins].length; i++) {
       if (!this[pins][i]) {
         this[pins][i] = Object.create(null, {
