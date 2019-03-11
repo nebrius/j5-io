@@ -1,8 +1,13 @@
-## 3.0.1 (2018-2-20)
+## 3.1.0 (2019-3-11)
+
+- Added support for missing i2cWrite method
+- Fixed a marginally broken TypeScript import (if you tried to use this from TypeScript, it _may_ have given you an error)
+
+## 3.0.1 (2019-2-20)
 
 - Fixed an odd bug by hand (possibly a bug in tsc itself) where the declaration emitted by tsc didn't compile in Raspi IO.
 
-## 3.0.0 (2018-2-20)
+## 3.0.0 (2019-2-20)
 
 - POTENTIALLY BREAKING CHANGE: Rewrote this module from the ground up in TypeScript
 - Removed any Raspberry Pi specific code and renamed this module from raspi-io-core to j5-io

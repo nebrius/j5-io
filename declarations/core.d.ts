@@ -1,5 +1,5 @@
 import { Mode } from 'abstract-io';
-import { IPeripheral, IBaseModule } from 'core-io-types';
+import { IPeripheral, IBaseModule } from 'j5-io-types';
 export declare function createInternalErrorMessage(msg: string): string;
 export declare function setBaseModule(module: IBaseModule): void;
 export declare function getPeripheral(pin: number): IPeripheral | undefined;

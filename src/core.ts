@@ -24,7 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 import { Mode } from 'abstract-io';
-import { IPeripheral, IBaseModule } from 'core-io-types';
+import { IPeripheral, IBaseModule } from 'j5-io-types';
 
 let baseModule: IBaseModule | null = null;
 

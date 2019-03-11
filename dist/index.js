@@ -469,6 +469,10 @@ class J5IO extends abstract_io_1.AbstractIO {
             register = registerOrInBytes;
             value = inBytes;
         }
+        else if (typeof registerOrInBytes === 'number' && typeof inBytes === 'undefined') {
+            register = registerOrInBytes;
+            value = [];
+        }
         else if (Array.isArray(registerOrInBytes)) {
             register = undefined;
             value = registerOrInBytes;

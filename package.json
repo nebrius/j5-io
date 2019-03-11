@@ -1,6 +1,6 @@
 {
   "name": "j5-io",
-  "version": "3.0.1",
+  "version": "3.1.0",
   "description": "A helper library/base class for creating Johnny-Five IO Plugins",
   "main": "dist/index.js",
   "types": "./declarations/index.d.ts",
@@ -15,7 +15,7 @@
     "robots"
   ],
   "dependencies": {
-    "abstract-io": "^1.5.1",
+    "abstract-io": "^1.6.0",
     "j5-io-types": "^2.4.0"
   },
   "devDependencies": {

@@ -77,6 +77,7 @@ export declare class J5IO extends AbstractIO {
     serialClose(portId: number | string): void;
     serialFlush(portId: number | string): void;
     i2cConfig(options: II2CConfig): void;
+    i2cWrite(address: number, register: number): void;
     i2cWrite(address: number, inBytes: number[]): void;
     i2cWrite(address: number, register: number, inBytes: number[]): void;
     i2cWriteReg(address: number, register: number, value: number): void;
@@ -84,6 +85,7 @@ export declare class J5IO extends AbstractIO {
     i2cRead(address: number, register: number, bytesToRead: number, handler: Handler<number[]>): void;
     i2cReadOnce(address: number, bytesToRead: number, handler: Handler<number[]>): void;
     i2cReadOnce(address: number, register: number, bytesToRead: number, handler: Handler<number[]>): void;
+    private [swizzleI2CReadArguments];
     private supportsMode;
     private validateSupportedMode;
 }
