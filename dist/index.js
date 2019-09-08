@@ -477,6 +477,9 @@ class J5IO extends abstract_io_1.AbstractIO {
             register = undefined;
             value = registerOrInBytes;
         }
+        else if (typeof inBytes === 'number') {
+            value = [inBytes];
+        }
         else {
             throw new Error('Invalid arguments');
         }
