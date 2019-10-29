@@ -32,7 +32,7 @@ import {
   ILED, ILEDModule,
   IPWMModule, IPWM,
   ISerial, ISerialOptions, ISerialModule
-} from 'core-io-types';
+} from 'j5-io-types';
 import { J5IO, IOptions } from '../src/index';
 
 // We can use the actual raspi-board modules in test mode here
@@ -305,7 +305,7 @@ export class I2C extends Peripheral implements II2C {
       register = registerOrBuffer;
     }
     setImmediate(() => {
-      this.emit('writeSync', { address, register, buffer });
+      this.emit('writeSync', { address, register, buffer: buffer && Array.from(buffer.values()) });
     });
   }
 

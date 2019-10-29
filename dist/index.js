@@ -23,9 +23,8 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
-Object.defineProperty(exports, "__esModule", { value: true });
 var _a, _b;
-"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const j5_io_types_1 = require("j5-io-types");
 const abstract_io_1 = require("abstract-io");
 const core_1 = require("./core");

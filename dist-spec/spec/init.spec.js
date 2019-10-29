@@ -28,7 +28,7 @@ const events_1 = require("events");
 const index_1 = require("../src/index");
 const mocks_1 = require("./mocks");
 const abstract_io_1 = require("abstract-io");
-const core_io_types_1 = require("core-io-types");
+const j5_io_types_1 = require("j5-io-types");
 describe('App Instantiation', () => {
     // TODO: test "reset" method
     let raspi;
@@ -258,17 +258,17 @@ describe('App Initialization', () => {
             const parsedPin = parseInt(pin, 10);
             const supportedModes = [];
             const pinInfo = mocks_1.pinInfo[parsedPin];
-            if (pinInfo.peripherals.indexOf(core_io_types_1.PeripheralType.UART) !== -1) {
+            if (pinInfo.peripherals.indexOf(j5_io_types_1.PeripheralType.UART) !== -1) {
                 supportedModes.push(99);
             }
-            else if (pinInfo.peripherals.indexOf(core_io_types_1.PeripheralType.I2C) !== -1) {
+            else if (pinInfo.peripherals.indexOf(j5_io_types_1.PeripheralType.I2C) !== -1) {
                 supportedModes.push(99);
             }
             else {
-                if (pinInfo.peripherals.indexOf(core_io_types_1.PeripheralType.GPIO) != -1) {
+                if (pinInfo.peripherals.indexOf(j5_io_types_1.PeripheralType.GPIO) != -1) {
                     supportedModes.push(0, 1);
                 }
-                if (pinInfo.peripherals.indexOf(core_io_types_1.PeripheralType.PWM) != -1) {
+                if (pinInfo.peripherals.indexOf(j5_io_types_1.PeripheralType.PWM) != -1) {
                     supportedModes.push(3, 4);
                 }
             }

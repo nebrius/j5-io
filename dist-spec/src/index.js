@@ -23,9 +23,8 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
-Object.defineProperty(exports, "__esModule", { value: true });
 var _a, _b;
-"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const j5_io_types_1 = require("j5-io-types");
 const abstract_io_1 = require("abstract-io");
 const core_1 = require("./core");
@@ -245,7 +244,7 @@ class J5IO extends abstract_io_1.AbstractIO {
                 }
             });
         }
-        // Fill in the holes, sins pins are sparse on the A+/B+/2
+        // Fill in the holes, sins pins are sparse on some platforms, e.g. on most Raspberry Pis
         for (let i = 0; i < this[pins].length; i++) {
             if (!this[pins][i]) {
                 this[pins][i] = Object.create(null, {
@@ -468,6 +467,10 @@ class J5IO extends abstract_io_1.AbstractIO {
         if (typeof registerOrInBytes === 'number' && Array.isArray(inBytes)) {
             register = registerOrInBytes;
             value = inBytes;
+        }
+        else if (typeof registerOrInBytes === 'number' && typeof inBytes === 'undefined') {
+            register = registerOrInBytes;
+            value = [];
         }
         else if (Array.isArray(registerOrInBytes)) {
             register = undefined;

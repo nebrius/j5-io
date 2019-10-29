@@ -11,6 +11,7 @@ declare const pwmManager: unique symbol;
 declare const ledManager: unique symbol;
 declare const serialManager: unique symbol;
 declare const i2cManager: unique symbol;
+declare const swizzleI2CReadArguments: unique symbol;
 export interface IOptions {
     pluginName: string;
     platform: {

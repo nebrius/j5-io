@@ -258,7 +258,7 @@ class I2C extends Peripheral {
             register = registerOrBuffer;
         }
         setImmediate(() => {
-            this.emit('writeSync', { address, register, buffer });
+            this.emit('writeSync', { address, register, buffer: buffer && Array.from(buffer.values()) });
         });
     }
     writeByte(address, registerOrByte, byteOrCb, cb) {
@@ -365,15 +365,6 @@ exports.raspiLEDMock = {
     createLED: () => new LED()
 };
 class PWM extends Peripheral {
-    get frequency() {
-        return this._frequencyValue;
-    }
-    get dutyCycle() {
-        return this._dutyCycleValue;
-    }
-    get range() {
-        return this._range;
-    }
     constructor(...args) {
         const config = args[0];
         let pin = 1;
@@ -395,6 +386,15 @@ class PWM extends Peripheral {
         this._range = 1000;
         this.args = args;
     }
+    get frequency() {
+        return this._frequencyValue;
+    }
+    get dutyCycle() {
+        return this._dutyCycleValue;
+    }
+    get range() {
+        return this._range;
+    }
     write(dutyCycle) {
         this._dutyCycleValue = dutyCycle;
     }
@@ -404,6 +404,18 @@ exports.raspiPWMMock = {
     createPWM: (config) => new PWM(config)
 };
 class Serial extends Peripheral {
+    constructor({ portId = '/dev/ttyAMA0', baudRate = 9600, dataBits = 8, stopBits = 1, parity = 'none' } = {}) {
+        const pins = ['TXD0', 'RXD0'];
+        super(pins);
+        this._portId = portId;
+        this._options = {
+            portId,
+            baudRate,
+            dataBits,
+            stopBits,
+            parity
+        };
+    }
     get port() {
         return this._portId;
     }
@@ -418,18 +430,6 @@ class Serial extends Peripheral {
     }
     get parity() {
         return this._options.parity;
-    }
-    constructor({ portId = '/dev/ttyAMA0', baudRate = 9600, dataBits = 8, stopBits = 1, parity = 'none' } = {}) {
-        const pins = ['TXD0', 'RXD0'];
-        super(pins);
-        this._portId = portId;
-        this._options = {
-            portId,
-            baudRate,
-            dataBits,
-            stopBits,
-            parity
-        };
     }
     open(cb) {
         setImmediate(() => {

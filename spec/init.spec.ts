@@ -35,7 +35,7 @@ import {
   pinInfo as boardPins
 } from './mocks';
 import { IPinConfiguration, Mode } from 'abstract-io';
-import { PeripheralType } from 'core-io-types';
+import { PeripheralType } from 'j5-io-types';
 
 describe('App Instantiation', () => {
 
