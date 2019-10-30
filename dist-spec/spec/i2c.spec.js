@@ -53,6 +53,17 @@ describe('I2C', () => {
         raspi.i2cWrite(inAddress, inBytes);
         done();
     }));
+    it('can write a byte to an address', (done) => mocks_1.createInstance((raspi) => {
+        const i2c = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
+        const inByte = 27;
+        i2c.on('writeSync', ({ address, register, buffer }) => {
+            expect(address).toEqual(inAddress);
+            expect(register).toBeUndefined();
+            expect(buffer).toEqual([inByte]);
+        });
+        raspi.i2cWrite(inAddress, inByte);
+        done();
+    }));
     it('can write a buffer to an address using sendI2CWriteRequest', (done) => mocks_1.createInstance((raspi) => {
         const i2c = raspi.getI2CInstance(raspi.I2C_PORT_IDS.DEFAULT);
         i2c.on('writeSync', ({ address, register, buffer }) => {

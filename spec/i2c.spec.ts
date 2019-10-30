@@ -59,7 +59,19 @@ describe('I2C', () => {
       expect(register).toBeUndefined();
       expect(buffer).toEqual(inBytes);
     });
-    raspi.i2cWrite(inAddress, inBytes)
+    raspi.i2cWrite(inAddress, inBytes);
+    done();
+  }));
+
+  it('can write a byte to an address', (done) => createInstance((raspi) => {
+    const i2c = (raspi.getI2CInstance as GetI2CInstance)(raspi.I2C_PORT_IDS.DEFAULT);
+    const inByte = 27;
+    i2c.on('writeSync', ({ address, register, buffer }) => {
+      expect(address).toEqual(inAddress);
+      expect(register).toBeUndefined();
+      expect(buffer).toEqual([ inByte ]);
+    });
+    raspi.i2cWrite(inAddress, inByte);
     done();
   }));
 
@@ -70,7 +82,7 @@ describe('I2C', () => {
       expect(register).toBeUndefined();
       expect(buffer).toEqual(inBytes);
     });
-    raspi.sendI2CWriteRequest(inAddress, inBytes)
+    raspi.sendI2CWriteRequest(inAddress, inBytes);
     done();
   }));
 
@@ -81,7 +93,7 @@ describe('I2C', () => {
       expect(register).toEqual(inRegister);
       expect(buffer).toEqual(inBytes);
     });
-    raspi.i2cWrite(inAddress, inRegister, inBytes)
+    raspi.i2cWrite(inAddress, inRegister, inBytes);
     done();
   }));
 
@@ -92,7 +104,7 @@ describe('I2C', () => {
       expect(register).toEqual(inRegister);
       expect(byte).toEqual(inByte);
     });
-    raspi.i2cWriteReg(inAddress, inRegister, inByte)
+    raspi.i2cWriteReg(inAddress, inRegister, inByte);
     done();
   }));
 

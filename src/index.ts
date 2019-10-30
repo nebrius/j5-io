@@ -568,7 +568,7 @@ export class J5IO extends AbstractIO {
     // Do nothing because we don't currently support delay
   }
 
-  public i2cWrite(address: number, register: number): void;
+  public i2cWrite(address: number, byte: number): void;
   public i2cWrite(address: number, inBytes: number[]): void;
   public i2cWrite(address: number, register: number, inBytes: number[]): void;
   public i2cWrite(address: number, registerOrInBytes: number | number[], inBytes?: number[]): void {
@@ -582,8 +582,8 @@ export class J5IO extends AbstractIO {
       register = registerOrInBytes;
       value = inBytes;
     } else if (typeof registerOrInBytes === 'number' && typeof inBytes === 'undefined') {
-      register = registerOrInBytes;
-      value = [];
+      register = undefined;
+      value = [ registerOrInBytes ];
     } else if (Array.isArray(registerOrInBytes)) {
       register = undefined;
       value = registerOrInBytes;
