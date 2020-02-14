@@ -75,6 +75,17 @@ describe('I2C', () => {
     done();
   }));
 
+  it('can write a byte to a register at address', (done) => createInstance((raspi) => {
+    const i2c = (raspi.getI2CInstance as GetI2CInstance)(raspi.I2C_PORT_IDS.DEFAULT);
+    i2c.on('writeSync', ({ address, register, buffer }) => {
+      expect(address).toEqual(inAddress);
+      expect(register).toEqual(inRegister);
+      expect(buffer).toEqual([ inByte ]);
+    });
+    raspi.i2cWrite(inAddress, inRegister, inByte);
+    done();
+  }));
+
   it('can write a buffer to an address using sendI2CWriteRequest', (done) => createInstance((raspi) => {
     const i2c = (raspi.getI2CInstance as GetI2CInstance)(raspi.I2C_PORT_IDS.DEFAULT);
     i2c.on('writeSync', ({ address, register, buffer }) => {

@@ -1,6 +1,6 @@
 {
   "name": "j5-io",
-  "version": "3.1.2",
+  "version": "3.2.0",
   "description": "A helper library/base class for creating Johnny-Five IO Plugins",
   "main": "dist/index.js",
   "types": "./declarations/index.d.ts",
@@ -19,17 +19,17 @@
     "j5-io-types": "^2.5.0"
   },
   "devDependencies": {
-    "@types/jasmine": "^3.4.4",
-    "@types/node": "^12.11.7",
-    "coveralls": "^3.0.7",
+    "@types/jasmine": "^3.5.3",
+    "@types/node": "^12.12.27",
+    "coveralls": "^3.0.9",
     "cross-env": "^6.0.3",
     "istanbul": "^0.4.5",
     "jasmine": "^3.5.0",
     "raspi": "^6.0.1",
     "raspi-board": "^7.3.0",
-    "tslint": "^5.20.0",
-    "typescript": "^3.6.4",
-    "typescript-tslint-plugin": "^0.5.4"
+    "tslint": "^5.20.1",
+    "typescript": "^3.7.5",
+    "typescript-tslint-plugin": "^0.5.5"
   },
   "scripts": {
     "prebuild": "tslint 'src/**/*.ts'",

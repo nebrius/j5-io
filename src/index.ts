@@ -570,18 +570,22 @@ export class J5IO extends AbstractIO {
 
   public i2cWrite(address: number, byte: number): void;
   public i2cWrite(address: number, inBytes: number[]): void;
+  public i2cWrite(address: number, register: number, byte: number): void;
   public i2cWrite(address: number, register: number, inBytes: number[]): void;
-  public i2cWrite(address: number, registerOrInBytes: number | number[], inBytes?: number[]): void {
+  public i2cWrite(address: number, registerOrInBytes: number | number[], byteOrInBytes?: number | number[]): void {
     const i2cManagerInstance = this[i2cManager];
     if (!i2cManagerInstance) {
       throw new Error('I2C support is disabled');
     }
     let value: number[];
     let register: number | undefined;
-    if (typeof registerOrInBytes === 'number' && Array.isArray(inBytes)) {
+    if (typeof registerOrInBytes === 'number' && Array.isArray(byteOrInBytes)) {
       register = registerOrInBytes;
-      value = inBytes;
-    } else if (typeof registerOrInBytes === 'number' && typeof inBytes === 'undefined') {
+      value = byteOrInBytes;
+    } else if (typeof registerOrInBytes === 'number' && typeof byteOrInBytes === 'number') {
+      register = registerOrInBytes;
+      value = [ byteOrInBytes ];
+    } else if (typeof registerOrInBytes === 'number' && typeof byteOrInBytes === 'undefined') {
       register = undefined;
       value = [ registerOrInBytes ];
     } else if (Array.isArray(registerOrInBytes)) {
